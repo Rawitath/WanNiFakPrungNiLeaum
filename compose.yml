@@ -1,11 +1,33 @@
 services:
   frontend:
+    profiles: ["prod"]
     image: wannifakprungnileaum-frontend:latest
-    build: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - 8081:8081
+  fronten-dev:
+    profiles: ["dev"]
+    image: wannifakprungnileaum-frontend:dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
       - 8081:8081
   backend:
+    profiles: ["prod"]
     image: wannifakprungnileaum-backend:latest
-    build: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+  backend-dev:
+    profiles: ["dev"]
+    image: wannifakprungnileaum-backend:dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     ports:
       - 3000:3000
