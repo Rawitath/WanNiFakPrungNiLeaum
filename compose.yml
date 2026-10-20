@@ -29,5 +29,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend/src:/app/src
     ports:
       - 3000:3000
