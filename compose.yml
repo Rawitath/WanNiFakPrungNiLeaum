@@ -1,0 +1,11 @@
+services:
+  frontend:
+    image: wannifakprungnileaum-frontend:latest
+    build: frontend
+    ports:
+      - 8081:8081
+  backend:
+    image: wannifakprungnileaum-backend:latest
+    build: backend
+    ports:
+      - 3000:3000
