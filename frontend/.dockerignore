@@ -1,0 +1,8 @@
+.git
+*Dockerfile*
+*docker-compose*
+node_modules
+.expo
+.web
+dist
+npm-debug.log
