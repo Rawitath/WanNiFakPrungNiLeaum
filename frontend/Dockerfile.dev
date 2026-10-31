@@ -10,7 +10,7 @@ RUN npm install -g react-devtools
 COPY my-app/package*.json ./
 
 # ใช้ npm install หรือ yarn install / pnpm install ตามที่คุณใช้
-RUN npm install
+RUN npm ci
 
 # ก๊อปปี้ไฟล์ทั้งหมดในโปรเจกต์
 COPY my-app/ .
