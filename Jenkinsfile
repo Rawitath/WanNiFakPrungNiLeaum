@@ -14,11 +14,31 @@ pipeline {
         stage('tuchsanai - setup') {
             steps {
                 sh '''
-                    dockerd > /dev/null 2>&1 &
+                    # 1. เคลียร์และเตรียม Directory สำหรับ /run และ /var/run
+                    mkdir -p /run/docker /var/run
+                    
+                    # 2. รัน dockerd ใน background โดยบังคับใช้ storage-driver vfs (หรือ overlay2) 
+                    # พร้อมดู log เพื่อ debug หากมีปัญหา
+                    dockerd --storage-driver=vfs > /tmp/dockerd.log 2>&1 &
+                    
+                    # 3. วนรอเช็คพร้อมตั้ง Timeout (ไม่ให้รันวนค้างตลอดไป)
+                    TRY_COUNT=0
+                    MAX_TRIES=30
+                    
                     while ! docker info > /dev/null 2>&1; do
-                        echo "Waiting for internal dockerd to start..."
+                        echo "Waiting for internal dockerd to start... ($TRY_COUNT/$MAX_TRIES)"
                         sleep 1
+                        TRY_COUNT=$((TRY_COUNT+1))
+                        
+                        if [ $TRY_COUNT -ge $MAX_TRIES ]; then
+                            echo "ERROR: Docker daemon failed to start within time!"
+                            echo "=== DOCKERD LOGS ==="
+                            cat /tmp/dockerd.log
+                            exit 1
+                        fi
                     done
+                    
+                    echo "Internal dockerd started successfully!"
                 '''
             }
         }
