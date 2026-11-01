@@ -11,19 +11,8 @@ import {
 
 const PetDetails = ({
   onBack,
+  pet,
   petImage,
-  pet = {
-    id: "P001",
-    name: "น้องจุ๊ดจุ๊ด",
-    type: "สุนัข",
-    breed: "สายพันธุ์ โกลเด้นรีทรีฟเวอร์",
-    age: "2 ปี 3 เดือน",
-    gender: "ผู้",
-    weight: "2 กิโล",
-    limitation: "แพ้ช็อกโกแลต",
-    checkIn: "29/03/2569",
-    checkOut: "01/04/2569",
-  },
   initialStatus = "In Care",
   onStatusChange,
 }) => {
@@ -31,9 +20,8 @@ const PetDetails = ({
 
   const statusOptions = [
     "In Care",
-    "พร้อมกลับบ้าน",
-    "ไม่สบาย",
-    "ยืนยันแล้ว",
+    "พร้อมรับกลับบ้าน",
+    "รับกลับบ้านแล้ว",
   ];
 
   const activeStatusIndex = statusOptions.indexOf(status);
@@ -47,11 +35,6 @@ const PetDetails = ({
   };
 
   return (
-    <ScrollView
-      style={styles.page}
-      contentContainerStyle={styles.pageContent}
-      showsVerticalScrollIndicator={true}
-    >
       <View style={styles.content}>
 
         {/* Back Button */}
@@ -70,12 +53,6 @@ const PetDetails = ({
             <Text style={styles.title}>PET Hotel</Text>
             <Text style={styles.smallPaw}>🐾</Text>
           </View>
-
-          <Text style={styles.subtitle}>
-            ดูแลสัตว์เลี้ยงตามใจ ใส่ใจทุกขั้นตอน
-            {"\n"}
-            เพื่อให้สัตว์เลี้ยงของคุณปลอดภัยและมีความสุขตลอดการเข้าพัก
-          </Text>
         </View>
 
         {/* Ticket */}
@@ -93,6 +70,7 @@ const PetDetails = ({
           {/* Ticket Main */}
           <View style={styles.ticketMain}>
 
+            {/* Ticket Header */}
             <View style={styles.ticketHeader}>
               <Text style={styles.ticketLogo}>
                 StayTodayForgotTomorrow
@@ -105,37 +83,49 @@ const PetDetails = ({
               </View>
             </View>
 
+            {/* Pet Information */}
             <View style={styles.ticketBody}>
 
-              {/* Pet Information */}
               <View style={styles.petInfo}>
+
                 <Text style={styles.petName}>
                   {pet.name}
                 </Text>
 
+                {/* หัวข้อและข้อมูลรับมาจาก App.js */}
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>ชนิด</Text>
-                  <Text style={styles.infoValue}>{pet.type}</Text>
+                  <Text style={styles.infoValue}>
+                    {pet.type}
+                  </Text>
                 </View>
 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>สายพันธุ์</Text>
-                  <Text style={styles.infoValue}>{pet.breed}</Text>
+                  <Text style={styles.infoValue}>
+                    {pet.breed}
+                  </Text>
                 </View>
 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>อายุ</Text>
-                  <Text style={styles.infoValue}>{pet.age}</Text>
+                  <Text style={styles.infoValue}>
+                    {pet.age}
+                  </Text>
                 </View>
 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>เพศ</Text>
-                  <Text style={styles.infoValue}>{pet.gender}</Text>
+                  <Text style={styles.infoValue}>
+                    {pet.gender}
+                  </Text>
                 </View>
 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>น้ำหนัก</Text>
-                  <Text style={styles.infoValue}>{pet.weight}</Text>
+                  <Text style={styles.infoValue}>
+                    {pet.weight}
+                  </Text>
                 </View>
 
                 <View style={styles.infoRow}>
@@ -144,6 +134,7 @@ const PetDetails = ({
                     {pet.limitation}
                   </Text>
                 </View>
+
               </View>
 
               {/* Pet Image */}
@@ -203,6 +194,7 @@ const PetDetails = ({
             <View style={styles.statusProgressLine} />
 
             {statusOptions.map((item, index) => {
+
               const active = index === activeStatusIndex;
               const completed = index < activeStatusIndex;
 
@@ -234,6 +226,25 @@ const PetDetails = ({
                     </Text>
                   </View>
 
+                  {/* Small Indicator */}
+                  <View style={styles.statusIndicator}>
+                    <View
+                      style={[
+                        styles.statusIndicatorLine,
+                        (active || completed) &&
+                          styles.statusIndicatorLineActive,
+                      ]}
+                    />
+
+                    <View
+                      style={[
+                        styles.statusIndicatorLine,
+                        (active || completed) &&
+                          styles.statusIndicatorLineActive,
+                      ]}
+                    />
+                  </View>
+
                   {/* Status Name */}
                   <Text
                     style={[
@@ -250,11 +261,9 @@ const PetDetails = ({
             })}
 
           </View>
-
         </View>
 
       </View>
-    </ScrollView>
   );
 };
 
@@ -275,6 +284,7 @@ const styles = StyleSheet.create({
   content: {
     width: "100%",
     paddingHorizontal: 30,
+    backgroundColor: "#FFFFFF",
   },
 
   // Back Button
@@ -319,14 +329,6 @@ const styles = StyleSheet.create({
     fontSize: 38,
     fontWeight: "900",
     color: "#000000",
-  },
-
-  subtitle: {
-    marginTop: 8,
-    color: "#111111",
-    fontSize: 12,
-    fontWeight: "500",
-    textAlign: "center",
   },
 
   // Ticket
@@ -495,12 +497,11 @@ const styles = StyleSheet.create({
   // Status
   statusBox: {
     width: 460,
-    minHeight: 175,
     alignSelf: "center",
     marginTop: 55,
     padding: 23,
-    borderWidth: 1,
-    borderColor: "#DCE5EF",
+    borderWidth: 2,
+    borderColor: "#CAD2DB",
     borderRadius: 15,
     backgroundColor: "#FFFFFF",
   },
@@ -508,7 +509,9 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontSize: 13,
     fontWeight: "bold",
+    textAlign: "center",
     color: "#0B2B45",
+    marginBottom: 20,
   },
 
   // Stepper
@@ -523,8 +526,8 @@ const styles = StyleSheet.create({
   statusProgressLine: {
     position: "absolute",
     top: 13,
-    left: "12%",
-    right: "12%",
+    left: "20%",
+    right: "20%",
     height: 3,
     backgroundColor: "#246AA5",
   },
