@@ -35,254 +35,199 @@ const PetDetails = ({
   };
 
   return (
-      <View style={styles.content}>
+    <View style={styles.content}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={onBack}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.backText}>ย้อนกลับ</Text>
+      </TouchableOpacity>
 
-        {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.backText}>ย้อนกลับ</Text>
-        </TouchableOpacity>
+      {/* Page Heading */}
+      <View style={styles.heading}>
+        <View style={styles.titleRow}>
+          <Text style={styles.paw}>🐾</Text>
+          <Text style={styles.title}>PET Hotel</Text>
+          <Text style={styles.smallPaw}>🐾</Text>
+        </View>
+      </View>
 
-        {/* Page Heading */}
-        <View style={styles.heading}>
-          <View style={styles.titleRow}>
-            <Text style={styles.paw}>🐾</Text>
-            <Text style={styles.title}>PET Hotel</Text>
-            <Text style={styles.smallPaw}>🐾</Text>
-          </View>
+      {/* Ticket */}
+      <View style={styles.ticket}>
+        {/* Left Ticket Strip */}
+        <View style={styles.ticketLeft}>
+          <View style={styles.leftCircle} />
+
+          <Text style={styles.ticketVertical}>TICKET</Text>
         </View>
 
-        {/* Ticket */}
-        <View style={styles.ticket}>
+        {/* Ticket Main */}
+        <View style={styles.ticketMain}>
+          {/* Ticket Header */}
+          <View style={styles.ticketHeader}>
+            <Text style={styles.ticketLogo}>StayTodayForgotTomorrow</Text>
 
-          {/* Left Ticket Strip */}
-          <View style={styles.ticketLeft}>
-            <View style={styles.leftCircle} />
-
-            <Text style={styles.ticketVertical}>
-              TICKET
-            </Text>
-          </View>
-
-          {/* Ticket Main */}
-          <View style={styles.ticketMain}>
-
-            {/* Ticket Header */}
-            <View style={styles.ticketHeader}>
-              <Text style={styles.ticketLogo}>
-                StayTodayForgotTomorrow
-              </Text>
-
-              <View style={styles.petId}>
-                <Text style={styles.petIdText}>
-                  {pet.id}
-                </Text>
-              </View>
-            </View>
-
-            {/* Pet Information */}
-            <View style={styles.ticketBody}>
-
-              <View style={styles.petInfo}>
-
-                <Text style={styles.petName}>
-                  {pet.name}
-                </Text>
-
-                {/* หัวข้อและข้อมูลรับมาจาก App.js */}
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>ชนิด</Text>
-                  <Text style={styles.infoValue}>
-                    {pet.type}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>สายพันธุ์</Text>
-                  <Text style={styles.infoValue}>
-                    {pet.breed}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>อายุ</Text>
-                  <Text style={styles.infoValue}>
-                    {pet.age}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>เพศ</Text>
-                  <Text style={styles.infoValue}>
-                    {pet.gender}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>น้ำหนัก</Text>
-                  <Text style={styles.infoValue}>
-                    {pet.weight}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>ข้อจำกัด</Text>
-                  <Text style={styles.infoValue}>
-                    {pet.limitation}
-                  </Text>
-                </View>
-
-              </View>
-
-              {/* Pet Image */}
-              <View style={styles.petImageContainer}>
-                {petImage ? (
-                  <Image
-                    source={petImage}
-                    style={styles.petImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.imagePlaceholder}>
-                    <Text style={styles.placeholderText}>
-                      NO IMAGE
-                    </Text>
-                  </View>
-                )}
-
-                <Text style={styles.dateText}>
-                  วันที่เข้าพัก {pet.checkIn}-{pet.checkOut}
-                </Text>
-              </View>
-
+            <View style={styles.petId}>
+              <Text style={styles.petIdText}>{pet.id}</Text>
             </View>
           </View>
 
-          {/* Barcode */}
-          <View style={styles.barcodeSide}>
-            <View style={styles.barcode}>
-              {Array.from({ length: 32 }).map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.barcodeLine,
-                    {
-                      height: index % 3 === 0 ? 3 : 2,
-                    },
-                  ]}
+          {/* Pet Information */}
+          <View style={styles.ticketBody}>
+            <View style={styles.petInfo}>
+              <Text style={styles.petName}>{pet.name}</Text>
+
+              {/* หัวข้อและข้อมูลรับมาจาก App.js */}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>ชนิด</Text>
+                <Text style={styles.infoValue}>{pet.type}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>สายพันธุ์</Text>
+                <Text style={styles.infoValue}>{pet.breed}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>อายุ</Text>
+                <Text style={styles.infoValue}>{pet.age}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>เพศ</Text>
+                <Text style={styles.infoValue}>{pet.gender}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>น้ำหนัก</Text>
+                <Text style={styles.infoValue}>{pet.weight}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>ข้อจำกัด</Text>
+                <Text style={styles.infoValue}>{pet.limitation}</Text>
+              </View>
+            </View>
+
+            {/* Pet Image */}
+            <View style={styles.petImageContainer}>
+              {petImage ? (
+                <Image
+                  source={petImage}
+                  style={styles.petImage}
+                  resizeMode="cover"
                 />
-              ))}
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Text style={styles.placeholderText}>NO IMAGE</Text>
+                </View>
+              )}
+
+              <Text style={styles.dateText}>
+                วันที่เข้าพัก {pet.checkIn}-{pet.checkOut}
+              </Text>
             </View>
           </View>
-
         </View>
 
-        {/* Status Box */}
-        <View style={styles.statusBox}>
+        {/* Barcode */}
+        <View style={styles.barcodeSide}>
+          <View style={styles.barcode}>
+            {Array.from({ length: 32 }).map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.barcodeLine,
+                  {
+                    height: index % 3 === 0 ? 3 : 2,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+      </View>
 
-          <Text style={styles.statusTitle}>
-            สถานะสัตว์เลี้ยง
-          </Text>
+      {/* Status Box */}
+      <View style={styles.statusBox}>
+        <Text style={styles.statusTitle}>สถานะสัตว์เลี้ยง</Text>
 
-          {/* Progress Stepper */}
-          <View style={styles.statusStepper}>
+        {/* Progress Stepper */}
+        <View style={styles.statusStepper}>
+          {/* Progress Line */}
+          <View style={styles.statusProgressLine} />
 
-            {/* Progress Line */}
-            <View style={styles.statusProgressLine} />
+          {statusOptions.map((item, index) => {
+            const active = index === activeStatusIndex;
+            const completed = index < activeStatusIndex;
 
-            {statusOptions.map((item, index) => {
-
-              const active = index === activeStatusIndex;
-              const completed = index < activeStatusIndex;
-
-              return (
-                <TouchableOpacity
-                  key={item}
-                  style={styles.statusStep}
-                  onPress={() => handleStatusChange(item)}
-                  activeOpacity={0.8}
+            return (
+              <TouchableOpacity
+                key={item}
+                style={styles.statusStep}
+                onPress={() => handleStatusChange(item)}
+                activeOpacity={0.8}
+              >
+                {/* Circle */}
+                <View
+                  style={[
+                    styles.statusCircle,
+                    (active || completed) && styles.statusCircleActive,
+                    active && styles.statusCircleCurrent,
+                  ]}
                 >
-
-                  {/* Circle */}
-                  <View
-                    style={[
-                      styles.statusCircle,
-                      (active || completed) &&
-                        styles.statusCircleActive,
-                      active && styles.statusCircleCurrent,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.statusCircleText,
-                        (active || completed) &&
-                          styles.statusCircleTextActive,
-                      ]}
-                    >
-                      {completed ? "✓" : index + 1}
-                    </Text>
-                  </View>
-
-                  {/* Small Indicator */}
-                  <View style={styles.statusIndicator}>
-                    <View
-                      style={[
-                        styles.statusIndicatorLine,
-                        (active || completed) &&
-                          styles.statusIndicatorLineActive,
-                      ]}
-                    />
-
-                    <View
-                      style={[
-                        styles.statusIndicatorLine,
-                        (active || completed) &&
-                          styles.statusIndicatorLineActive,
-                      ]}
-                    />
-                  </View>
-
-                  {/* Status Name */}
                   <Text
                     style={[
-                      styles.statusStepLabel,
-                      active && styles.statusStepLabelActive,
-                      completed && styles.statusStepLabelCompleted,
+                      styles.statusCircleText,
+                      (active || completed) && styles.statusCircleTextActive,
                     ]}
                   >
-                    {item}
+                    {completed ? "✓" : index + 1}
                   </Text>
+                </View>
 
-                </TouchableOpacity>
-              );
-            })}
+                {/* Small Indicator */}
+                <View style={styles.statusIndicator}>
+                  <View
+                    style={[
+                      styles.statusIndicatorLine,
+                      (active || completed) && styles.statusIndicatorLineActive,
+                    ]}
+                  />
 
-          </View>
+                  <View
+                    style={[
+                      styles.statusIndicatorLine,
+                      (active || completed) && styles.statusIndicatorLineActive,
+                    ]}
+                  />
+                </View>
+
+                {/* Status Name */}
+                <Text
+                  style={[
+                    styles.statusStepLabel,
+                    active && styles.statusStepLabelActive,
+                    completed && styles.statusStepLabelCompleted,
+                  ]}
+                >
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-
       </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-
-  page: {
-    flex: 1,
-    width: "100%",
-    minWidth: 900,
-    backgroundColor: "#FFFFFF",
-  },
-
-  pageContent: {
-    alignItems: "center",
-    paddingBottom: 80,
-  },
-
   content: {
     width: "100%",
+    height: "100%",
     paddingHorizontal: 30,
     backgroundColor: "#FFFFFF",
   },
@@ -292,8 +237,8 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginTop: 15,
     backgroundColor: "#246AA5",
-    paddingHorizontal: 17,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 8,
   },
 

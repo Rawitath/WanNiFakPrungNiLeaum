@@ -13,7 +13,7 @@ export default function App() {
     name: "น้องจุ๊ดจุ๊ด",
     type: "สุนัข",
     breed: "สายพันธุ์ โกลเด้นรีทรีฟเวอร์",
-    age: "2 ปี 3 เดือน",
+    age: "2 ปี 4 เดือน",
     gender: "ผู้",
     weight: "2 กิโล",
     limitation: "แพ้ช็อกโกแลต",
