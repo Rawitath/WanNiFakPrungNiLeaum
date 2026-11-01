@@ -1,0 +1,596 @@
+
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+
+const PetDetails = ({
+  onBack,
+  petImage,
+  pet = {
+    id: "P001",
+    name: "น้องจุ๊ดจุ๊ด",
+    type: "สุนัข",
+    breed: "สายพันธุ์ โกลเด้นรีทรีฟเวอร์",
+    age: "2 ปี 3 เดือน",
+    gender: "ผู้",
+    weight: "2 กิโล",
+    limitation: "แพ้ช็อกโกแลต",
+    checkIn: "29/03/2569",
+    checkOut: "01/04/2569",
+  },
+  initialStatus = "In Care",
+  onStatusChange,
+}) => {
+  const [status, setStatus] = useState(initialStatus);
+
+  const statusOptions = [
+    "In Care",
+    "พร้อมกลับบ้าน",
+    "ไม่สบาย",
+    "ยืนยันแล้ว",
+  ];
+
+  const activeStatusIndex = statusOptions.indexOf(status);
+
+  const handleStatusChange = (value) => {
+    setStatus(value);
+
+    if (onStatusChange) {
+      onStatusChange(value);
+    }
+  };
+
+  return (
+    <ScrollView
+      style={styles.page}
+      contentContainerStyle={styles.pageContent}
+      showsVerticalScrollIndicator={true}
+    >
+      <View style={styles.content}>
+
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={onBack}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.backText}>ย้อนกลับ</Text>
+        </TouchableOpacity>
+
+        {/* Page Heading */}
+        <View style={styles.heading}>
+          <View style={styles.titleRow}>
+            <Text style={styles.paw}>🐾</Text>
+            <Text style={styles.title}>PET Hotel</Text>
+            <Text style={styles.smallPaw}>🐾</Text>
+          </View>
+
+          <Text style={styles.subtitle}>
+            ดูแลสัตว์เลี้ยงตามใจ ใส่ใจทุกขั้นตอน
+            {"\n"}
+            เพื่อให้สัตว์เลี้ยงของคุณปลอดภัยและมีความสุขตลอดการเข้าพัก
+          </Text>
+        </View>
+
+        {/* Ticket */}
+        <View style={styles.ticket}>
+
+          {/* Left Ticket Strip */}
+          <View style={styles.ticketLeft}>
+            <View style={styles.leftCircle} />
+
+            <Text style={styles.ticketVertical}>
+              TICKET
+            </Text>
+          </View>
+
+          {/* Ticket Main */}
+          <View style={styles.ticketMain}>
+
+            <View style={styles.ticketHeader}>
+              <Text style={styles.ticketLogo}>
+                StayTodayForgotTomorrow
+              </Text>
+
+              <View style={styles.petId}>
+                <Text style={styles.petIdText}>
+                  {pet.id}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.ticketBody}>
+
+              {/* Pet Information */}
+              <View style={styles.petInfo}>
+                <Text style={styles.petName}>
+                  {pet.name}
+                </Text>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>ชนิด</Text>
+                  <Text style={styles.infoValue}>{pet.type}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>สายพันธุ์</Text>
+                  <Text style={styles.infoValue}>{pet.breed}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>อายุ</Text>
+                  <Text style={styles.infoValue}>{pet.age}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>เพศ</Text>
+                  <Text style={styles.infoValue}>{pet.gender}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>น้ำหนัก</Text>
+                  <Text style={styles.infoValue}>{pet.weight}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>ข้อจำกัด</Text>
+                  <Text style={styles.infoValue}>
+                    {pet.limitation}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Pet Image */}
+              <View style={styles.petImageContainer}>
+                {petImage ? (
+                  <Image
+                    source={petImage}
+                    style={styles.petImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Text style={styles.placeholderText}>
+                      NO IMAGE
+                    </Text>
+                  </View>
+                )}
+
+                <Text style={styles.dateText}>
+                  วันที่เข้าพัก {pet.checkIn}-{pet.checkOut}
+                </Text>
+              </View>
+
+            </View>
+          </View>
+
+          {/* Barcode */}
+          <View style={styles.barcodeSide}>
+            <View style={styles.barcode}>
+              {Array.from({ length: 32 }).map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.barcodeLine,
+                    {
+                      height: index % 3 === 0 ? 3 : 2,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+
+        </View>
+
+        {/* Status Box */}
+        <View style={styles.statusBox}>
+
+          <Text style={styles.statusTitle}>
+            สถานะสัตว์เลี้ยง
+          </Text>
+
+          {/* Progress Stepper */}
+          <View style={styles.statusStepper}>
+
+            {/* Progress Line */}
+            <View style={styles.statusProgressLine} />
+
+            {statusOptions.map((item, index) => {
+              const active = index === activeStatusIndex;
+              const completed = index < activeStatusIndex;
+
+              return (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.statusStep}
+                  onPress={() => handleStatusChange(item)}
+                  activeOpacity={0.8}
+                >
+
+                  {/* Circle */}
+                  <View
+                    style={[
+                      styles.statusCircle,
+                      (active || completed) &&
+                        styles.statusCircleActive,
+                      active && styles.statusCircleCurrent,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusCircleText,
+                        (active || completed) &&
+                          styles.statusCircleTextActive,
+                      ]}
+                    >
+                      {completed ? "✓" : index + 1}
+                    </Text>
+                  </View>
+
+                  {/* Status Name */}
+                  <Text
+                    style={[
+                      styles.statusStepLabel,
+                      active && styles.statusStepLabelActive,
+                      completed && styles.statusStepLabelCompleted,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+
+                </TouchableOpacity>
+              );
+            })}
+
+          </View>
+
+        </View>
+
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+
+  page: {
+    flex: 1,
+    width: "100%",
+    minWidth: 900,
+    backgroundColor: "#FFFFFF",
+  },
+
+  pageContent: {
+    alignItems: "center",
+    paddingBottom: 80,
+  },
+
+  content: {
+    width: "100%",
+    paddingHorizontal: 30,
+  },
+
+  // Back Button
+  backButton: {
+    alignSelf: "flex-start",
+    marginTop: 15,
+    backgroundColor: "#246AA5",
+    paddingHorizontal: 17,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+
+  backText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+
+  // Heading
+  heading: {
+    alignItems: "center",
+    marginTop: 55,
+    marginBottom: 60,
+  },
+
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
+  },
+
+  paw: {
+    fontSize: 45,
+  },
+
+  smallPaw: {
+    fontSize: 30,
+    marginLeft: 5,
+  },
+
+  title: {
+    fontSize: 38,
+    fontWeight: "900",
+    color: "#000000",
+  },
+
+  subtitle: {
+    marginTop: 8,
+    color: "#111111",
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+
+  // Ticket
+  ticket: {
+    width: 850,
+    height: 250,
+    alignSelf: "center",
+    flexDirection: "row",
+    backgroundColor: "#0B2B45",
+    elevation: 5,
+    shadowColor: "#000000",
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 3, height: 4 },
+  },
+
+  ticketLeft: {
+    width: 55,
+    backgroundColor: "#246AA5",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+
+  leftCircle: {
+    width: 26,
+    height: 26,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+  },
+
+  ticketVertical: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "900",
+    transform: [{ rotate: "-90deg" }],
+    marginBottom: 33,
+    textAlign: "center",
+  },
+
+  ticketMain: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
+  },
+
+  ticketHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  ticketLogo: {
+    color: "#FFAA00",
+    fontSize: 20,
+    fontWeight: "900",
+  },
+
+  petId: {
+    backgroundColor: "#9CF0A9",
+    width: 70,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+
+  petIdText: {
+    color: "#12642A",
+    fontSize: 11,
+  },
+
+  ticketBody: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    paddingHorizontal: 15,
+  },
+
+  petInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+
+  petName: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "bold",
+    marginBottom: 12,
+  },
+
+  infoRow: {
+    flexDirection: "row",
+    marginBottom: 7,
+  },
+
+  infoLabel: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    width: 75,
+  },
+
+  infoValue: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    flexShrink: 1,
+  },
+
+  // Image
+  petImageContainer: {
+    width: 205,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
+  },
+
+  petImage: {
+    width: 180,
+    height: 120,
+    backgroundColor: "#FFFFFF",
+  },
+
+  imagePlaceholder: {
+    width: 180,
+    height: 120,
+    backgroundColor: "#203B50",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  placeholderText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+  },
+
+  dateText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    marginTop: 12,
+  },
+
+  // Barcode
+  barcodeSide: {
+    width: 58,
+    backgroundColor: "#246AA5",
+    padding: 7,
+    justifyContent: "center",
+  },
+
+  barcode: {
+    backgroundColor: "#FFFFFF",
+    flex: 1,
+    justifyContent: "space-evenly",
+    paddingHorizontal: 3,
+  },
+
+  barcodeLine: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#246AA5",
+  },
+
+  // Status
+  statusBox: {
+    width: 460,
+    minHeight: 175,
+    alignSelf: "center",
+    marginTop: 55,
+    padding: 23,
+    borderWidth: 1,
+    borderColor: "#DCE5EF",
+    borderRadius: 15,
+    backgroundColor: "#FFFFFF",
+  },
+
+  statusTitle: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#0B2B45",
+  },
+
+  // Stepper
+  statusStepper: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    position: "relative",
+    width: "100%",
+  },
+
+  statusProgressLine: {
+    position: "absolute",
+    top: 13,
+    left: "12%",
+    right: "12%",
+    height: 3,
+    backgroundColor: "#246AA5",
+  },
+
+  statusStep: {
+    flex: 1,
+    alignItems: "center",
+    zIndex: 1,
+  },
+
+  // Circle
+  statusCircle: {
+    width: 27,
+    height: 27,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#246AA5",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  statusCircleActive: {
+    backgroundColor: "#246AA5",
+    borderColor: "#246AA5",
+  },
+
+  statusCircleCurrent: {
+    borderWidth: 2,
+    borderColor: "#246AA5",
+    backgroundColor: "#246AA5",
+    width: 30,
+    height: 30,
+    marginTop: -1.5,
+  },
+
+  statusCircleText: {
+    fontSize: 12,
+    color: "#246AA5",
+    fontWeight: "600",
+  },
+
+  statusCircleTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+
+  // Status Label
+  statusStepLabel: {
+    fontSize: 9,
+    color: "#718096",
+    marginTop: 8,
+    textAlign: "center",
+  },
+
+  statusStepLabelActive: {
+    color: "#246AA5",
+    fontWeight: "bold",
+  },
+
+  statusStepLabelCompleted: {
+    color: "#246AA5",
+    fontWeight: "600",
+  },
+
+});
+
+export default PetDetails;
