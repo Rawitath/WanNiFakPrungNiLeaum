@@ -2,7 +2,8 @@ pipeline {
     agent {
         docker{
             image 'tuchsanai/devtools:2569_1'
-            args '--privileged --tmpfs /run'
+            label 'docker-linux'
+            args '--privileged --tmpfs /run -u 0:0'
         }
     }
     environment {
@@ -10,45 +11,91 @@ pipeline {
         COMPOSE_PROJECT_NAME = "build-${BUILD_NUMBER}"
     }
     stages{
-        stage('backend - build'){
-            when{
-                allOf{
-                    changeset "backend/**"
-                    branch 'backend/**'
+        stage('build') {
+            parallel {
+                stage('backend - build'){
+                    when{
+                        changeset "backend/**"
+                    }
+                    steps{
+                        sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build backend"
+                    }
                 }
-            }
-            steps{
-                sh "docker compose -p ${COMPOSE_PROJECT_NAME} --profile prod run --rm --build backend node -e 'require(\"./src/index.js\"); process.exit(0);'"
-            }
-        }
-        stage('frontend - build'){
-            when{
-                allOf{
-                    changeset "frontend/**"
-                    branch 'frontend/**'
-                }
-            }
-            steps{
-                sh "docker compose -p ${COMPOSE_PROJECT_NAME} --profile prod build frontend"
-            }
-        }
-        stage('all - build'){
-            when{
-                not{
-                    anyOf{
-                        branch 'frontend/**'
-                        branch 'backend/**'
+                stage('frontend - build'){
+                    when{
+                        changeset "frontend/**"
+                    }
+                    steps{
+                        sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build frontend"
                     }
                 }
             }
-            steps{
-                sh "docker compose -p ${COMPOSE_PROJECT_NAME} --profile prod up -d --build"
+        }
+
+        stage('run') {
+            parallel {
+                stage('backend - run'){
+                    when{
+                        allOf{
+                            branch 'backend/**'
+                        }
+                    }
+                    steps{
+                        sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d backend"
+                        sh '''
+                            docker run --rm \
+                                --network host \
+                                curlimages/curl:latest \
+                                curl --fail --retry 5 --retry-delay 3 --retry-connrefused \
+                                http://localhost:3000/
+                        '''
+                    }
+                }
+                stage('frontend - run'){
+                    when{
+                        allOf{
+                            branch 'frontend/**'
+                        }
+                    }
+                    steps{
+                        sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d frontend"
+                        sh '''
+                            docker run --rm \
+                                --network host \
+                                curlimages/curl:latest \
+                                curl --fail --retry 5 --retry-delay 3 --retry-connrefused \
+                                http://localhost:8081/
+                        '''
+                    }
+                }
+                stage('all - run'){
+                    when{
+                        not{
+                            anyOf{
+                                branch 'frontend/**'
+                                branch 'backend/**'
+                            }
+                        }
+                    }
+                    steps{
+                        sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d"
+                        sh '''
+                            docker run --rm \
+                                --network host \
+                                curlimages/curl:latest \
+                                sh -c '
+                                    curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:3000/ &&
+                                    curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8081/
+                                '
+                        '''
+                    }
+                }
             }
         }
     }
     post{
         always{
-            sh "docker compose -p ${COMPOSE_PROJECT_NAME} --profile prod down -v --remove-orphans"
+            sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod down -v --remove-orphans"
         }
     }
 }
