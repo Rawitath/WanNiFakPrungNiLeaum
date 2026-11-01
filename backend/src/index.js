@@ -12,3 +12,5 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`WanniFakPrungNiLeaum listening on port ${port}`);
 });
+
+export default app;
