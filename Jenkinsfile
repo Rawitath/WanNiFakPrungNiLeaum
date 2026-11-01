@@ -2,6 +2,7 @@ pipeline {
     agent {
         docker{
             image 'tuchsanai/devtools:2569_1'
+            label 'docker-linux'
             args '--privileged --tmpfs /run'
         }
     }
