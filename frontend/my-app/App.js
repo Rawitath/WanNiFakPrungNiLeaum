@@ -5,6 +5,7 @@ import { View, StyleSheet } from "react-native";
 import LogoutNavbar from "./2components/logoutnavbar";
 import Navbar from "./2components/navbar";
 import PetDetails from "./3page/petdetails";
+import MyBooking from "./3page/mybooking_user";
 
 export default function App() {
 
@@ -31,14 +32,16 @@ export default function App() {
       />
 
       {/* Pet Details Page */}
-      <PetDetails
+      {/* <PetDetails
         onBack={() => console.log("ย้อนกลับ")}
         pet={petData}
         initialStatus="In Care"
         onStatusChange={(value) => {
           console.log("สถานะสัตว์เลี้ยง:", value);
         }}
-      />
+      /> */}
+
+      <MyBooking/>
 
     </View>
   );
