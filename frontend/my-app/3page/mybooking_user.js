@@ -71,18 +71,19 @@ export default function MyBooking() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
         {/* ส่วนหัวสีน้ำเงิน */}
         <View style={styles.header}>
+
+          <TouchableOpacity style={styles.backButton}>
+            <Text style={styles.backButtonText}>
+              ย้อนกลับ
+            </Text>
+          </TouchableOpacity>
+
           <Text style={styles.headerTitle}>
             การจองของฉัน
           </Text>
-
-          <TouchableOpacity style={styles.addButton}>
-            <Text style={styles.addButtonText}>
-              จองเพิ่ม
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* เนื้อหา */}
@@ -212,33 +213,38 @@ export default function MyBooking() {
           </View>
 
         </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#202020",
-  },
-
   container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-
-  pageTitle: {
-    color: "#888",
-    fontSize: 14,
-    marginBottom: 10,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#FFFFFF",
   },
 
   header: {
     height: 155,
     backgroundColor: "#0b2d47",
-    justifyContent: "center",
+    // justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 30,
+  },
+
+  backButton: {
+    alignSelf: "flex-start",
+    marginTop: 20,
+    backgroundColor: "#246AA5",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+
+  backButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 
   headerTitle: {
@@ -247,28 +253,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  addButton: {
-    position: "absolute",
-    top: 12,
-    left: 15,
-    backgroundColor: "#216ca7",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-
-  addButtonText: {
-    color: "#fff",
-    fontSize: 12,
-  },
-
   content: {
     flex: 1,
     backgroundColor: "#fff",
   },
 
   contentContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 300,
     paddingTop: 25,
     paddingBottom: 40,
   },
@@ -333,7 +324,7 @@ const styles = StyleSheet.create({
   },
 
   cardBar: {
-    width: 26,
+    width: 37,
     backgroundColor: "#216ca7",
     borderRadius: 8,
   },

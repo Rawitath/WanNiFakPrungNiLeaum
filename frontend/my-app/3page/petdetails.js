@@ -35,14 +35,14 @@ const PetDetails = ({
   };
 
   return (
-    <View style={styles.content}>
+    <View style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={onBack}
         activeOpacity={0.8}
       >
-        <Text style={styles.backText}>ย้อนกลับ</Text>
+        <Text style={styles.backButtonText}>ย้อนกลับ</Text>
       </TouchableOpacity>
 
       {/* Page Heading */}
@@ -227,7 +227,7 @@ const PetDetails = ({
 };
 
 const styles = StyleSheet.create({
-  content: {
+  container: {
     width: "100%",
     height: "100%",
     paddingHorizontal: 30,
@@ -237,14 +237,14 @@ const styles = StyleSheet.create({
   // Back Button
   backButton: {
     alignSelf: "flex-start",
-    marginTop: 15,
+    marginTop: 20,
     backgroundColor: "#246AA5",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
   },
 
-  backText: {
+  backButtonText: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "bold",
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   // Heading
   heading: {
     alignItems: "center",
-    marginTop: 5,
+    // marginTop: 5,
     marginBottom: 30,
   },
 
