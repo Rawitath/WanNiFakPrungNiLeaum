@@ -48,9 +48,11 @@ const PetDetails = ({
       {/* Page Heading */}
       <View style={styles.heading}>
         <View style={styles.titleRow}>
-          <Text style={styles.paw}>🐾</Text>
-          <Text style={styles.title}>PET Hotel</Text>
-          <Text style={styles.smallPaw}>🐾</Text>
+          <Image
+            source={require("../1assets/titlelogo.png")}
+            style={styles.titlelogo}
+            resizeMode="cover"
+          />
         </View>
       </View>
 
@@ -251,29 +253,20 @@ const styles = StyleSheet.create({
   // Heading
   heading: {
     alignItems: "center",
-    marginTop: 55,
-    marginBottom: 60,
+    marginTop: 5,
+    marginBottom: 30,
   },
 
   titleRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignSelf: "center",
     gap: 20,
+    // marginLeft: "21%",
   },
 
-  paw: {
-    fontSize: 45,
-  },
-
-  smallPaw: {
-    fontSize: 30,
-    marginLeft: 5,
-  },
-
-  title: {
-    fontSize: 38,
-    fontWeight: "900",
-    color: "#000000",
+  titlelogo: {
+    width: 370,
+    height: 150,
   },
 
   // Ticket
