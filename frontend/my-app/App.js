@@ -3,6 +3,7 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 
 import LogoutNavbar from "./2components/logoutnavbar";
+import Navbar from "./2components/navbar";
 import PetDetails from "./3page/petdetails";
 
 export default function App() {
@@ -25,7 +26,7 @@ export default function App() {
     <View style={styles.container}>
 
       {/* Navbar */}
-      <LogoutNavbar
+      <Navbar
         onLogin={() => console.log("เปิดหน้าเข้าสู่ระบบ")}
       />
 
