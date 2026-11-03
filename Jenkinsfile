@@ -13,12 +13,19 @@ pipeline {
     stages{
         stage('build') {
             parallel {
-                stage('backend - build'){
+                stage('backend - test & build'){
                     when{
                         changeset "backend/**"
                     }
-                    steps{
-                        sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build backend"
+                    stage('backend - test'){
+                        steps{
+                            sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm backend-test"
+                        }
+                    }
+                    stage('backend - build'){
+                        steps{
+                            sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build --target run backend"
+                        }
                     }
                 }
                 stage('frontend - build'){

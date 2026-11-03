@@ -38,6 +38,15 @@ services:
       dockerfile: Dockerfile
     ports:
       - 3000:3000
+  backend-test:
+    profiles: ["prod"]
+    image: wannifakprungnileaum-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: test
+    ports:
+      - 3000:3000
   backend-dev:
     profiles: ["dev"]
     image: wannifakprungnileaum-backend:dev
