@@ -15,12 +15,15 @@ pipeline {
             parallel {
                 stage('backend - test & build'){
                     when{
-                        changeset "backend/**"
+                        anyOf{
+                            changeset "backend/**"
+                            changeset "Jenkinsfile"
+                        }
                     }
                     stages{
                         stage('backend - test'){
                             steps{
-                                sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm backend-test"
+                                sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm --build backend-test"
                             }
                         }
                         stage('backend - build'){
@@ -32,7 +35,10 @@ pipeline {
                 }
                 stage('frontend - build'){
                     when{
-                        changeset "frontend/**"
+                        anyOf{
+                            changeset "frontend/**"
+                            changeset "Jenkinsfile"
+                        }
                     }
                     steps{
                         sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build frontend"

@@ -40,7 +40,7 @@ services:
       - 3000:3000
   backend-test:
     profiles: ["prod"]
-    image: wannifakprungnileaum-backend:latest
+    image: wannifakprungnileaum-backend:test
     build:
       context: ./backend
       dockerfile: Dockerfile

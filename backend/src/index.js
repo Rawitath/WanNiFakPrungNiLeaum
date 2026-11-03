@@ -1,16 +1,59 @@
 import express from 'express';
+import defaultAuthMiddleware from './auth/authentication.js';
 
-const app = express();
-const port = 3000;
+export function createApp(options = {}) {
+  let currentAuthMiddleware = typeof options === 'function'
+    ? options
+    : (options?.authMiddleware || defaultAuthMiddleware);
 
-app.use(express.json());
+  const app = express();
+  app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+  app.setAuthMiddleware = (middleware) => {
+    currentAuthMiddleware = middleware;
+  };
+  app.injectAuthMiddleware = (middleware) => {
+    currentAuthMiddleware = middleware;
+  };
 
-app.listen(port, () => {
-  console.log(`WanniFakPrungNiLeaum listening on port ${port}`);
-});
+  const authMiddleware = (req, res, next) => {
+    if (typeof currentAuthMiddleware === 'function') {
+      return currentAuthMiddleware(req, res, next);
+    }
+    next();
+  };
+
+  app.authMiddleware = authMiddleware;
+
+  // Protect /api routes except public auth endpoints
+  app.use('/api', (req, res, next) => {
+    const publicPaths = ['/login', '/register', '/forget'];
+    if (publicPaths.some(p => req.path.startsWith(p))) {
+      return next();
+    }
+    return authMiddleware(req, res, next);
+  });
+
+  app.get('/', (req, res) => {
+    res.send('Hello World!');
+  });
+
+  app.get('/', (req, res) => {
+    res.send('Hello World!');
+  });
+
+  //เขียน Endpoint ในนี้นะ
+
+  return app;
+}
+
+const app = createApp();
+const port = process.env.PORT || 3000;
+
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`WanniFakPrungNiLeaum listening on port ${port}`);
+  });
+}
 
 export default app;
