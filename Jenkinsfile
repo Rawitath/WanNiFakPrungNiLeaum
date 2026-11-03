@@ -17,14 +17,16 @@ pipeline {
                     when{
                         changeset "backend/**"
                     }
-                    stage('backend - test'){
-                        steps{
-                            sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm backend-test"
+                    stages{
+                        stage('backend - test'){
+                            steps{
+                                sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm backend-test"
+                            }
                         }
-                    }
-                    stage('backend - build'){
-                        steps{
-                            sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build --target run backend"
+                        stage('backend - build'){
+                            steps{
+                                sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build --target run backend"
+                            }
                         }
                     }
                 }
