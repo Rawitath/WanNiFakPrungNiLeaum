@@ -23,12 +23,24 @@ pipeline {
                     stages{
                         stage('backend - test'){
                             steps{
-                                sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm --build backend-test"
+                                withCredentials([
+                                    string(credentialsId: 'POSTGRES_DB', variable: 'POSTGRES_DB'),
+                                    string(credentialsId: 'POSTGRES_USER', variable: 'POSTGRES_USER'),
+                                    string(credentialsId: 'POSTGRES_PASSWORD', variable: 'POSTGRES_PASSWORD')
+                                ]) {
+                                    sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm --build backend-test"
+                                }
                             }
                         }
                         stage('backend - build'){
                             steps{
-                                sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build --target run backend"
+                                withCredentials([
+                                    string(credentialsId: 'POSTGRES_DB', variable: 'POSTGRES_DB'),
+                                    string(credentialsId: 'POSTGRES_USER', variable: 'POSTGRES_USER'),
+                                    string(credentialsId: 'POSTGRES_PASSWORD', variable: 'POSTGRES_PASSWORD')
+                                ]) {
+                                    sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build --target run backend"
+                                }
                             }
                         }
                     }
@@ -56,14 +68,20 @@ pipeline {
                         }
                     }
                     steps{
-                        sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d backend"
-                        sh '''
-                            docker run --rm \
-                                --network host \
-                                curlimages/curl:latest \
-                                curl --fail --retry 5 --retry-delay 3 --retry-connrefused \
-                                http://localhost:3000/
-                        '''
+                        withCredentials([
+                            string(credentialsId: 'POSTGRES_DB', variable: 'POSTGRES_DB'),
+                            string(credentialsId: 'POSTGRES_USER', variable: 'POSTGRES_USER'),
+                            string(credentialsId: 'POSTGRES_PASSWORD', variable: 'POSTGRES_PASSWORD')
+                        ]) {
+                            sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d backend"
+                            sh '''
+                                docker run --rm \
+                                    --network host \
+                                    curlimages/curl:latest \
+                                    curl --fail --retry 5 --retry-delay 3 --retry-connrefused \
+                                    http://localhost:3000/
+                            '''
+                        }
                     }
                 }
                 stage('frontend - run'){
@@ -93,16 +111,22 @@ pipeline {
                         }
                     }
                     steps{
-                        sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d"
-                        sh '''
-                            docker run --rm \
-                                --network host \
-                                curlimages/curl:latest \
-                                sh -c '
-                                    curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:3000/ &&
-                                    curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8081/
-                                '
-                        '''
+                        withCredentials([
+                            string(credentialsId: 'POSTGRES_DB', variable: 'POSTGRES_DB'),
+                            string(credentialsId: 'POSTGRES_USER', variable: 'POSTGRES_USER'),
+                            string(credentialsId: 'POSTGRES_PASSWORD', variable: 'POSTGRES_PASSWORD')
+                        ]) {
+                            sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d"
+                            sh '''
+                                docker run --rm \
+                                    --network host \
+                                    curlimages/curl:latest \
+                                    sh -c '
+                                        curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:3000/ &&
+                                        curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8081/
+                                    '
+                            '''
+                        }
                     }
                 }
             }
@@ -110,7 +134,13 @@ pipeline {
     }
     post{
         always{
-            sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod down -v --remove-orphans"
+            withCredentials([
+                string(credentialsId: 'POSTGRES_DB', variable: 'POSTGRES_DB'),
+                string(credentialsId: 'POSTGRES_USER', variable: 'POSTGRES_USER'),
+                string(credentialsId: 'POSTGRES_PASSWORD', variable: 'POSTGRES_PASSWORD')
+            ]) {
+                sh "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod down -v --remove-orphans"
+            }
         }
     }
 }

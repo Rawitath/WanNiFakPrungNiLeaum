@@ -6,7 +6,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - 8081:8081
+      - "8081:8081"
+    networks:
+      - stayforget-network
+
   frontend-dev:
     profiles: ["dev"]
     image: wannifakprungnileaum-frontend:dev
@@ -25,11 +28,12 @@ services:
       - CHOKIDAR_INTERVAL=1000
       - FAST_REFRESH=true
     ports:
-      - 8081:8081
+      - "8081:8081"
     networks:
       - stayforget-network
     stdin_open: true
     tty: true
+
   backend:
     profiles: ["prod"]
     image: wannifakprungnileaum-backend:latest
@@ -37,28 +41,93 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - 3000:3000
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - stayforget-network
+
   backend-test:
-    profiles: ["prod"]
+    profiles: ["test"]
     image: wannifakprungnileaum-backend:test
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: test
-    ports:
-      - 3000:3000
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - stayforget-network
+
   backend-dev:
     profiles: ["dev"]
     image: wannifakprungnileaum-backend:dev
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+    environment:
+      DB_HOST: db-dev
+      DB_PORT: 5432
+      DB_NAME: dev
+      DB_USER: dev
+      DB_PASSWORD: 1234
     volumes:
       - ./backend/src:/app/src
     ports:
-      - 3000:3000
+      - "3000:3000"
+    depends_on:
+      - db-dev
     networks:
       - stayforget-network
+
+  db:
+    image: postgres:18-alpine
+    profiles: ["prod", "test"]
+    volumes:
+      - stayforget_db:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    networks:
+      - stayforget-network
+
+  db-dev:
+    image: postgres:18-alpine
+    profiles: ["dev"]
+    volumes:
+      - stayforget_dev_db:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: dev
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    networks:
+      - stayforget-network
+
+volumes:
+  stayforget_db:
+  stayforget_dev_db:
 
 networks:
   stayforget-network:
