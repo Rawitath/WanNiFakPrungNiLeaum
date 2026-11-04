@@ -5,8 +5,10 @@ import { View, StyleSheet } from "react-native";
 import LogoutNavbar from "./2components/logoutnavbar";
 import NavbarUser from "./2components/navbar_user";
 import NavbarSA from "./2components/navbar_s_a";
+
 import PetDetails from "./3page/petdetails";
-import MyBooking from "./3page/mybooking_user";
+import BookingUser from "./3page/booking_user";
+import MyBookingUser from "./3page/mybooking_user";
 
 export default function App() {
 
@@ -42,7 +44,7 @@ export default function App() {
         }}
       /> */}
 
-      <MyBooking/>
+      <BookingUser/>
 
     </View>
   );

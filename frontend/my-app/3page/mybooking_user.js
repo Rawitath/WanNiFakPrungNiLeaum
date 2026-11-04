@@ -48,7 +48,7 @@ const bookingData = [
   },
 ];
 
-export default function MyBooking() {
+export default function MyBookingUser() {
   const [filter, setFilter] = useState("ทั้งหมด");
   const [showFilter, setShowFilter] = useState(false);
 
