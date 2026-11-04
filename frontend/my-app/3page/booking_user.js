@@ -94,167 +94,172 @@ export default function BookingUser({ onBack, onSubmit }) {
       </TouchableOpacity>
 
       {/* Main Section */}
-      <View style={styles.mainSection}>
-        {/* Left Side */}
-        <View style={styles.leftSection}>
-          <Image
-            source={require("../1assets/titlelogo.png")}
-            style={styles.titlelogo}
-            resizeMode="cover"
-          />
-        </View>
-
-        {/* Right Side */}
-        <View style={styles.rightSection}>
-          <Text style={styles.title}>Booking Form</Text>
-
-          <View style={styles.formColumns}>
-            {/* Column 1 */}
-            <View style={styles.formColumn}>
-              <Text style={styles.sectionTitle}>ข้อมูลผู้จอง</Text>
-
-              <Field
-                label="ชื่อ"
-                value={form.ownerName}
-                onChangeText={(v) => updateForm("ownerName", v)}
-              />
-
-              <Field
-                label="เบอร์โทรติดต่อ"
-                value={form.phone}
-                onChangeText={(v) => updateForm("phone", v)}
-              />
-
-              <Field
-                label="email"
-                value={form.email}
-                onChangeText={(v) => updateForm("email", v)}
-              />
-
-              <Text style={styles.sectionTitle}>ข้อมูลสัตว์เลี้ยง</Text>
-
-              <Field
-                label="ชื่อสัตว์เลี้ยง"
-                value={form.petName}
-                onChangeText={(v) => updateForm("petName", v)}
-              />
-
-              <Field
-                label="ประเภท"
-                value={form.petType}
-                onChangeText={(v) => updateForm("petType", v)}
-              />
-
-              <Field
-                label="สายพันธุ์"
-                value={form.breed}
-                onChangeText={(v) => updateForm("breed", v)}
-              />
-
-              <Field
-                label="เพศ"
-                value={form.gender}
-                onChangeText={(v) => updateForm("gender", v)}
-              />
-
-              <Field
-                label="วันเกิด"
-                value={form.age}
-                onChangeText={(v) => updateForm("age", v)}
-              />
-
-              <Field
-                label="น้ำหนัก"
-                value={form.weight}
-                onChangeText={(v) => updateForm("weight", v)}
-              />
-
-              <Field
-                label="โรคประจำตัว/ประวัติการแพ้ยา-อาหาร"
-                value={form.health}
-                onChangeText={(v) => updateForm("health", v)}
-              />
-
-              <Field
-                label="ข้อจำกัด/คำแนะนำในการดูแล"
-                value={form.health}
-                onChangeText={(v) => updateForm("health", v)}
-              />
+      <View style={styles.mainWrapper}>
+        <View style={styles.mainSection}>
+            {/* Left Side */}
+            <View style={styles.leftSection}>
+            <Image
+                source={require("../1assets/titlelogo.png")}
+                style={styles.titlelogo}
+                resizeMode="cover"
+            />
             </View>
 
-            {/* Column 2 */}
-            <View style={styles.formColumn}>
-              <Text style={styles.sectionTitle}>ข้อมูลการเข้าพัก</Text>
+            {/* Right Side */}
+            <View style={styles.rightSection}>
+            <Text style={styles.title}>Booking Form</Text>
 
-              <Field
-                label="วันที่ฝาก"
-                value={form.checkIn}
-                onChangeText={(v) => updateForm("checkIn", v)}
-                placeholder="วัน/เดือน/ปี"
-              />
+            <View style={styles.formColumns}>
+                {/* Column 1 */}
+                <View style={styles.formColumn}>
+                <Text style={styles.sectionTitle}>ข้อมูลผู้จอง</Text>
 
-              <Field
-                label="วันที่เข้ารับ"
-                value={form.checkOut}
-                onChangeText={(v) => updateForm("checkOut", v)}
-                placeholder="วัน/เดือน/ปี"
-              />
+                <Field
+                    label="ชื่อ"
+                    value={form.ownerName}
+                    onChangeText={(v) => updateForm("ownerName", v)}
+                />
 
-              <Field
-                label="เวลาเข้าพัก"
-                value={form.checkInTime}
-                onChangeText={(v) => updateForm("checkInTime", v)}
-                placeholder="00:00"
-              />
+                <Field
+                    label="เบอร์โทรติดต่อ"
+                    value={form.phone}
+                    onChangeText={(v) => updateForm("phone", v)}
+                />
 
-              <Field
-                label="เวลารับกลับ"
-                value={form.checkOutTime}
-                onChangeText={(v) => updateForm("checkOutTime", v)}
-                placeholder="00:00"
-              />
+                <Field
+                    label="email"
+                    value={form.email}
+                    onChangeText={(v) => updateForm("email", v)}
+                />
 
-              <Text style={styles.branchTitle}>เลือกสาขา</Text>
+                <Text style={styles.sectionTitle}>ข้อมูลสัตว์เลี้ยง</Text>
 
-              <TouchableOpacity
-                style={styles.branchButton}
-                onPress={() => setShowBranches(!showBranches)}
-              >
-                <Text style={styles.branchText}>{branch}</Text>
-                <Text style={styles.arrow}>▼</Text>
-              </TouchableOpacity>
+                <Field
+                    label="ชื่อสัตว์เลี้ยง"
+                    value={form.petName}
+                    onChangeText={(v) => updateForm("petName", v)}
+                />
 
-              {showBranches && (
-                <View style={styles.dropdown}>
-                  {branches.map((item, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setBranch(item);
-                        setShowBranches(false);
-                      }}
-                    >
-                      <Text style={styles.dropdownText}>{item}</Text>
-                    </TouchableOpacity>
-                  ))}
+                <Field
+                    label="ประเภท"
+                    value={form.petType}
+                    onChangeText={(v) => updateForm("petType", v)}
+                />
+
+                <Field
+                    label="สายพันธุ์"
+                    value={form.breed}
+                    onChangeText={(v) => updateForm("breed", v)}
+                />
+
+                <Field
+                    label="เพศ"
+                    value={form.gender}
+                    onChangeText={(v) => updateForm("gender", v)}
+                />
+
+                <Field
+                    label="วันเกิด"
+                    value={form.age}
+                    onChangeText={(v) => updateForm("age", v)}
+                />
+
+                <Field
+                    label="น้ำหนัก"
+                    value={form.weight}
+                    onChangeText={(v) => updateForm("weight", v)}
+                />
+
+                <Field
+                    label="โรคประจำตัว/ประวัติการแพ้ยา-อาหาร"
+                    value={form.health}
+                    onChangeText={(v) => updateForm("health", v)}
+                />
+
+                <Field
+                    label="ข้อจำกัด/คำแนะนำในการดูแล"
+                    value={form.health}
+                    onChangeText={(v) => updateForm("health", v)}
+                />
                 </View>
-              )}
 
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={handleSubmit}
-              >
-                <Text style={styles.confirmText}>ยืนยัน</Text>
-              </TouchableOpacity>
+                {/* Column 2 */}
+                <View style={styles.formColumn}>
+                <Text style={styles.sectionTitle}>ข้อมูลการเข้าพัก</Text>
+
+                <Field
+                    label="วันที่ฝาก"
+                    value={form.checkIn}
+                    onChangeText={(v) => updateForm("checkIn", v)}
+                    placeholder="วัน/เดือน/ปี"
+                />
+
+                <Field
+                    label="วันที่เข้ารับ"
+                    value={form.checkOut}
+                    onChangeText={(v) => updateForm("checkOut", v)}
+                    placeholder="วัน/เดือน/ปี"
+                />
+
+                <Field
+                    label="เวลาเข้าพัก"
+                    value={form.checkInTime}
+                    onChangeText={(v) => updateForm("checkInTime", v)}
+                    placeholder="00:00"
+                />
+
+                <Field
+                    label="เวลารับกลับ"
+                    value={form.checkOutTime}
+                    onChangeText={(v) => updateForm("checkOutTime", v)}
+                    placeholder="00:00"
+                />
+
+                <Text style={styles.branchTitle}>เลือกสาขา</Text>
+
+                <TouchableOpacity
+                    style={styles.branchButton}
+                    onPress={() => setShowBranches(!showBranches)}
+                >
+                    <Text style={styles.branchText}>{branch}</Text>
+                    <Text style={styles.arrow}>▼</Text>
+                </TouchableOpacity>
+
+                {showBranches && (
+                    <View style={styles.dropdown}>
+                    {branches.map((item, index) => (
+                        <TouchableOpacity
+                        key={index}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                            setBranch(item);
+                            setShowBranches(false);
+                        }}
+                        >
+                        <Text style={styles.dropdownText}>{item}</Text>
+                        </TouchableOpacity>
+                    ))}
+                    </View>
+                )}
+
+                <TouchableOpacity
+                    style={styles.confirmButton}
+                    onPress={handleSubmit}
+                >
+                    <Text style={styles.confirmText}>ยืนยัน</Text>
+                </TouchableOpacity>
+                </View>
             </View>
-          </View>
-        </View>
+            </View>
 
-        {/* Pet decoration */}
-        <View style={styles.petDecoration}>
-          <Text style={styles.petEmoji}>🐶</Text>
-          <Text style={styles.petEmoji}>🐱</Text>
+            {/* Pet decoration */}
+            <View style={styles.petDecoration}>
+            <Image
+                source={require("../1assets/piclogo.png")}
+                style={styles.petpic}
+                resizeMode="cover"
+            />
+            </View>
         </View>
       </View>
     </View>
@@ -283,8 +288,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  mainWrapper: {
+    flex: 1,
+    justifyContent: "center",
+    marginBottom: 70,
+    },
+
   mainSection: {
-    marginVertical: 30,
+    // marginVertical: 30,
     minHeight: 420,
     backgroundColor: "#0C2B43",
     flexDirection: "row",
@@ -441,15 +452,15 @@ const styles = StyleSheet.create({
 
   petDecoration: {
     position: "absolute",
-    right: 35,
-    bottom: 35,
+    right: 330,
+    bottom: 140,
     flexDirection: "row",
     opacity: 0.15,
     zIndex: 1,
   },
 
-  petEmoji: {
-    fontSize: 100,
-    marginLeft: -25,
+  petpic: {
+    width: 500,
+    height: 320,
   },
 });
