@@ -1,9 +1,13 @@
-import crypto from 'crypto';
+import bcrypt from 'bcrypt'
 
-const makePassword = (password, salt) => {
-  const randomSalt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.createHash('sha256').update(password + (salt ? salt + randomSalt : randomSalt)).digest('hex');
+const makePassword = async (password, salt) => {
+  const hash = await bcrypt.hash(password, salt);
   return new String(hash);
 };
 
-export default makePassword;
+const checkPassword = async (password, password_hash) => {
+  const result = await bcrypt.compare(password, password_hash);
+  return result;
+};
+
+export {makePassword, checkPassword};
