@@ -3,7 +3,8 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 
 import LogoutNavbar from "./2components/logoutnavbar";
-import Navbar from "./2components/navbar";
+import NavbarUser from "./2components/navbar_user";
+import NavbarSA from "./2components/navbar_s_a";
 import PetDetails from "./3page/petdetails";
 import MyBooking from "./3page/mybooking_user";
 
@@ -27,7 +28,7 @@ export default function App() {
     <View style={styles.container}>
 
       {/* Navbar */}
-      <Navbar
+      <NavbarSA
         onLogin={() => console.log("เปิดหน้าเข้าสู่ระบบ")}
       />
 

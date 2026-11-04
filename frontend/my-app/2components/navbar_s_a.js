@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 
-const Navbar = ({
+const NavbarSA = ({
   onProfile,
   onMyBookings,
   onLogin,
@@ -29,14 +29,6 @@ const Navbar = ({
           activeOpacity={0.8}
         >
           <Text style={styles.buttonText}>โปรไฟล์</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={onMyBookings}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>การจองของฉัน</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -113,4 +105,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Navbar;
+export default NavbarSA;
