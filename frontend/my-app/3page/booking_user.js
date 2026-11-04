@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   ScrollView,
@@ -35,10 +36,10 @@ export default function BookingUser({ onBack, onSubmit }) {
   });
 
   const branches = [
-    "สาขากรุงเทพ",
-    "สาขานนทบุรี",
-    "สาขาเชียงใหม่",
-    "สาขาชลบุรี",
+    "สาขาลาดกระบัง",
+    "สาขาร่มเกล้า",
+    "สาขาปราจีนบุรี",
+    "สาขาหาดใหญ่",
   ];
 
   const updateForm = (key, value) => {
@@ -83,203 +84,179 @@ export default function BookingUser({ onBack, onSubmit }) {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={onBack}
+        activeOpacity={0.8}
       >
-        {/* Top decoration */}
-        <View style={styles.topDecoration}>
-          <View style={styles.topPaw}>
-            <Text style={styles.pawText}>🐾</Text>
-          </View>
+        <Text style={styles.backButtonText}>ย้อนกลับ</Text>
+      </TouchableOpacity>
+
+      {/* Main Section */}
+      <View style={styles.mainSection}>
+        {/* Left Side */}
+        <View style={styles.leftSection}>
+          <Image
+            source={require("../1assets/titlelogo.png")}
+            style={styles.titlelogo}
+            resizeMode="cover"
+          />
         </View>
 
-        {/* Main Section */}
-        <View style={styles.mainSection}>
-          {/* Left Side */}
-          <View style={styles.leftSection}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.bigPaw}>🐾</Text>
+        {/* Right Side */}
+        <View style={styles.rightSection}>
+          <Text style={styles.title}>Booking Form</Text>
 
-              <Text style={styles.logoText}>PET Hotel</Text>
+          <View style={styles.formColumns}>
+            {/* Column 1 */}
+            <View style={styles.formColumn}>
+              <Text style={styles.sectionTitle}>ข้อมูลผู้จอง</Text>
 
-              <Text style={styles.smallPaw}>🐾</Text>
+              <Field
+                label="ชื่อ"
+                value={form.ownerName}
+                onChangeText={(v) => updateForm("ownerName", v)}
+              />
+
+              <Field
+                label="เบอร์โทรติดต่อ"
+                value={form.phone}
+                onChangeText={(v) => updateForm("phone", v)}
+              />
+
+              <Field
+                label="email"
+                value={form.email}
+                onChangeText={(v) => updateForm("email", v)}
+              />
+
+              <Text style={styles.sectionTitle}>ข้อมูลสัตว์เลี้ยง</Text>
+
+              <Field
+                label="ชื่อสัตว์เลี้ยง"
+                value={form.petName}
+                onChangeText={(v) => updateForm("petName", v)}
+              />
+
+              <Field
+                label="ประเภท"
+                value={form.petType}
+                onChangeText={(v) => updateForm("petType", v)}
+              />
+
+              <Field
+                label="สายพันธุ์"
+                value={form.breed}
+                onChangeText={(v) => updateForm("breed", v)}
+              />
+
+              <Field
+                label="เพศ"
+                value={form.gender}
+                onChangeText={(v) => updateForm("gender", v)}
+              />
+
+              <Field
+                label="วันเกิด"
+                value={form.age}
+                onChangeText={(v) => updateForm("age", v)}
+              />
+
+              <Field
+                label="น้ำหนัก"
+                value={form.weight}
+                onChangeText={(v) => updateForm("weight", v)}
+              />
+
+              <Field
+                label="โรคประจำตัว/ประวัติการแพ้ยา-อาหาร"
+                value={form.health}
+                onChangeText={(v) => updateForm("health", v)}
+              />
+
+              <Field
+                label="ข้อจำกัด/คำแนะนำในการดูแล"
+                value={form.health}
+                onChangeText={(v) => updateForm("health", v)}
+              />
+            </View>
+
+            {/* Column 2 */}
+            <View style={styles.formColumn}>
+              <Text style={styles.sectionTitle}>ข้อมูลการเข้าพัก</Text>
+
+              <Field
+                label="วันที่ฝาก"
+                value={form.checkIn}
+                onChangeText={(v) => updateForm("checkIn", v)}
+                placeholder="วัน/เดือน/ปี"
+              />
+
+              <Field
+                label="วันที่เข้ารับ"
+                value={form.checkOut}
+                onChangeText={(v) => updateForm("checkOut", v)}
+                placeholder="วัน/เดือน/ปี"
+              />
+
+              <Field
+                label="เวลาเข้าพัก"
+                value={form.checkInTime}
+                onChangeText={(v) => updateForm("checkInTime", v)}
+                placeholder="00:00"
+              />
+
+              <Field
+                label="เวลารับกลับ"
+                value={form.checkOutTime}
+                onChangeText={(v) => updateForm("checkOutTime", v)}
+                placeholder="00:00"
+              />
+
+              <Text style={styles.branchTitle}>เลือกสาขา</Text>
+
+              <TouchableOpacity
+                style={styles.branchButton}
+                onPress={() => setShowBranches(!showBranches)}
+              >
+                <Text style={styles.branchText}>{branch}</Text>
+                <Text style={styles.arrow}>▼</Text>
+              </TouchableOpacity>
+
+              {showBranches && (
+                <View style={styles.dropdown}>
+                  {branches.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setBranch(item);
+                        setShowBranches(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownText}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={handleSubmit}
+              >
+                <Text style={styles.confirmText}>ยืนยัน</Text>
+              </TouchableOpacity>
             </View>
           </View>
-
-          {/* Right Side */}
-          <View style={styles.rightSection}>
-            <Text style={styles.title}>Booking Form</Text>
-
-            <View style={styles.formColumns}>
-              {/* Column 1 */}
-              <View style={styles.formColumn}>
-                <Text style={styles.sectionTitle}>
-                  ข้อมูลผู้จอง
-                </Text>
-
-                <Field
-                  label="ชื่อ"
-                  value={form.ownerName}
-                  onChangeText={(v) => updateForm("ownerName", v)}
-                />
-
-                <Field
-                  label="เบอร์โทรติดต่อ"
-                  value={form.phone}
-                  onChangeText={(v) => updateForm("phone", v)}
-                />
-
-                <Field
-                  label="email"
-                  value={form.email}
-                  onChangeText={(v) => updateForm("email", v)}
-                />
-
-                <Text style={styles.sectionTitle}>
-                  ข้อมูลสัตว์เลี้ยง
-                </Text>
-
-                <Field
-                  label="ชื่อสัตว์เลี้ยง"
-                  value={form.petName}
-                  onChangeText={(v) => updateForm("petName", v)}
-                />
-
-                <Field
-                  label="ประเภท"
-                  value={form.petType}
-                  onChangeText={(v) => updateForm("petType", v)}
-                />
-
-                <Field
-                  label="สายพันธุ์"
-                  value={form.breed}
-                  onChangeText={(v) => updateForm("breed", v)}
-                />
-
-                <Field
-                  label="เพศ"
-                  value={form.gender}
-                  onChangeText={(v) => updateForm("gender", v)}
-                />
-
-                <Field
-                  label="วันเกิด"
-                  value={form.age}
-                  onChangeText={(v) => updateForm("age", v)}
-                />
-
-                <Field
-                  label="น้ำหนัก"
-                  value={form.weight}
-                  onChangeText={(v) => updateForm("weight", v)}
-                />
-
-                <Field
-                  label="โรคประจำตัว/ประวัติการแพ้ยา-อาหาร"
-                  value={form.health}
-                  onChangeText={(v) => updateForm("health", v)}
-                />
-
-                <Field
-                  label="ข้อจำกัด/คำแนะนำในการดูแล"
-                  value={form.health}
-                  onChangeText={(v) => updateForm("health", v)}
-                />
-              </View>
-
-              {/* Column 2 */}
-              <View style={styles.formColumn}>
-                <Text style={styles.sectionTitle}>
-                  ข้อมูลการเข้าพัก
-                </Text>
-
-                <Field
-                  label="วันที่ฝาก"
-                  value={form.checkIn}
-                  onChangeText={(v) => updateForm("checkIn", v)}
-                  placeholder="วัน/เดือน/ปี"
-                />
-
-                <Field
-                  label="วันที่เข้ารับ"
-                  value={form.checkOut}
-                  onChangeText={(v) => updateForm("checkOut", v)}
-                  placeholder="วัน/เดือน/ปี"
-                />
-
-                <Field
-                  label="เวลาเข้าพัก"
-                  value={form.checkInTime}
-                  onChangeText={(v) => updateForm("checkInTime", v)}
-                  placeholder="00:00"
-                />
-
-                <Field
-                  label="เวลารับกลับ"
-                  value={form.checkOutTime}
-                  onChangeText={(v) => updateForm("checkOutTime", v)}
-                  placeholder="00:00"
-                />
-
-                <Text style={styles.branchTitle}>
-                  เลือกสาขา
-                </Text>
-
-                <TouchableOpacity
-                  style={styles.branchButton}
-                  onPress={() => setShowBranches(!showBranches)}
-                >
-                  <Text style={styles.branchText}>
-                    {branch}
-                  </Text>
-                  <Text style={styles.arrow}>▼</Text>
-                </TouchableOpacity>
-
-                {showBranches && (
-                  <View style={styles.dropdown}>
-                    {branches.map((item, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                          setBranch(item);
-                          setShowBranches(false);
-                        }}
-                      >
-                        <Text style={styles.dropdownText}>
-                          {item}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-
-                <TouchableOpacity
-                  style={styles.confirmButton}
-                  onPress={handleSubmit}
-                >
-                  <Text style={styles.confirmText}>
-                    ยืนยัน
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Pet decoration */}
-          <View style={styles.petDecoration}>
-            <Text style={styles.petEmoji}>🐶</Text>
-            <Text style={styles.petEmoji}>🐱</Text>
-          </View>
         </View>
 
-        {/* Bottom decoration */}
-        <View style={styles.bottomDecoration}>
-          <Text style={styles.bottomPaw}>🐾</Text>
+        {/* Pet decoration */}
+        <View style={styles.petDecoration}>
+          <Text style={styles.petEmoji}>🐶</Text>
+          <Text style={styles.petEmoji}>🐱</Text>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -290,29 +267,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
-  scrollContent: {
-    flexGrow: 1,
+  backButton: {
+    alignSelf: "flex-start",
+    marginTop: 20,
+    marginLeft: 30,
+    backgroundColor: "#246AA5",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
 
-  topDecoration: {
-    height: 95,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-  },
-
-  topPaw: {
-    position: "absolute",
-    right: "35%",
-    top: 20,
-  },
-
-  pawText: {
-    fontSize: 35,
-    opacity: 0.25,
+  backButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 
   mainSection: {
+    marginVertical: 30,
     minHeight: 420,
     backgroundColor: "#0C2B43",
     flexDirection: "row",
@@ -330,10 +302,9 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
 
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  titlelogo: {
+    width: 420,
+    height: 170,
   },
 
   bigPaw: {
@@ -480,17 +451,5 @@ const styles = StyleSheet.create({
   petEmoji: {
     fontSize: 100,
     marginLeft: -25,
-  },
-
-  bottomDecoration: {
-    height: 75,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    paddingLeft: 65,
-  },
-
-  bottomPaw: {
-    fontSize: 32,
-    opacity: 0.25,
   },
 });

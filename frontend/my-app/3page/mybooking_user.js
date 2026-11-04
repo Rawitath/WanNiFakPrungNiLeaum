@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    height: 155,
+    height: 135,
     backgroundColor: "#0b2d47",
     // justifyContent: "center",
     alignItems: "center",
