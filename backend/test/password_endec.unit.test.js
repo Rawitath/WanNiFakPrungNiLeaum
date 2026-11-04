@@ -1,6 +1,6 @@
 import {makePassword, checkPassword} from "../src/utils/password_endec";
 
-describe("makePassword", async () => {
+describe("makePassword", () => {
   it("should return a hash of the password concatenated with the salt", async () => {
     const password = "testPassword";
     const salt = "randomSalt";
@@ -15,7 +15,7 @@ describe("makePassword", async () => {
 )
 });
 
-describe("checkPassword", async () => {
+describe("checkPassword", () => {
   it("should return true when password is right", async () => {
     const password = "testPassword";
     const salt = "randomSalt";
