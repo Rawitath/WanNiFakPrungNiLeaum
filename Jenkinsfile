@@ -180,7 +180,8 @@ def executeStepWithCheck(Map args) {
         exitCode = runShell()
     }
 
-    long durationSec = Math.round((System.currentTimeMillis() - startTime) / 1000)
+    // แก้ไขตรงนี้: ใช้ .intdiv(1000) ป้องกัน Groovy แปลงผลหารเป็น BigDecimal
+    long durationSec = (System.currentTimeMillis() - startTime).intdiv(1000)
     boolean isSuccess = (exitCode == 0)
 
     String logContent = ""
