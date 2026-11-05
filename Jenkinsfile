@@ -134,7 +134,7 @@ def executeStepWithCheck(Map args) {
     String checkName = args.name
     String checkTitle = args.title ?: checkName
     String cmd = args.command
-    boolean useDbCredentials = args.useDbCredentials ?: false
+    boolean useCredentials = args.useCredentials ?: false
     boolean failOnError = args.containsKey('failOnError') ? args.failOnError : true
 
     String safeName = checkName.replaceAll('[^a-zA-Z0-9_-]', '_')
@@ -168,11 +168,14 @@ def executeStepWithCheck(Map args) {
         )
     }
 
-    if (useDbCredentials) {
+    if (useCredentials) {
         withCredentials([
             string(credentialsId: 'POSTGRES_DB', variable: 'POSTGRES_DB'),
             string(credentialsId: 'POSTGRES_USER', variable: 'POSTGRES_USER'),
-            string(credentialsId: 'POSTGRES_PASSWORD', variable: 'POSTGRES_PASSWORD')
+            string(credentialsId: 'POSTGRES_PASSWORD', variable: 'POSTGRES_PASSWORD'),
+            string(credentialsId: 'PASSWORD_ENDEC_SALT', variable: 'PASSWORD_ENDEC_SALT'),
+            string(credentialsId: 'JWT_SECRET', variable: 'JWT_SECRET'),
+            string(credentialsId: 'JWT_EXPIRATION', variable: 'JWT_EXPIRATION')
         ]) {
             exitCode = runShell()
         }
@@ -264,7 +267,7 @@ pipeline {
                                         name: 'backend - test',
                                         title: 'Backend Test',
                                         command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm --build backend-test",
-                                        useDbCredentials: true
+                                        useCredentials: true
                                     )
                                 }
                             }
@@ -276,7 +279,7 @@ pipeline {
                                         name: 'backend - build',
                                         title: 'Backend Build',
                                         command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build --target run backend",
-                                        useDbCredentials: true
+                                        useCredentials: true
                                     )
                                 }
                             }
@@ -296,7 +299,7 @@ pipeline {
                                 name: 'frontend - build',
                                 title: 'Frontend Build',
                                 command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build frontend",
-                                useDbCredentials: false
+                                useCredentials: false
                             )
                         }
                     }
@@ -325,7 +328,7 @@ pipeline {
                                         curl --fail --retry 5 --retry-delay 3 --retry-connrefused \\
                                         http://localhost:3000/
                                 """,
-                                useDbCredentials: true
+                                useCredentials: true
                             )
                         }
                     }
@@ -349,7 +352,7 @@ pipeline {
                                         curl --fail --retry 5 --retry-delay 3 --retry-connrefused \\
                                         http://localhost:8081/
                                 """,
-                                useDbCredentials: false
+                                useCredentials: false
                             )
                         }
                     }
@@ -378,7 +381,7 @@ pipeline {
                                             curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8081/
                                         '
                                 """,
-                                useDbCredentials: true
+                                useCredentials: true
                             )
                         }
                     }
@@ -393,7 +396,7 @@ pipeline {
                     name: 'cleanup',
                     title: 'Docker Cleanup',
                     command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod down -v --remove-orphans",
-                    useDbCredentials: true,
+                    useCredentials: true,
                     failOnError: false
                 )
             }

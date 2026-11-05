@@ -48,6 +48,9 @@ services:
       DB_NAME: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      PASSWORD_ENDEC_SALT: ${PASSWORD_ENDEC_SALT}
     depends_on:
       db:
         condition: service_healthy
@@ -67,6 +70,9 @@ services:
       DB_NAME: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      PASSWORD_ENDEC_SALT: ${PASSWORD_ENDEC_SALT}
     depends_on:
       db:
         condition: service_healthy
@@ -85,6 +91,9 @@ services:
       DB_NAME: dev
       DB_USER: dev
       DB_PASSWORD: 1234
+      JWT_SECRET: secret123
+      JWT_EXPIRATION: 1h
+      PASSWORD_ENDEC_SALT: saltSALT
     volumes:
       - ./backend/src:/app/src
     ports:

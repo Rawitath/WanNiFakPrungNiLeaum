@@ -2,6 +2,7 @@ import request from "supertest";
 import crypto from "crypto";
 import pool from "../src/config/db.js";
 import app from "../src/index.js";
+import { makePassword } from "../src/utils/password_endec.js";
 
 /**
  * ==============================================================================
@@ -44,7 +45,7 @@ const CUSTOMER_USER_ID = "c0000000-0000-0000-0000-000000000001";
 const CUSTOMER_ID = "c1000000-0000-0000-0000-000000000001";
 const CUSTOMER_CREDENTIALS = {
   username: "customer_integration",
-  password: "password123",
+  password: makePassword("password123"),
   email: "customer_integration@test.com",
   phone: "0891234567",
   role: "customer"
@@ -54,7 +55,7 @@ const STAFF_USER_ID = "d0000000-0000-0000-0000-000000000001";
 const STAFF_ID = "d1000000-0000-0000-0000-000000000001";
 const STAFF_CREDENTIALS = {
   username: "staff_integration",
-  password: "password123",
+  password: makePassword("password123"),
   email: "staff_integration@test.com",
   phone: "0892345678",
   role: "staff"
@@ -64,7 +65,7 @@ const MANAGER_USER_ID = "e0000000-0000-0000-0000-000000000001";
 const MANAGER_ID = "e1000000-0000-0000-0000-000000000001";
 const MANAGER_CREDENTIALS = {
   username: "manager_integration",
-  password: "password123",
+  password: makePassword("password123"),
   email: "manager_integration@test.com",
   phone: "0893456789",
   role: "admin"
