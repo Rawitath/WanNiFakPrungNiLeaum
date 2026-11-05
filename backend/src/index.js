@@ -4,6 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc'
 import register from './auth/register.js';
 import login from './auth/login.js';
+import { requestForget } from './auth/forget.js';
 
 export function createApp(options = {}) {
   //-----------------------------Auth Middleware---------------------------------
@@ -143,12 +144,104 @@ app.post('/api/register', register);
  */
 app.post('/api/login', login);
 
-  app.post('/api/forget', (req, res) => {
+/**
+ * @swagger
+ * /api/forget:
+ *   post:
+ *     summary: request for reset password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Can be either username or email
+ *                 example: testuser
+ *     responses:
+ *       200:
+ *         description: Successfully sent request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Password reset requested
+ */
+app.post('/api/forget', requestForget);
+
+/**
+ * @swagger
+ * /api/forget/reset:
+ *   get:
+ *     summary: check if password reset token is valid
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Can be either username or email
+ *                 example: testuser
+ *     responses:
+ *       200:
+ *         description: Successfully sent request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Password reset requested
+ *   post:
+ *     summary: submit password reset
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Can be either username or email
+ *                 example: testuser
+ *     responses:
+ *       200:
+ *         description: Successfully sent request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Password reset requested
+ */
+app.get('/api/forget/reset', (req, res) => {
     res.send('Hello World!');
   });
-  app.post('/api/forget/reset', (req, res) => {
-    res.send('Hello World!');
-  });
+
+app.post('/api/forget/reset', (req, res) => {
+  res.send('Hello World!');
+});
 
   //เขียน Endpoint ในนี้นะ
 

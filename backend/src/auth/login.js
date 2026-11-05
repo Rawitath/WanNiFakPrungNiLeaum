@@ -1,6 +1,9 @@
 import { checkPassword } from "../utils/password_endec.js";
 import jwt from "jsonwebtoken";
 import db from "../db.js";
+import dotenv from 'dotenv'
+
+dotenv.config();
 
 const login = async (req, res, next) => {
     try {

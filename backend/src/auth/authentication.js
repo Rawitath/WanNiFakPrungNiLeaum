@@ -1,3 +1,8 @@
+import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+
+dotenv.config();
+
 const defaultAuthMiddleware = (req, res, next) => {
   const authHeader = req.headers['authorization'] || req.headers['Authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -9,8 +14,13 @@ const defaultAuthMiddleware = (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  // Real JWT authentication will be implemented here
-  next();
+  const verified = jwt.verify(token, process.env.JWT_SECRET || "secret_key");
+  if (verified) {
+    next();
+  } else {
+    // Access Denied
+    return res.status(401).send({ error: "InvalidToken!" });
+  }
 };
 
 export default defaultAuthMiddleware;
