@@ -3,6 +3,7 @@ import defaultAuthMiddleware from './auth/authentication.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc'
 import register from './auth/register.js';
+import profileRouter from './auth/profile.js';
 import login from './auth/login.js';
 import { createForgetHandlers } from './auth/forget.js';
 
@@ -272,6 +273,8 @@ app.get('/api/forget/reset', checkForget);
 app.post('/api/forget/reset', resetPassword);
 
   //เขียน Endpoint ในนี้นะ
+  // Mount profile router
+  app.use('/api', profileRouter);
 
   return app;
 }
