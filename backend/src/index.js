@@ -5,7 +5,16 @@ import swaggerJsDoc from 'swagger-jsdoc'
 import register from './auth/register.js';
 import profileRouter from './auth/profile.js';
 import login from './auth/login.js';
+import detailRouter from './auth/detail.js';
+import reservationRouter from './auth/reservation.js';
+import cancelRouter from './auth/cancel.js';
 import statusRouter from './auth/status.js';
+import reservStaffRouter from './auth/reservstaff.js';
+import petsRouter from './auth/pets.js';
+import petsDetailRouter from './auth/petsdetail.js';
+import callCustomerRouter from './auth/callcustomer.js';
+import statusStaffRouter from './auth/statusstaff.js';
+import entryRouter from './auth/entry.js';
 import { createForgetHandlers } from './auth/forget.js';
 
 export function createApp(options = {}) {
@@ -278,7 +287,24 @@ app.post('/api/forget/reset', resetPassword);
   app.use('/api', profileRouter);
   // Mount status router (admin)
   app.use('/api', statusRouter);
-  app.use('/api', profileRouter);
+  // Mount detail router
+  app.use('/api', detailRouter);
+  // Mount reservation router
+  app.use('/api', reservationRouter);
+  // Mount cancel router
+  app.use('/api', cancelRouter);
+  // Mount staff reservation router
+  app.use('/api', reservStaffRouter);
+  // Mount staff pets router
+  app.use('/api', petsRouter);
+  // Mount staff pets detail router
+  app.use('/api', petsDetailRouter);
+  // Mount call customer router
+  app.use('/api', callCustomerRouter);
+  // Mount staff status router
+  app.use('/api', statusStaffRouter);
+  // Mount entry router
+  app.use('/api', entryRouter);
 
   return app;
 }
