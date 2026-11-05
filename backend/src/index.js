@@ -4,13 +4,20 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc'
 import register from './auth/register.js';
 import login from './auth/login.js';
-import { requestForget } from './auth/forget.js';
+import { createForgetHandlers } from './auth/forget.js';
 
 export function createApp(options = {}) {
   //-----------------------------Auth Middleware---------------------------------
   let currentAuthMiddleware = typeof options === 'function'
     ? options
     : (options?.authMiddleware || defaultAuthMiddleware);
+
+  //-----------------------------Forget Handlers---------------------------------
+  // Allow a custom nodemailer transporter to be injected for testing (DI).
+  // Pass options.mailerTransporter to use a custom SMTP transporter (e.g. Ethereal).
+  const { requestForget, checkForget, resetPassword } = createForgetHandlers(
+    options?.mailerTransporter || null
+  );
 
   const app = express();
   app.use(express.json());
@@ -52,7 +59,7 @@ export function createApp(options = {}) {
       },
       servers: [
         {
-          url: `http://localhost:${port}`,
+          url: `http://localhost:${process.env.PORT || 3000}`,
           description: 'Development Server',
         },
       ],
@@ -148,7 +155,11 @@ app.post('/api/login', login);
  * @swagger
  * /api/forget:
  *   post:
- *     summary: request for reset password
+ *     summary: Request a password reset link
+ *     description: >
+ *       Accepts a username or email address. Sends a password reset e-mail
+ *       with a link containing a short-lived JWT `resetToken`.
+ *       Always returns 200 regardless of whether the account exists (security by design).
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -161,11 +172,11 @@ app.post('/api/login', login);
  *             properties:
  *               username:
  *                 type: string
- *                 description: Can be either username or email
+ *                 description: Username or e-mail address of the account
  *                 example: testuser
  *     responses:
  *       200:
- *         description: Successfully sent request
+ *         description: Request acknowledged (always returned, even if account not found)
  *         content:
  *           application/json:
  *             schema:
@@ -181,24 +192,23 @@ app.post('/api/forget', requestForget);
  * @swagger
  * /api/forget/reset:
  *   get:
- *     summary: check if password reset token is valid
+ *     summary: Validate a password reset token
+ *     description: >
+ *       Checks whether the provided `resetToken` query parameter is a valid,
+ *       non-expired JWT issued for a password reset. Returns 200 if valid,
+ *       401 if invalid or expired.
  *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - username
- *             properties:
- *               username:
- *                 type: string
- *                 description: Can be either username or email
- *                 example: testuser
+ *     parameters:
+ *       - in: query
+ *         name: resetToken
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: JWT reset token (received via e-mail link)
+ *         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *     responses:
  *       200:
- *         description: Successfully sent request
+ *         description: Token is valid
  *         content:
  *           application/json:
  *             schema:
@@ -206,9 +216,22 @@ app.post('/api/forget', requestForget);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Password reset requested
+ *                   example: Reset token is valid
+ *       401:
+ *         description: Token is missing, invalid, or expired
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid or expired reset token
  *   post:
- *     summary: submit password reset
+ *     summary: Reset password using a valid reset token
+ *     description: >
+ *       Verifies the `resetToken` and updates the user's password.
+ *       Returns 200 on success, 400 if fields are missing, 401 if the token is invalid/expired.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -217,15 +240,20 @@ app.post('/api/forget', requestForget);
  *           schema:
  *             type: object
  *             required:
- *               - username
+ *               - resetToken
+ *               - password
  *             properties:
- *               username:
+ *               resetToken:
  *                 type: string
- *                 description: Can be either username or email
- *                 example: testuser
+ *                 description: JWT reset token received via e-mail link
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *               password:
+ *                 type: string
+ *                 description: New password to set
+ *                 example: newSecurePassword123
  *     responses:
  *       200:
- *         description: Successfully sent request
+ *         description: Password reset successfully
  *         content:
  *           application/json:
  *             schema:
@@ -233,15 +261,15 @@ app.post('/api/forget', requestForget);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Password reset requested
+ *                   example: Password reset successfully
+ *       400:
+ *         description: Missing resetToken or password in request body
+ *       401:
+ *         description: Token is invalid or expired
  */
-app.get('/api/forget/reset', (req, res) => {
-    res.send('Hello World!');
-  });
+app.get('/api/forget/reset', checkForget);
 
-app.post('/api/forget/reset', (req, res) => {
-  res.send('Hello World!');
-});
+app.post('/api/forget/reset', resetPassword);
 
   //เขียน Endpoint ในนี้นะ
 

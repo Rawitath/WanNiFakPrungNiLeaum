@@ -1,6 +1,6 @@
 import { makePassword } from "../utils/password_endec.js";
 import { v4 as uuidv4 } from "uuid";
-import db from "../db.js"; // สมมติว่าคุณเชื่อมต่อ DB ไว้ที่นี่
+import db from "../config/db.js";
 
 function checkMissingFields(obj) {
   const requiredKeys = ['username', 'password', 'email', 'phone'];
@@ -42,7 +42,7 @@ const register = async (req, res, next) => {
             }
         }
 
-        const hashedPassword = await makePassword(password, salt);
+        const hashedPassword = await makePassword(password, username);
         const userid = uuidv4();
 
         await db.query(
