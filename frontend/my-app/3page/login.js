@@ -277,8 +277,9 @@ const styles = StyleSheet.create({
 
     formContainer: {
         flexGrow: 1,
-        justifyContent: "center",
-        paddingTop: 0,
+        justifyContent: "flex-start",
+        paddingTop: 15,
+        paddingBottom: 20,
     },
 
     backButton: {

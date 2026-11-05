@@ -12,10 +12,13 @@ import PetDetails from "./3page/petdetails";
 import BookingUser from "./3page/booking_user";
 import MyBookingUser from "./3page/mybooking_user";
 import Login from "./3page/login";
+import Register from "./3page/register";
 
 export default function App() {
 
   const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+
   // ข้อมูลสัตว์เลี้ยงทั้งหมดจัดการที่นี่
   const petData = {
     id: "P001",
@@ -33,7 +36,22 @@ export default function App() {
   return (
   <View style={styles.container}>
 
-    {showLogin ? (
+    {showRegister ? (
+      // หน้า Register
+    <Register
+        onBack={() => setShowRegister(false)}
+        onRegister={(username, email, phone, password, confirmPassword) => {
+            console.log("ข้อมูลสมัครสมาชิก:", {
+                username,
+                email,
+                phone,
+                password,
+                confirmPassword,
+            });
+        }}
+    />
+
+    ) : showLogin ? (
       // หน้า Login
       <Login
         onBack={() => setShowLogin(false)}
@@ -42,8 +60,9 @@ export default function App() {
         }}
         onForgotPassword={() => console.log("ลืมรหัสผ่าน")}
         onGoogleLogin={() => console.log("Google Login")}
-        onRegister={() => console.log("ลงทะเบียน")}
+        onRegister={() => setShowRegister(true)}
       />
+
     ) : (
       // หน้าเดิมของเพื่อน
       <>
