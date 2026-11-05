@@ -131,14 +131,12 @@ export default function Login({
                 />
 
                 {/* ลืมรหัสผ่าน */}
-                <TouchableOpacity
-                    style={styles.forgotButton}
-                    onPress={onForgotPassword}
-                >
-                    <Text style={styles.forgotText}>
+                <TouchableOpacity onPress={onForgotPassword}>
+                    <Text style={styles.forgotPassword}>
                         ลืมรหัสผ่าน?
                     </Text>
                 </TouchableOpacity>
+
 
                 {/* ปุ่มเข้าสู่ระบบ */}
                 <TouchableOpacity
@@ -328,16 +326,13 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFFFFF",
     },
 
-    forgotButton: {
+    forgotPassword: {
         alignSelf: "flex-end",
         marginTop: -10,
         marginBottom: 25,
         marginRight: 120,
-    },
-
-    forgotText: {
         color: "#f9aa16",
-        fontSize: 16,
+        fontSize: 14,
     },
 
     loginButton: {

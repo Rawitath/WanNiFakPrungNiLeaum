@@ -13,11 +13,13 @@ import BookingUser from "./3page/booking_user";
 import MyBookingUser from "./3page/mybooking_user";
 import Login from "./3page/login";
 import Register from "./3page/register";
+import ForgotPassword from "./3page/forgotpassword";
 
 export default function App() {
 
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // ข้อมูลสัตว์เลี้ยงทั้งหมดจัดการที่นี่
   const petData = {
@@ -33,59 +35,57 @@ export default function App() {
     checkOut: "01/04/2569",
   };
 
-  return (
-  <View style={styles.container}>
+return (
+    <View style={styles.container}>
 
-    {showRegister ? (
-      // หน้า Register
-    <Register
-        onBack={() => setShowRegister(false)}
-        onRegister={(username, email, phone, password, confirmPassword) => {
-            console.log("ข้อมูลสมัครสมาชิก:", {
-                username,
-                email,
-                phone,
-                password,
-                confirmPassword,
-            });
-        }}
-    />
+        {showForgotPassword ? (
+            // หน้า Forgot Password
+            <ForgotPassword
+                onBack={() => setShowForgotPassword(false)}
+                onSubmit={(email) => {
+                    console.log("อีเมลสำหรับรีเซ็ตรหัสผ่าน:", email);
+                }}
+            />
 
-    ) : showLogin ? (
-      // หน้า Login
-      <Login
-        onBack={() => setShowLogin(false)}
-        onLogin={(username, password) => {
-          console.log("เข้าสู่ระบบ", username);
-        }}
-        onForgotPassword={() => console.log("ลืมรหัสผ่าน")}
-        onGoogleLogin={() => console.log("Google Login")}
-        onRegister={() => setShowRegister(true)}
-      />
+        ) : showRegister ? (
+            // หน้า Register
+            <Register
+                onBack={() => setShowRegister(false)}
+                onRegister={(username, email, phone, password, confirmPassword) => {
+                    console.log("ข้อมูลสมัครสมาชิก:", {
+                        username,
+                        email,
+                        phone,
+                        password,
+                        confirmPassword,
+                    });
+                }}
+            />
 
-    ) : (
-      // หน้าเดิมของเพื่อน
-      <>
-        {/* Navbar */}
-        <NavbarSA
-          onLogin={() => setShowLogin(true)}
-        />
+        ) : showLogin ? (
+            // หน้า Login
+            <Login
+                onBack={() => setShowLogin(false)}
+                onLogin={(username, password) => {
+                    console.log("เข้าสู่ระบบ", username);
+                }}
+                onForgotPassword={() => setShowForgotPassword(true)}
+                onGoogleLogin={() => console.log("Google Login")}
+                onRegister={() => setShowRegister(true)}
+            />
 
-        {/* Pet Details Page */}
-        {/* <PetDetails
-          onBack={() => console.log("ย้อนกลับ")}
-          pet={petData}
-          initialStatus="In Care"
-          onStatusChange={(value) => {
-            console.log("สถานะสัตว์เลี้ยง:", value);
-          }}
-        /> */}
+        ) : (
+            // หน้าเดิมของเพื่อน
+            <>
+                <NavbarSA
+                    onLogin={() => setShowLogin(true)}
+                />
 
-        <BookingUser />
-      </>
-    )}
+                <BookingUser />
+            </>
+        )}
 
-  </View>
+    </View>
 );
 }
 
