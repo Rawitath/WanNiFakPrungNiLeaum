@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest test/db.unit.test.js && jest test/index.unit.test.js && jest test/integration.test.js",
+    "test": "jest test/password_endec.unit.test.js && jest test/db.unit.test.js && jest test/index.unit.test.js && jest test/integration.test.js",
     "dev": "nodemon -L src/index.js",
     "start": "node src/index.js"
   },
@@ -13,9 +13,26 @@
   "license": "Apache-2.0",
   "type": "module",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
-    "pg": "^8.23.1"
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.3.1",
+    "pg": "^8.23.1",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^14.0.3"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.[jt]s$": "babel-jest"
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!uuid/)"
+    ],
+    "moduleNameMapper": {
+      "^uuid$": "<rootDir>/test/__mocks__/uuid-cjs-shim.js"
+    }
   },
   "devDependencies": {
     "@babel/core": "^8.1.0",
