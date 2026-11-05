@@ -5,6 +5,7 @@ import swaggerJsDoc from 'swagger-jsdoc'
 import register from './auth/register.js';
 import profileRouter from './auth/profile.js';
 import login from './auth/login.js';
+import statusRouter from './auth/status.js';
 import { createForgetHandlers } from './auth/forget.js';
 
 export function createApp(options = {}) {
@@ -274,6 +275,9 @@ app.post('/api/forget/reset', resetPassword);
 
   //เขียน Endpoint ในนี้นะ
   // Mount profile router
+  app.use('/api', profileRouter);
+  // Mount status router (admin)
+  app.use('/api', statusRouter);
   app.use('/api', profileRouter);
 
   return app;
