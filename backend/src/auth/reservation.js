@@ -1,38 +1,87 @@
 import express from 'express';
 
-// In‑memory mock reservations. In a real app this would be persisted per user.
-let reservations = [
-  { id: 1, animal: 'Dog', date: '2023-09-01', status: 'confirmed' },
-];
+let reservations = [];
+let nextId = 1;
 
-/**
- * GET /customer/reservation
- * Returns the list of reservations for the logged‑in customer.
- */
+/** GET /customer/reservation */
 function getReservations(req, res) {
-  // In a real implementation you would filter by req.user.id.
-  res.json({ success: true, reservations });
+  const id = req.query.id;
+  if (id) {
+    const reservation = reservations.find(r => r.id === Number(id));
+    if (!reservation) return res.status(404).json({ error: 'Not found' });
+    return res.json(reservation);
+  }
+  res.json(reservations);
 }
 
-/**
- * POST /customer/reservation
- * Creates a new reservation. Expects JSON body with `animal` and `date`.
- */
+/** POST /customer/reservation */
 function createReservation(req, res) {
-  const { animal, date } = req.body;
-  if (!animal || !date) {
-    return res
-      .status(400)
-      .json({ success: false, message: 'animal and date are required' });
+  const {
+    customerName,
+    customerPhone,
+    customerEmail,
+    petName,
+    petType,
+    petBreed,
+    petSex,
+    petWeight,
+    petBirth,
+    petCondition,
+    petNote,
+    checkIn,
+    checkOut,
+    branch,
+  } = req.body;
+
+  // Basic required field check (as per test, all fields are required)
+  const required = [
+    'customerName',
+    'customerPhone',
+    'customerEmail',
+    'petName',
+    'petType',
+    'petBreed',
+    'petSex',
+    'petWeight',
+    'petBirth',
+    'petCondition',
+    'petNote',
+    'checkIn',
+    'checkOut',
+    'branch',
+  ];
+  for (const f of required) {
+    if (!req.body[f]) {
+      return res.status(400).json({ error: `${f} is required` });
+    }
   }
-  const newRes = {
-    id: reservations.length + 1,
-    animal,
-    date,
+
+  // checkOut must be after checkIn
+  if (new Date(checkOut) <= new Date(checkIn)) {
+    return res.status(400).json({ error: 'checkOut must be after checkIn' });
+  }
+
+  const reservation = {
+    reservationId: nextId++,
+    reservationDate: new Date().toISOString(),
+    customerName,
+    customerPhone,
+    customerEmail,
+    petName,
+    petType,
+    petBreed,
+    petSex,
+    petWeight,
+    petBirth,
+    petCondition,
+    petNote,
+    checkIn,
+    checkOut,
+    branch,
     status: 'pending',
   };
-  reservations.push(newRes);
-  res.json({ success: true, reservation: newRes });
+  reservations.push(reservation);
+  res.status(201).json({ reservationId: reservation.reservationId, reservationDate: reservation.reservationDate });
 }
 
 const router = express.Router();
@@ -40,4 +89,5 @@ router.get('/customer/reservation', getReservations);
 router.post('/customer/reservation', createReservation);
 
 export default router;
+
 
