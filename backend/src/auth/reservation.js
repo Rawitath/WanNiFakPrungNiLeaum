@@ -33,7 +33,6 @@ function createReservation(req, res) {
     branch,
   } = req.body;
 
-  // Basic required field check (as per test, all fields are required)
   const required = [
     'customerName',
     'customerPhone',
@@ -56,13 +55,12 @@ function createReservation(req, res) {
     }
   }
 
-  // checkOut must be after checkIn
   if (new Date(checkOut) <= new Date(checkIn)) {
     return res.status(400).json({ error: 'checkOut must be after checkIn' });
   }
 
   const reservation = {
-    reservationId: nextId++,
+    id: nextId++,
     reservationDate: new Date().toISOString(),
     customerName,
     customerPhone,
@@ -81,7 +79,7 @@ function createReservation(req, res) {
     status: 'pending',
   };
   reservations.push(reservation);
-  res.status(201).json({ reservationId: reservation.reservationId, reservationDate: reservation.reservationDate });
+  res.status(201).json({ reservationId: reservation.id, reservationDate: reservation.reservationDate });
 }
 
 const router = express.Router();
@@ -89,5 +87,4 @@ router.get('/customer/reservation', getReservations);
 router.post('/customer/reservation', createReservation);
 
 export default router;
-
-
+export { reservations, nextId };

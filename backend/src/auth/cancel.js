@@ -1,20 +1,5 @@
 import express from 'express';
-
-// Use the same in‑memory reservations array from reservation.js. In a real
-// application this would be a shared database model. For this mock we import
-// the array via require – Node's ES module loader allows circular imports if we
-// keep the reference mutable.
-let reservations = [];
-try {
-  // eslint-disable-next-line import/no-unresolved
-  const reservationModule = require('./reservation.js');
-  if (Array.isArray(reservationModule.reservations)) {
-    reservations = reservationModule.reservations;
-  }
-} catch (_) {
-  // Fallback: the module may not have been loaded yet; the router will still
-  // operate on its own local copy which will be consistent for this demo.
-}
+import { reservations } from './reservation.js';
 
 /**
  * POST /customer/reservation/cancel
