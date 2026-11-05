@@ -6,9 +6,9 @@ describe("makePassword", () => {
     const salt = "randomSalt";
     const hash1 = await makePassword(password, salt);
     const hash2 = await makePassword(password, salt)
-    expect(hash1).toBeInstanceOf(String);
+    expect(typeof hash1 === 'string').toBe(true);
     expect(hash1.length).toBeGreaterThan(0);
-    expect(hash2).toBeInstanceOf(String);
+    expect(typeof hash2 === 'string').toBe(true);
     expect(hash2.length).toBeGreaterThan(0);
     expect(hash1).not.toBe(hash2);
   }
