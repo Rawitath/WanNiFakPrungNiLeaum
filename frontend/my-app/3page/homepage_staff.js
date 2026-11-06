@@ -259,9 +259,11 @@ export default function HomePageStaff({
 
           {/* CHECK IN / OUT */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>
-              บันทึกเข้า-ออกรับคืน
-            </Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>
+                บันทึกเข้า-ออกรับคืน
+              </Text>
+            </View>
 
             {activityList.map((item) => (
               <View key={item.id} style={styles.activityRow}>
@@ -414,27 +416,29 @@ const styles = StyleSheet.create({
 
   // TOP SECTION
   topSection: {
-    height: 106,
+    height: 146,
     backgroundColor: "#0C2B43",
-    paddingHorizontal: 28,
-    paddingTop: 16,
+    paddingHorizontal: 68,
+    paddingTop: 36,
     flexDirection: "row",
     justifyContent: "space-between",
   },
 
   welcomeSection: {
     flex: 1,
+    marginLeft: 10,
+    paddingTop: 5,
   },
 
   welcomeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 15,
+    gap: 25,
   },
 
   welcomeText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 32,
     fontWeight: "bold",
   },
 
@@ -446,9 +450,9 @@ const styles = StyleSheet.create({
   branchButton: {
     backgroundColor: "#F5A000",
     borderRadius: 8,
-    height: 27,
+    height: 32,
     minWidth: 70,
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -457,13 +461,13 @@ const styles = StyleSheet.create({
 
   branchText: {
     color: "#FFFFFF",
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: "bold",
   },
 
   branchArrow: {
     color: "#FFFFFF",
-    fontSize: 9,
+    fontSize: 11,
   },
 
   branchDropdown: {
@@ -495,8 +499,8 @@ const styles = StyleSheet.create({
   },
 
   statCard: {
-    width: 65,
-    height: 66,
+    width: 85,
+    height: 86,
     backgroundColor: "#163954",
     borderRadius: 10,
     justifyContent: "center",
@@ -505,13 +509,13 @@ const styles = StyleSheet.create({
 
   statNumber: {
     color: "#F5A000",
-    fontSize: 16,
+    fontSize: 26,
     fontWeight: "bold",
   },
 
   statLabel: {
     color: "#D5DFE8",
-    fontSize: 8,
+    fontSize: 12,
     marginTop: 3,
   },
 
@@ -522,7 +526,7 @@ const styles = StyleSheet.create({
   },
 
   mainContent: {
-    paddingHorizontal: 28,
+    paddingHorizontal: 50,
     paddingBottom: 35,
   },
 
@@ -536,8 +540,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
     backgroundColor: "#FFFFFF",
     borderRadius: 9,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     minHeight: 180,
   },
 
@@ -545,34 +549,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 9,
+    marginBottom: 10,
   },
 
   cardTitle: {
     color: "#19344C",
-    fontSize: 11,
+    fontSize: 23,
     fontWeight: "bold",
   },
 
   cardSubtitle: {
     color: "#8795A3",
-    fontSize: 8,
+    fontSize: 12,
   },
 
   // QUEUE
   queueRow: {
-    minHeight: 35,
+    minHeight: 55,
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: "#F0F2F4",
-    gap: 7,
+    gap: 20,
   },
 
   queueTime: {
-    width: 30,
+    width: 40,
     color: "#73869A",
-    fontSize: 9,
+    fontSize: 15,
   },
 
   queueInfo: {
@@ -582,53 +586,53 @@ const styles = StyleSheet.create({
 
   queueName: {
     color: "#24435E",
-    fontSize: 9,
+    fontSize: 15,
     fontWeight: "bold",
   },
 
   queueDetail: {
     color: "#8B9AA9",
-    fontSize: 8,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 4,
   },
 
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 10,
   },
 
   statusText: {
-    fontSize: 7,
+    fontSize: 11,
     fontWeight: "bold",
   },
 
   detailButton: {
     borderWidth: 1,
     borderColor: "#DCE4EC",
-    paddingHorizontal: 9,
+    paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 5,
+    borderRadius: 10,
   },
 
   detailButtonText: {
     color: "#286BA5",
-    fontSize: 8,
+    fontSize: 11,
   },
 
   // ACTIVITY
   activityRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 36,
+    minHeight: 55,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F2F4",
     gap: 8,
   },
 
   petAvatar: {
-    width: 24,
-    height: 24,
+    width: 30,
+    height: 30,
     borderRadius: 20,
     backgroundColor: "#69C1E0",
   },
@@ -640,27 +644,27 @@ const styles = StyleSheet.create({
 
   activityName: {
     color: "#24435E",
-    fontSize: 9,
+    fontSize: 15,
     fontWeight: "bold",
   },
 
   activityDetail: {
     color: "#8999A8",
-    fontSize: 8,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 4,
   },
 
   activityButton: {
     minWidth: 49,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 5,
+    borderRadius: 10,
     alignItems: "center",
   },
 
   activityButtonText: {
     color: "#FFFFFF",
-    fontSize: 7,
+    fontSize: 11,
     fontWeight: "bold",
   },
 
@@ -670,39 +674,33 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 19,
     marginHorizontal: "10%",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
   },
 
   tableHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
-  },
-
-  viewAllText: {
-    color: "#286BA5",
-    fontSize: 8,
-    textDecorationLine: "underline",
+    marginBottom: 10,
   },
 
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 35,
+    minHeight: 50,
     borderBottomWidth: 1,
     borderBottomColor: "#EDF0F3",
   },
 
   tableHeading: {
     color: "#8795A3",
-    fontSize: 8,
+    fontSize: 15,
   },
 
   tableText: {
     color: "#314B62",
-    fontSize: 8,
+    fontSize: 15,
   },
 
   petNameCol: {
@@ -727,13 +725,13 @@ const styles = StyleSheet.create({
 
   tableStatus: {
     alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
   },
 
   tableStatusText: {
-    fontSize: 7,
+    fontSize: 11,
     fontWeight: "bold",
   },
 
@@ -746,13 +744,13 @@ const styles = StyleSheet.create({
   tableButton: {
     borderWidth: 1,
     borderColor: "#DCE4EC",
-    borderRadius: 5,
-    paddingHorizontal: 7,
+    borderRadius: 10,
+    paddingHorizontal: 10,
     paddingVertical: 5,
   },
 
   tableButtonText: {
     color: "#286BA5",
-    fontSize: 7,
+    fontSize: 11,
   },
 });
