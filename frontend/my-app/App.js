@@ -16,6 +16,7 @@ import BookingUser from "./3page/booking_user";
 import MyBookingUser from "./3page/mybooking_user";
 import HomePageStaff from "./3page/homepage_staff";
 import HomePageGuest from "./3page/homepage_guest";
+import HomePageUser from "./3page/homepage_user";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
@@ -111,10 +112,19 @@ export default function App() {
         </>
       ) : (
         // หน้าหลัก
-         // หน้าแรก Guest
-        <HomePageGuest
-          onLogin={() => setShowLogin(true)}
-        />
+        //  // หน้าแรก Guest
+        // <HomePageGuest
+        //   onLogin={() => setShowLogin(true)}
+        // />
+
+        // หน้าแรก User
+          <>
+            <HomePageUser
+              onProfile={() => setShowProfile(true)}
+              onMyBooking={() => setShowMyBooking(true)}
+              onLogout={() => setShowLogin(true)}
+            />
+          </>
 
         ///หน้าหลัก Staff
         // <>
