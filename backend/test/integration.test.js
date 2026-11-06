@@ -262,8 +262,8 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     } catch (err) {
       console.warn("Cleanup warning:", err.message);
     } finally {
-      await pool.end();
-      server.close();
+      if (pool) await pool.end();
+      if (server) server.close();
     }
   }, 60000);
 

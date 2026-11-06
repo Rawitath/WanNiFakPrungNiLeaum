@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest test/password_endec.unit.test.js --detectOpenHandles && jest test/db.unit.test.js --detectOpenHandles && jest test/integration.test.js --detectOpenHandles && jest test/forget.integration.test.js --detectOpenHandles",
+    "test": "jest test/password_endec.unit.test.js --forceExit --detectOpenHandles && jest test/db.unit.test.js --forceExit --detectOpenHandles && jest test/integration.test.js --forceExit --detectOpenHandles && jest test/forget.integration.test.js --forceExit --detectOpenHandles",
     "dev": "nodemon -L src/index.js",
     "start": "node src/index.js"
   },
