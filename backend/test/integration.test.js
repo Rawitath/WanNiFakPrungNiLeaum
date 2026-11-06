@@ -1,7 +1,7 @@
 import request from "supertest";
 import crypto from "crypto";
 import pool from "../src/config/db.js";
-import app from "../src/index.js";
+import { createApp } from "../src/index.js";
 import { makePassword } from "../src/utils/password_endec.js";
 
 /**
@@ -36,6 +36,16 @@ import { makePassword } from "../src/utils/password_endec.js";
  *   4. Direct database validation using `pool` to ensure data integrity.
  * ==============================================================================
  */
+
+// 1. สร้าง Mock Transporter หลอกๆ ขึ้นมาเพื่อไม่ให้มีการเปิด Connection จริง
+const mockTransporter = {
+  sendMail: jest.fn().mockResolvedValue({ messageId: "mock-id" }),
+  close: jest.fn(),
+  verify: jest.fn().mockResolvedValue(true)
+};
+
+// 2. สร้าง app instance สำหรับรันเทสต์โดยเฉพาะ พร้อมยัด Mock เข้าไป
+const app = createApp({ mailerTransporter: mockTransporter });
 
 // Shared Fixture Identifiers (UUID format matching DB_SCHEMA.md)
 const TEST_BRANCH_ID = "b0000000-0000-0000-0000-000000000001";
