@@ -19,7 +19,7 @@ function checkMissingFields(obj) {
   };
 }
 
-const register = async (req, res, next) => {
+const registerCustomer = async (req, res, next) => {
     try {
         const checkValid = checkMissingFields(req.body);
         if(!checkValid.isValid){
@@ -49,6 +49,11 @@ const register = async (req, res, next) => {
             "INSERT INTO users (userid, username, password, email, phone, role) VALUES ($1, $2, $3, $4, $5, $6)",
             [userid, username, hashedPassword, email, phone, "customer"]
         );
+        const customerid = uuidv4();
+        await db.query(
+            "INSERT INTO customers (customer_id, userid) VALUES ($1, $2)",
+            [customerid, userid]
+        );
 
         return res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
@@ -56,4 +61,4 @@ const register = async (req, res, next) => {
     }
 };
 
-export default register;
+export default registerCustomer;

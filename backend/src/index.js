@@ -2,7 +2,7 @@ import express from 'express';
 import defaultAuthMiddleware from './auth/authentication.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc'
-import register from './auth/register.js';
+import registerCustomer from './auth/register.js';
 import profileRouter from './auth/profile.js';
 import login from './auth/login.js';
 import detailRouter from './auth/detail.js';
@@ -14,7 +14,7 @@ import petsRouter from './auth/pets.js';
 import petsDetailRouter from './auth/petsdetail.js';
 import callCustomerRouter from './auth/callcustomer.js';
 import statusStaffRouter from './auth/statusstaff.js';
-import entryRouter from './auth/entry.js';
+// import entryRouter from './auth/entry.js';
 import { createForgetHandlers } from './auth/forget.js';
 
 export function createApp(options = {}) {
@@ -51,7 +51,7 @@ export function createApp(options = {}) {
 
   // Protect /api routes except public auth endpoints
   app.use('/api', (req, res, next) => {
-    const publicPaths = ['/login', '/register', '/forget'];
+    const publicPaths = ['/login', '/register', '/forget', '/docs'];
     if (publicPaths.some(p => req.path.startsWith(p))) {
       return next();
     }
@@ -121,7 +121,7 @@ export function createApp(options = {}) {
  *       409:
  *         description: Username or email already exists
  */
-app.post('/api/register', register);
+app.post('/api/register', registerCustomer);
 
 /**
  * @swagger
@@ -304,7 +304,7 @@ app.post('/api/forget/reset', resetPassword);
   // Mount staff status router
   app.use('/api', statusStaffRouter);
   // Mount entry router
-  app.use('/api', entryRouter);
+  // app.use('/api', entryRouter);
 
   return app;
 }

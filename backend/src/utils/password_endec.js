@@ -4,7 +4,10 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 const makePassword = async (password, salt = process.env.PASSWORD_ENDEC_SALT || 'saltSALT') => {
-  const bSalt = await bcrypt.genSalt([...salt].map((char) => /^[a-z]$/.test(char) ? 1 : 2).reduce((acc, cur) => acc + cur));
+  const calculatedRounds = [...salt].map((char) => /^[a-z]$/.test(char) ? 1 : 2).reduce((acc, cur) => acc + cur, 0);
+  const rounds = Math.min(calculatedRounds, 12); // บังคับไม่ให้เกิน 12 รอบ
+
+  const bSalt = await bcrypt.genSalt(rounds);
   const hash = await bcrypt.hash(password, bSalt);
   return hash.toString();
 };
