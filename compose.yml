@@ -1,6 +1,6 @@
 services:
   frontend:
-    profiles: ["prod"]
+    profiles: ["prod", "frontend"]
     image: wannifakprungnileaum-frontend:latest
     build:
       context: ./frontend
@@ -11,7 +11,7 @@ services:
       - stayforget-network
 
   frontend-dev:
-    profiles: ["dev"]
+    profiles: ["dev", "dev-frontend"]
     image: wannifakprungnileaum-frontend:dev
     build:
       context: ./frontend
@@ -35,7 +35,7 @@ services:
     tty: true
 
   backend:
-    profiles: ["prod"]
+    profiles: ["prod", "backend"]
     image: wannifakprungnileaum-backend:latest
     build:
       context: ./backend
@@ -58,7 +58,7 @@ services:
       - stayforget-network
 
   backend-test:
-    profiles: ["test"]
+    profiles: ["test", "test-backend"]
     image: wannifakprungnileaum-backend:test
     build:
       context: ./backend
@@ -80,7 +80,7 @@ services:
       - stayforget-network
 
   backend-dev:
-    profiles: ["dev"]
+    profiles: ["dev", "dev-backend"]
     image: wannifakprungnileaum-backend:dev
     build:
       context: ./backend
@@ -90,7 +90,7 @@ services:
       DB_PORT: 5432
       DB_NAME: dev
       DB_USER: dev
-      DB_PASSWORD: 1234
+      DB_PASSWORD: aa1234
       JWT_SECRET: secret123
       JWT_EXPIRATION: 1h
       PASSWORD_ENDEC_SALT: saltSALT
@@ -105,7 +105,7 @@ services:
 
   db:
     image: postgres:18-alpine
-    profiles: ["prod", "test"]
+    profiles: ["prod", "test", "backend"]
     volumes:
       - stayforget_db:/var/lib/postgresql
     environment:
@@ -122,13 +122,13 @@ services:
 
   db-dev:
     image: postgres:18-alpine
-    profiles: ["dev"]
+    profiles: ["dev", "dev-backend"]
     volumes:
       - stayforget_dev_db:/var/lib/postgresql
     environment:
       POSTGRES_DB: dev
       POSTGRES_USER: dev
-      POSTGRES_PASSWORD: 1234
+      POSTGRES_PASSWORD: aa1234
     ports:
       - "5432:5432"
     networks:
