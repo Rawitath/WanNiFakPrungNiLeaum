@@ -36,7 +36,7 @@ const NavbarSA = ({
           onPress={onLogin}
           activeOpacity={0.8}
         >
-          <Text style={styles.loginText}>เข้าสู่ระบบ</Text>
+          <Text style={styles.loginText}>ออกจากระบบ</Text>
         </TouchableOpacity>
       </View>
     </View>
