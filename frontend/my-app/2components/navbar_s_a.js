@@ -10,15 +10,13 @@ import {
 
 const NavbarSA = ({
   onProfile,
-  onMyBookings,
-  onLogin,
+  onLogout,
 }) => {
   const { width } = useWindowDimensions();
-  const isMobile = width < 600;
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.logo, isMobile && styles.logoMobile]}>
+      <Text style={styles.logo}>
         StayTodayForgotTomorrow
       </Text>
 
@@ -32,11 +30,11 @@ const NavbarSA = ({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, styles.loginButton]}
-          onPress={onLogin}
+          style={[styles.button, styles.LogoutButton]}
+          onPress={onLogout}
           activeOpacity={0.8}
         >
-          <Text style={styles.loginText}>ออกจากระบบ</Text>
+          <Text style={styles.LogoutText}>ออกจากระบบ</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -66,10 +64,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 1,
   },
 
-  logoMobile: {
-    fontSize: 18,
-  },
-
   actions: {
     flexDirection: "row",
     alignItems: "center",
@@ -94,11 +88,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  loginButton: {
+  LogoutButton: {
     backgroundColor: "#8CC4F2",
   },
 
-  loginText: {
+  LogoutText: {
     color: "#071D30",
     fontSize: 10,
     fontWeight: "700",

@@ -10,11 +10,10 @@ import {
 
 const logoutNavbar = ({ onLogin }) => {
   const { width } = useWindowDimensions();
-  const isMobile = width < 600;
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.logo, isMobile && styles.logoMobile]}>
+      <Text style={styles.logo}>
         StayTodayForgotTomorrow
       </Text>
 
@@ -50,10 +49,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 3, height: 3 },
     textShadowRadius: 1,
     flexShrink: 1,
-  },
-
-  logoMobile: {
-    fontSize: 18,
   },
 
   loginButton: {

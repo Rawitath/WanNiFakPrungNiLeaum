@@ -1,12 +1,11 @@
 
-
-// แพรเพิ่ม
-import React, { useState } from "react"; 
+import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 
 import LogoutNavbar from "./2components/logoutnavbar";
 import NavbarUser from "./2components/navbar_user";
 import NavbarSA from "./2components/navbar_s_a";
+import UserProfile from "./2components/userprofile";
 
 import PetDetails from "./3page/petdetails";
 import BookingUser from "./3page/booking_user";
@@ -16,10 +15,19 @@ import Register from "./3page/register";
 import ForgotPassword from "./3page/forgotpassword";
 
 export default function App() {
-
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // ควบคุม Popup โปรไฟล์
+  const [showProfile, setShowProfile] = useState(false);
+
+  // ข้อมูลโปรไฟล์ จัดการจาก App.js
+  const profileData = {
+    name: "นายคุ๊กกี้ อร่อย",
+    phone: "083xxxxxxx",
+    email: "cookie@gmail.com",
+  };
 
   // ข้อมูลสัตว์เลี้ยงทั้งหมดจัดการที่นี่
   const petData = {
@@ -35,58 +43,69 @@ export default function App() {
     checkOut: "01/04/2569",
   };
 
-return (
+  return (
     <View style={styles.container}>
 
-        {showForgotPassword ? (
-            // หน้า Forgot Password
-            <ForgotPassword
-                onBack={() => setShowForgotPassword(false)}
-                onSubmit={(email) => {
-                    console.log("อีเมลสำหรับรีเซ็ตรหัสผ่าน:", email);
-                }}
-            />
+      {showForgotPassword ? (
+        // หน้า Forgot Password
+        <ForgotPassword
+          onBack={() => setShowForgotPassword(false)}
+          onSubmit={(email) => {
+            console.log("อีเมลสำหรับรีเซ็ตรหัสผ่าน:", email);
+          }}
+        />
 
-        ) : showRegister ? (
-            // หน้า Register
-            <Register
-                onBack={() => setShowRegister(false)}
-                onRegister={(username, email, phone, password, confirmPassword) => {
-                    console.log("ข้อมูลสมัครสมาชิก:", {
-                        username,
-                        email,
-                        phone,
-                        password,
-                        confirmPassword,
-                    });
-                }}
-            />
+      ) : showRegister ? (
+        // หน้า Register
+        <Register
+          onBack={() => setShowRegister(false)}
+          onRegister={(username, email, phone, password, confirmPassword) => {
+            console.log("ข้อมูลสมัครสมาชิก:", {
+              username,
+              email,
+              phone,
+              password,
+              confirmPassword,
+            });
+          }}
+        />
 
-        ) : showLogin ? (
-            // หน้า Login
-            <Login
-                onBack={() => setShowLogin(false)}
-                onLogin={(username, password) => {
-                    console.log("เข้าสู่ระบบ", username);
-                }}
-                onForgotPassword={() => setShowForgotPassword(true)}
-                onGoogleLogin={() => console.log("Google Login")}
-                onRegister={() => setShowRegister(true)}
-            />
+      ) : showLogin ? (
+        // หน้า Login
+        <Login
+          onBack={() => setShowLogin(false)}
+          onLogin={(username, password) => {
+            console.log("เข้าสู่ระบบ", username);
+          }}
+          onForgotPassword={() => setShowForgotPassword(true)}
+          onGoogleLogin={() => console.log("Google Login")}
+          onRegister={() => setShowRegister(true)}
+        />
 
-        ) : (
-            // หน้าเดิมของเพื่อน
-            <>
-                <NavbarSA
-                    onLogin={() => setShowLogin(true)}
-                />
+      ) : (
+        // หน้าหลัก
+        <>
+          <NavbarSA
+            onProfile={() => setShowProfile(true)}
+            onLogout={() => setShowLogin(true)}
+          />
 
-                <BookingUser />
-            </>
-        )}
+          <BookingUser />
+
+          {/* Profile Popup */}
+          <UserProfile
+            visible={showProfile}
+            onClose={() => setShowProfile(false)}
+            title={profileData.name}
+            name={profileData.name}
+            phone={profileData.phone}
+            email={profileData.email}
+          />
+        </>
+      )}
 
     </View>
-);
+  );
 }
 
 const styles = StyleSheet.create({

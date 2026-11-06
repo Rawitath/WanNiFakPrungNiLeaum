@@ -254,11 +254,11 @@ export default function BookingUser({ onBack, onSubmit }) {
 
             {/* Pet decoration */}
             <View style={styles.petDecoration}>
-            <Image
-                source={require("../1assets/piclogo.png")}
-                style={styles.petpic}
-                resizeMode="cover"
-            />
+              <Image
+                  source={require("../1assets/piclogo.png")}
+                  style={styles.petpic}
+                  resizeMode="cover"
+              />
             </View>
         </View>
       </View>
