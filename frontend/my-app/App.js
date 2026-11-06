@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
+import { useFonts } from "expo-font";
 
 import LogoutNavbar from "./2components/logoutnavbar";
 import NavbarUser from "./2components/navbar_user";
@@ -14,6 +15,7 @@ import PetDetails from "./3page/petdetails";
 import BookingUser from "./3page/booking_user";
 import MyBookingUser from "./3page/mybooking_user";
 import HomePageStaff from "./3page/homepage_staff";
+import HomePageGuest from "./3page/homepage_guest";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
@@ -24,6 +26,15 @@ export default function App() {
 
   // ควบคุม Popup โปรไฟล์
   const [showProfile, setShowProfile] = useState(false);
+
+    //font
+  const [fontsLoaded] = useFonts({
+    Itim: require("./1assets/Itim-Regular.ttf"),
+  });
+
+  if (!fontsLoaded) {
+  return null;
+  }
 
   // ข้อมูลโปรไฟล์ จัดการจาก App.js
   const profileData = {
@@ -100,31 +111,37 @@ export default function App() {
         </>
       ) : (
         // หน้าหลัก
-        <>
-          <NavbarUser
-            onProfile={() => setShowProfile(true)}
-            onMyBooking={() => setShowMyBooking(true)}
-            onLogout={() => setShowLogin(true)}
-          />
+         // หน้าแรก Guest
+        <HomePageGuest
+          onLogin={() => setShowLogin(true)}
+        />
 
-          {/* Profile Popup */}
-          <UserProfile
-            visible={showProfile}
-            onClose={() => setShowProfile(false)}
-            title={profileData.name}
-            name={profileData.name}
-            phone={profileData.phone}
-            email={profileData.email}
-          />
+        ///หน้าหลัก Staff
+        // <>
+        //   <NavbarUser
+        //     onProfile={() => setShowProfile(true)}
+        //     onMyBooking={() => setShowMyBooking(true)}
+        //     onLogout={() => setShowLogin(true)}
+        //   />
 
-          <HomePageStaff
-            onViewBooking={(item) => console.log("รายละเอียดคิว", item)}
-            onViewPet={(pet) => console.log("รายละเอียดสัตว์เลี้ยง", pet)}
-            onCheckIn={(item) => console.log("รับเข้าพัก", item)}
-            onCheckOut={(item) => console.log("รับกลับ", item)}
-            />
+        //   {/* Profile Popup */}
+        //   <UserProfile
+        //     visible={showProfile}
+        //     onClose={() => setShowProfile(false)}
+        //     title={profileData.name}
+        //     name={profileData.name}
+        //     phone={profileData.phone}
+        //     email={profileData.email}
+        //   />
 
-        </>
+        //   <HomePageStaff
+        //     onViewBooking={(item) => console.log("รายละเอียดคิว", item)}
+        //     onViewPet={(pet) => console.log("รายละเอียดสัตว์เลี้ยง", pet)}
+        //     onCheckIn={(item) => console.log("รับเข้าพัก", item)}
+        //     onCheckOut={(item) => console.log("รับกลับ", item)}
+        //     />
+
+        // </>
       )}
 
     </View>
