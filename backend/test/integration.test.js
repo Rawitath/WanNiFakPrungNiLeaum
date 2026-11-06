@@ -111,11 +111,20 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       CREATE TABLE IF NOT EXISTS users (
         userid UUID PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
+        password TEXT,
         email TEXT NOT NULL UNIQUE,
         phone TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         role TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS oauthusers (
+          id SERIAL PRIMARY KEY,
+          user_id UUID NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
+          provider TEXT NOT NULL, -- เช่น 'google', 'github'
+          provider_user_id TEXT NOT NULL, -- ID ที่ Google ส่งมา (googleUser.id)
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          UNIQUE(provider, provider_user_id) -- ห้าม OAuth ID ซ้ำในระบบ
       );
 
       CREATE TABLE IF NOT EXISTS customers (
@@ -810,4 +819,99 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       expect(dbCheck.rows.length).toBe(0);
     });
   });
+
+  describe('Google OAuth2 Redirection (GET /api/oauth/google)', () => {
+    it('should redirect user to Google OAuth URL', async () => {
+      const res = await request(app).get('/api/oauth/google');
+
+      expect(res.statusCode).toBe(302);
+      expect(res.headers.location).toContain('https://accounts.google.com/o/oauth2/v2/auth');
+      expect(res.headers.location).toContain('client_id=');
+    });
+  });
+
+  describe('Google OAuth2 Login (GET /api/oauth/google/callback)', () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      global.fetch = originalFetch; // คืนค่า fetch เดิมหลังจบแต่ละ test
+      jest.restoreAllMocks();
+    });
+
+    it('should return 400 if code parameter is missing', async () => {
+      const res = await request(app).get('/auth/google/callback');
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toBe('Authorization code missing');
+    });
+
+    it('should login successfully when Google returns valid tokens and profile', async () => {
+      // 1. Mock fetch สำหรับ 2 Calls (1st: Exchange Token, 2nd: Get User Info)
+      const oauthEmail = 'test@example.com';
+      global.fetch = jest.fn()
+        // Call 1: Mock response จาก https://oauth2.googleapis.com/token
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            access_token: 'mock_access_token',
+            id_token: 'mock_id_token',
+            token_type: 'Bearer',
+          }),
+        })
+        // Call 2: Mock response จาก https://www.googleapis.com/oauth2/v2/userinfo
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: '1234567890',
+            email: oauthEmail,
+            name: 'Test User',
+          }),
+        });
+
+      // 2. ยิง Request พร้อม query code
+      const res = await request(app).get('/auth/google/callback?code=mock_authorization_code');
+
+      // 3. Assertions
+      expect(res.statusCode).toBe(200);
+      expect(res.body.message).toBe('Login successful');
+      expect(res.body.user).toEqual({
+        id: '1234567890',
+        email: oauthEmail,
+        name: 'Test User',
+      });
+
+      // ตรวจสอบว่า fetch ถูกเรียก 2 ครั้งถูกต้อง
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+
+      const usersCheck = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [oauthEmail]
+      );
+      // เช็คว่า oauth user ถูกบันทึกลง users ยัง
+      expect(usersCheck.rowCount).toBeGreaterThan(0);
+
+      const oauthUsersCheck = await pool.query(
+        "SELECT * FROM oauthusers WHERE userid = $1",
+        [usersCheck.rows[0].userid]
+      );
+      expect(oauthUsersCheck.rowCount).toBeGreaterThan(0);
+    });
+
+    it('should return 400 if Google token exchange fails', async () => {
+      // Mock เมื่อ Google ตอบกลับมาเป็น Error (เช่น Code หมดอายุ/ไม่ถูกต้อง)
+      global.fetch = jest.fn().mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({
+          error: 'invalid_grant',
+          error_description: 'Bad Request',
+        }),
+      });
+
+      const res = await request(app).get('/auth/google/callback?code=invalid_code');
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toBe('Failed to fetch tokens');
+    });
+  });
+
 });

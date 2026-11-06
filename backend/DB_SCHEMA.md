@@ -11,12 +11,20 @@ erDiagram
     customers ||--o{ pets : has
     branches ||--o{ staffs : works_for
     branches ||--o{ pets : is_in
+
+    oauthusers{
+        serial id PK
+        uuid user_id FK
+        text provider NN U
+        text provider_user_id NN U
+        timestampz created_at
+    }
     users{
         uuid userid PK
-        text username
-        text password
-        text email
-        text phone
+        text username NN U
+        text password 
+        text email NN U
+        text phone 
         timestampz created_at
         text role
     }
