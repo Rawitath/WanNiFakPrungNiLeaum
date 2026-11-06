@@ -839,7 +839,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it('should return 400 if code parameter is missing', async () => {
-      const res = await request(app).get('/auth/google/callback');
+      const res = await request(app).get('/api/oauth/google/callback');
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toBe('Authorization code missing');
@@ -869,7 +869,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         });
 
       // 2. ยิง Request พร้อม query code
-      const res = await request(app).get('/auth/google/callback?code=mock_authorization_code');
+      const res = await request(app).get('/api/oauth/google/callback?code=mock_authorization_code');
 
       // 3. Assertions
       expect(res.statusCode).toBe(200);
@@ -907,7 +907,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         }),
       });
 
-      const res = await request(app).get('/auth/google/callback?code=invalid_code');
+      const res = await request(app).get('/api/oauth/google/callback?code=invalid_code');
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toBe('Failed to fetch tokens');
