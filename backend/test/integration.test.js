@@ -53,9 +53,10 @@ const TEST_BRANCH_NAME = "ลาดกระบัง";
 
 const CUSTOMER_USER_ID = "c0000000-0000-0000-0000-000000000001";
 const CUSTOMER_ID = "c1000000-0000-0000-0000-000000000001";
+const CUSTOMER_PASSWORD = "password123";
 const CUSTOMER_CREDENTIALS = {
   username: "customer_integration",
-  password: makePassword("password123"),
+  password: "", // ปล่อยว่างไว้ก่อน เดี๋ยวมาใส่ใน beforeAll
   email: "customer_integration@test.com",
   phone: "0891234567",
   role: "customer"
@@ -63,9 +64,10 @@ const CUSTOMER_CREDENTIALS = {
 
 const STAFF_USER_ID = "d0000000-0000-0000-0000-000000000001";
 const STAFF_ID = "d1000000-0000-0000-0000-000000000001";
+const STAFF_PASSWORD = "password123";
 const STAFF_CREDENTIALS = {
   username: "staff_integration",
-  password: makePassword("password123"),
+  password: "", // ปล่อยว่างไว้ก่อน เดี๋ยวมาใส่ใน beforeAll
   email: "staff_integration@test.com",
   phone: "0892345678",
   role: "staff"
@@ -73,9 +75,10 @@ const STAFF_CREDENTIALS = {
 
 const MANAGER_USER_ID = "e0000000-0000-0000-0000-000000000001";
 const MANAGER_ID = "e1000000-0000-0000-0000-000000000001";
+const MANAGER_PASSWORD = "password123";
 const MANAGER_CREDENTIALS = {
   username: "manager_integration",
-  password: makePassword("password123"),
+  password: "", // ปล่อยว่างไว้ก่อน เดี๋ยวมาใส่ใน beforeAll
   email: "manager_integration@test.com",
   phone: "0893456789",
   role: "admin"
@@ -85,6 +88,8 @@ let customerToken = "mock-customer-token";
 let staffToken = "mock-staff-token";
 let managerToken = "mock-admin-token";
 
+let server;
+
 let createdReservationId;
 let createdPetId;
 
@@ -92,6 +97,10 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
   // ─── Setup & Teardown ────────────────────────────────────────────────────────
 
   beforeAll(async () => {
+    server = app.listen(0);
+    CUSTOMER_CREDENTIALS.password = await makePassword(CUSTOMER_PASSWORD);
+    STAFF_CREDENTIALS.password = await makePassword(STAFF_PASSWORD);
+    MANAGER_CREDENTIALS.password = await makePassword(MANAGER_PASSWORD);
     // 1. Ensure database schema exists according to DB_SCHEMA.md
     await pool.query(`
       CREATE TABLE IF NOT EXISTS branches (
@@ -254,6 +263,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       console.warn("Cleanup warning:", err.message);
     } finally {
       await pool.end();
+      server.close();
     }
   });
 
@@ -261,11 +271,11 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
   describe("Actor Authentication & Session Establishment", () => {
     it("Customer logs in and retrieves access token", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/login")
         .send({
           username: CUSTOMER_CREDENTIALS.username,
-          password: CUSTOMER_CREDENTIALS.password
+          password: CUSTOMER_PASSWORD
         });
 
       expect(res.status).toBe(200);
@@ -282,11 +292,11 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Staff logs in and retrieves access token", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/login")
         .send({
           username: STAFF_CREDENTIALS.username,
-          password: STAFF_CREDENTIALS.password
+          password: STAFF_PASSWORD
         });
 
       expect(res.status).toBe(200);
@@ -303,11 +313,11 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Manager logs in and retrieves access token", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/login")
         .send({
           username: MANAGER_CREDENTIALS.username,
-          password: MANAGER_CREDENTIALS.password
+          password: MANAGER_PASSWORD
         });
 
       expect(res.status).toBe(200);
@@ -334,7 +344,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         phone: "0819998877"
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/register")
         .send(newCustomer);
 
@@ -363,7 +373,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         email: CUSTOMER_CREDENTIALS.email
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/profile")
         .set("Authorization", `Bearer ${customerToken}`)
         .send(updatedProfile);
@@ -397,7 +407,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         branch: TEST_BRANCH_NAME
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/customer/reservation")
         .set("Authorization", `Bearer ${customerToken}`)
         .send(reservationPayload);
@@ -422,7 +432,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Customer views their list of reservations", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/customer/reservation")
         .set("Authorization", `Bearer ${customerToken}`);
 
@@ -432,7 +442,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Customer views details of specific reservation by id", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/customer/reservation")
         .set("Authorization", `Bearer ${customerToken}`)
         .query({ id: createdReservationId });
@@ -466,7 +476,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         ]
       );
 
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/customer/reservation/cancel")
         .set("Authorization", `Bearer ${customerToken}`)
         .send({ id: tempResId });
@@ -486,7 +496,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
   describe("Staff Workflow (UC8: จัดการคิวฝากสัตว์เลี้ยง)", () => {
     it("Staff views incoming reservation list", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/staff/reservation")
         .set("Authorization", `Bearer ${staffToken}`);
 
@@ -496,7 +506,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Staff inspects single reservation details by id", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/staff/reservation")
         .set("Authorization", `Bearer ${staffToken}`)
         .query({ id: createdReservationId });
@@ -507,7 +517,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Staff accesses customer phone contact for reservation", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get(`/api/staff/reservation/${createdReservationId}/callcustomer`)
         .set("Authorization", `Bearer ${staffToken}`);
 
@@ -535,7 +545,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         branch: TEST_BRANCH_NAME
       };
 
-      const res = await request(app)
+      const res = await request(server)
         .put("/api/staff/reservation")
         .set("Authorization", `Bearer ${staffToken}`)
         .send(updatePayload);
@@ -554,7 +564,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Staff confirms and accepts reservation; pet record is created in pets table", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .put(`/api/staff/reservation/${createdReservationId}/confirm`)
         .set("Authorization", `Bearer ${staffToken}`)
         .send({
@@ -583,7 +593,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     it("UC2: Staff records check-in entry and timestamp is written to pets table", async () => {
       const checkInTime = "2026-11-10T10:30:00.000Z";
 
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/staff/pets/entry")
         .set("Authorization", `Bearer ${staffToken}`)
         .send({
@@ -604,7 +614,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("UC4: Staff updates pet status to 'สบายดี' and database reflects the change", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/staff/pets/status")
         .set("Authorization", `Bearer ${staffToken}`)
         .send({
@@ -623,7 +633,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("UC4: Staff updates pet status to 'ไม่สบาย' when health condition changes", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/staff/pets/status")
         .set("Authorization", `Bearer ${staffToken}`)
         .send({
@@ -642,14 +652,14 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("UC3 & UC5: Staff views pet list and single pet details", async () => {
-      const listRes = await request(app)
+      const listRes = await request(server)
         .get("/api/staff/pets")
         .set("Authorization", `Bearer ${staffToken}`);
 
       expect(listRes.status).toBe(200);
       expect(Array.isArray(listRes.body)).toBe(true);
 
-      const detailRes = await request(app)
+      const detailRes = await request(server)
         .get("/api/staff/pets")
         .set("Authorization", `Bearer ${staffToken}`)
         .query({ petId: createdPetId });
@@ -662,7 +672,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     it("UC2: Staff records check-out entry and timestamp is written to pets table", async () => {
       const checkOutTime = "2026-11-15T17:00:00.000Z";
 
-      const res = await request(app)
+      const res = await request(server)
         .post("/api/staff/pets/entry")
         .set("Authorization", `Bearer ${staffToken}`)
         .send({
@@ -686,7 +696,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
   describe("Customer Pet Tracking Workflow (UC5: ดูรายละเอียด, UC6: ติดตามสถานะ)", () => {
     it("Customer lists their pets currently deposited", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/customer/pets")
         .set("Authorization", `Bearer ${customerToken}`);
 
@@ -696,7 +706,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Customer tracks real-time pet status and care details", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/customer/pets")
         .set("Authorization", `Bearer ${customerToken}`)
         .query({ petId: createdPetId });
@@ -718,7 +728,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
   describe("Manager Reporting Workflow (UC9, UC10, UC11)", () => {
     it("UC9, UC10, UC11: Manager views branch occupancy, pet types, and overall status", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/manager/status")
         .set("Authorization", `Bearer ${managerToken}`);
 
@@ -738,12 +748,12 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
   describe("System Security Boundaries & Error Scenarios", () => {
     it("Returns 401 Unauthorized when request lacks authorization token", async () => {
-      const res = await request(app).get("/api/profile");
+      const res = await request(server).get("/api/profile");
       expect(res.status).toBe(401);
     });
 
     it("Returns 403 Forbidden when Customer attempts to access Manager endpoints", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/manager/status")
         .set("Authorization", `Bearer ${customerToken}`);
 
@@ -751,7 +761,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Returns 403 Forbidden when Customer attempts to access Staff endpoints", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/staff/reservation")
         .set("Authorization", `Bearer ${customerToken}`);
 
@@ -759,7 +769,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     });
 
     it("Returns 403 Forbidden when Staff attempts to access Manager endpoints", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/manager/status")
         .set("Authorization", `Bearer ${staffToken}`);
 
@@ -768,7 +778,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
     it("Returns 404 Not Found when querying non-existent reservation ID in database", async () => {
       const nonExistentId = "00000000-0000-0000-0000-000000000999";
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/customer/reservation")
         .set("Authorization", `Bearer ${customerToken}`)
         .query({ id: nonExistentId });
@@ -785,7 +795,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
     it("Returns 404 Not Found when querying non-existent pet ID in database", async () => {
       const nonExistentPetId = "00000000-0000-0000-0000-000000000999";
-      const res = await request(app)
+      const res = await request(server)
         .get("/api/staff/pets")
         .set("Authorization", `Bearer ${staffToken}`)
         .query({ petId: nonExistentPetId });
