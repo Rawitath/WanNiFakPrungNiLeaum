@@ -2,7 +2,7 @@ import express from 'express';
 import defaultAuthMiddleware from './auth/authentication.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc'
-import register from './auth/register.js';
+import registerCustomer from './auth/register.js';
 import profileRouter from './auth/profile.js';
 import login from './auth/login.js';
 import detailRouter from './auth/detail.js';
@@ -121,7 +121,7 @@ export function createApp(options = {}) {
  *       409:
  *         description: Username or email already exists
  */
-app.post('/api/register', register);
+app.post('/api/register', registerCustomer);
 
 /**
  * @swagger
