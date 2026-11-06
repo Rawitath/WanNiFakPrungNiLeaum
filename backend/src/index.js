@@ -52,7 +52,7 @@ export function createApp(options = {}) {
 
   // Protect /api routes except public auth endpoints
   app.use('/api', (req, res, next) => {
-    const publicPaths = ['/login', '/register', '/forget', '/docs'];
+    const publicPaths = ['/login', '/register', '/forget', '/docs', '/oauth'];
     if (publicPaths.some(p => req.path.startsWith(p))) {
       return next();
     }
