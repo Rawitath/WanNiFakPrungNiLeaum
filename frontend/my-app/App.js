@@ -7,17 +7,20 @@ import NavbarUser from "./2components/navbar_user";
 import NavbarSA from "./2components/navbar_s_a";
 import UserProfile from "./2components/userprofile";
 
-import PetDetails from "./3page/petdetails";
-import BookingUser from "./3page/booking_user";
-import MyBookingUser from "./3page/mybooking_user";
 import Login from "./3page/login";
 import Register from "./3page/register";
 import ForgotPassword from "./3page/forgotpassword";
+import PetDetails from "./3page/petdetails";
+import BookingUser from "./3page/booking_user";
+import MyBookingUser from "./3page/mybooking_user";
+import HomePageStaff from "./3page/homepage_staff";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  const [showMyBooking, setShowMyBooking] = useState(false);
 
   // ควบคุม Popup โปรไฟล์
   const [showProfile, setShowProfile] = useState(false);
@@ -82,15 +85,27 @@ export default function App() {
           onRegister={() => setShowRegister(true)}
         />
 
-      ) : (
-        // หน้าหลัก
+      ) : showMyBooking ? (
         <>
-          <NavbarSA
+          <NavbarUser
             onProfile={() => setShowProfile(true)}
+            onMyBooking={() => setShowMyBooking(true)}
             onLogout={() => setShowLogin(true)}
           />
 
-          <BookingUser />
+          <MyBookingUser 
+            visible={showMyBooking}
+            onBack={() => setShowMyBooking(false)}
+          />
+        </>
+      ) : (
+        // หน้าหลัก
+        <>
+          <NavbarUser
+            onProfile={() => setShowProfile(true)}
+            onMyBooking={() => setShowMyBooking(true)}
+            onLogout={() => setShowLogin(true)}
+          />
 
           {/* Profile Popup */}
           <UserProfile
@@ -101,6 +116,14 @@ export default function App() {
             phone={profileData.phone}
             email={profileData.email}
           />
+
+          <HomePageStaff
+            onViewBooking={(item) => console.log("รายละเอียดคิว", item)}
+            onViewPet={(pet) => console.log("รายละเอียดสัตว์เลี้ยง", pet)}
+            onCheckIn={(item) => console.log("รับเข้าพัก", item)}
+            onCheckOut={(item) => console.log("รับกลับ", item)}
+            />
+
         </>
       )}
 

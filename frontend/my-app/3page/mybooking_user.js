@@ -48,7 +48,11 @@ const bookingData = [
   },
 ];
 
-export default function MyBookingUser() {
+export default function MyBookingUser({
+  visible = false,
+  onBack,
+}) {
+  
   const [filter, setFilter] = useState("ทั้งหมด");
   const [showFilter, setShowFilter] = useState(false);
 
@@ -75,7 +79,11 @@ export default function MyBookingUser() {
         {/* ส่วนหัวสีน้ำเงิน */}
         <View style={styles.header}>
 
-          <TouchableOpacity style={styles.backButton}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.8}
+          >
             <Text style={styles.backButtonText}>
               ย้อนกลับ
             </Text>

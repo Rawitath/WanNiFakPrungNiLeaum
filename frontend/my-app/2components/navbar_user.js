@@ -10,7 +10,7 @@ import {
 
 const NavbarUser = ({
   onProfile,
-  onMyBookings,
+  onMyBooking,
   onLogout,
 }) => {
   const { width } = useWindowDimensions();
@@ -32,7 +32,7 @@ const NavbarUser = ({
 
         <TouchableOpacity
           style={styles.button}
-          onPress={onMyBookings}
+          onPress={onMyBooking}
           activeOpacity={0.8}
         >
           <Text style={styles.buttonText}>การจองของฉัน</Text>
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 3, height: 3 },
     textShadowRadius: 1,
   },
-  
+
   actions: {
     flexDirection: "row",
     alignItems: "center",
