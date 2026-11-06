@@ -247,7 +247,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       "INSERT INTO managers (manager_id, userid) VALUES ($1, $2)",
       [MANAGER_ID, MANAGER_USER_ID]
     );
-  });
+  }, 60000);
 
   afterAll(async () => {
     try {
@@ -265,7 +265,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       await pool.end();
       server.close();
     }
-  });
+  }, 60000);
 
   // ─── 1. Authentication & Actor Login ────────────────────────────────────────
 

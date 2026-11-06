@@ -73,6 +73,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       PASSWORD_ENDEC_SALT: ${PASSWORD_ENDEC_SALT}
+      NODE_ENV=test
     depends_on:
       db:
         condition: service_healthy
