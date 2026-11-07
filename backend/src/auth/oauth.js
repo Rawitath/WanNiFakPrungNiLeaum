@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import pool from '../config/db';
 import generateJwtToken from './generatejwttoken';
+import { v4 as uuidv4 } from 'uuid'
 
 dotenv.config();
 
@@ -82,14 +83,16 @@ const googleOauthCallback = async (req, res, next) => {
             // googleId: googleUser.resourceName // ถ้าต้องการเก็บ ID ของ Google ไว้ผูกกับ Database
         };
 
+        const client = await pool.connect();
+
         try {
-            await pool.query('BEGIN'); // เริ่ม Transaction
+            await client.query('BEGIN'); // เริ่ม Transaction
 
             let userId = null;
             const role = 'customer'
 
             // 1. Search oauthusers ด้วย provider_user_id และ provider
-            const oauthQuery = await pool.query(
+            const oauthQuery = await client.query(
                 'SELECT user_id FROM oauthusers WHERE provider_user_id = $1 AND provider = $2',
                 [providerUserId, provider]
             );
@@ -99,7 +102,7 @@ const googleOauthCallback = async (req, res, next) => {
                 userId = oauthQuery.rows[0].user_id;
             } else {
                 // [ไม่พบบันทึก] Search users ด้วย email
-                const userQuery = await pool.query(
+                const userQuery = await client.query(
                     'SELECT userid FROM users WHERE email = $1',
                     [email]
                 );
@@ -108,7 +111,7 @@ const googleOauthCallback = async (req, res, next) => {
                     // [พบบันทึกใน users] เชื่อม OAuth Account เข้ากับ user_id นั้น
                     userId = userQuery.rows[0].userid;
 
-                    await pool.query(
+                    await client.query(
                         `INSERT INTO oauthusers (user_id, provider, provider_user_id) 
                  VALUES ($1, $2, $3)`,
                         [userId, provider, providerUserId]
@@ -118,7 +121,7 @@ const googleOauthCallback = async (req, res, next) => {
 
                     // กรณีไม่มีระบบสร้าง UUID ฝั่ง Node.js ให้ใช้ gen_random_uuid() ของ PostgreSQL
                     const genuserid = uuidv4();
-                    const newUserQuery = await pool.query(
+                    const newUserQuery = await client.query(
                         `INSERT INTO users (userid, username, email, phone, role) 
                  VALUES ($1, $2, $3, $4, $5) 
                  RETURNING userid`,
@@ -128,7 +131,7 @@ const googleOauthCallback = async (req, res, next) => {
                     userId = newUserQuery.rows[0].userid;
 
                     // ผูก record ใน oauthusers
-                    await pool.query(
+                    await client.query(
                         `INSERT INTO oauthusers (user_id, provider, provider_user_id) 
                  VALUES ($1, $2, $3)`,
                         [userId, provider, providerUserId]
@@ -136,7 +139,7 @@ const googleOauthCallback = async (req, res, next) => {
                 }
             }
 
-            await pool.query('COMMIT'); // ยืนยัน Transaction
+            await client.query('COMMIT'); // ยืนยัน Transaction
 
             const accessToken = generateJwtToken({ userid: userId, role: role });
 
@@ -147,9 +150,12 @@ const googleOauthCallback = async (req, res, next) => {
             });
 
         } catch (error) {
-            await pool.query('ROLLBACK'); // ยกเลิก Transaction หากเกิด error
+            await client.query('ROLLBACK');
             console.error('OAuth Authentication Error:', error);
-            throw error;
+            console.error(error.message);
+            return res.status(500).json({ error: 'Database transaction failed'});
+        } finally {
+            client.release();
         }
     }
     catch (e) {
