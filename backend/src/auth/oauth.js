@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import pool from '../config/db.js';
-import generateJwtToken from './generatejwttoken';
+import generateJwtToken from './generatejwttoken.js';
 import { v4 as uuidv4 } from 'uuid'
 
 dotenv.config();
