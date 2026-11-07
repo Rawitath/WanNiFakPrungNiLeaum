@@ -278,7 +278,7 @@ pipeline {
                                     executeStepWithCheck(
                                         name: 'backend - build',
                                         title: 'Backend Build',
-                                        command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build --target run backend",
+                                        command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build backend",
                                         useCredentials: true
                                     )
                                 }
