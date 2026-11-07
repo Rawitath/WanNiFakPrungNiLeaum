@@ -1,4 +1,6 @@
 import dotenv from 'dotenv';
+import pool from '../config/db';
+import generateJwtToken from './generatejwttoken';
 
 dotenv.config();
 
@@ -56,7 +58,7 @@ const googleOauthCallback = async (req, res, next) => {
                 Accept: 'application/json',
             },
         });
-        
+
         const googleUser = await userResponse.json();
 
         if (!userResponse.ok) {
@@ -64,22 +66,95 @@ const googleOauthCallback = async (req, res, next) => {
         }
 
         // People API จะ return ข้อมูลมาเป็น Array เราจึงใช้ Optional Chaining (?.) ดึงค่าตัวแรกออกมา
-        const id = googleUser.names?.[0]?.metadata?.source?.id || null;
+        const providerUserId = String(googleUser.resourceName).slice(7) || null;
         const name = googleUser.names?.[0]?.displayName || null;
         const email = googleUser.emailAddresses?.[0]?.value || null;
         const phone = googleUser.phoneNumbers?.[0]?.value || null;
+        const provider = 'google';
 
-        return res.status(200).json({
-            message: 'Login successful',
-            user: {
-                id,
-                name,
-                email,
-                phone,
-                // googleId: googleUser.resourceName // ถ้าต้องการเก็บ ID ของ Google ไว้ผูกกับ Database
-            },
-            // tokens: tokens // ไม่ควรส่ง access_token กลับไปฝั่ง client
-        });
+
+
+        const user = {
+            providerUserId,
+            name,
+            email,
+            phone,
+            // googleId: googleUser.resourceName // ถ้าต้องการเก็บ ID ของ Google ไว้ผูกกับ Database
+        };
+
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN'); // เริ่ม Transaction
+
+            let userId = null;
+            const role = 'customer'
+
+            // 1. Search oauthusers ด้วย provider_user_id และ provider
+            const oauthQuery = await client.query(
+                'SELECT user_id FROM oauthusers WHERE provider_user_id = $1 AND provider = $2',
+                [providerUserId, provider]
+            );
+
+            if (oauthQuery.rows.length > 0) {
+                // [พบบันทึก] ดึง user_id เดิม
+                userId = oauthQuery.rows[0].user_id;
+            } else {
+                // [ไม่พบบันทึก] Search users ด้วย email
+                const userQuery = await client.query(
+                    'SELECT userid FROM users WHERE email = $1',
+                    [email]
+                );
+
+                if (userQuery.rows.length > 0) {
+                    // [พบบันทึกใน users] เชื่อม OAuth Account เข้ากับ user_id นั้น
+                    userId = userQuery.rows[0].userid;
+
+                    await client.query(
+                        `INSERT INTO oauthusers (user_id, provider, provider_user_id) 
+                 VALUES ($1, $2, $3)`,
+                        [userId, provider, providerUserId]
+                    );
+                } else {
+                    // [ไม่พบบันทึกใน users] สร้าง User ใหม่ใน users และสร้าง record ใน oauthusers
+
+                    // กรณีไม่มีระบบสร้าง UUID ฝั่ง Node.js ให้ใช้ gen_random_uuid() ของ PostgreSQL
+                    const genuserid = uuidv4();
+                    const newUserQuery = await client.query(
+                        `INSERT INTO users (userid, username, email, phone, role) 
+                 VALUES ($1, $2, $3, $4, $5) 
+                 RETURNING userid`,
+                        [genuserid, name || email.split('@')[0], email, phone, role]
+                    );
+
+                    userId = newUserQuery.rows[0].userid;
+
+                    // ผูก record ใน oauthusers
+                    await client.query(
+                        `INSERT INTO oauthusers (user_id, provider, provider_user_id) 
+                 VALUES ($1, $2, $3)`,
+                        [userId, provider, providerUserId]
+                    );
+                }
+            }
+
+            await client.query('COMMIT'); // ยืนยัน Transaction
+
+            const accessToken = generateJwtToken({ userid: userId, role: role });
+
+            return res.status(200).json({
+                message: 'Login successful',
+                user: user,
+                accessToken: accessToken
+            });
+
+        } catch (error) {
+            await client.query('ROLLBACK'); // ยกเลิก Transaction หากเกิด error
+            console.error('OAuth Authentication Error:', error);
+            throw error;
+        } finally {
+            client.release(); // คืน Client เข้า Pool
+        }
     }
     catch (e) {
         console.error('OAuth Error:', e);

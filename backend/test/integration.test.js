@@ -877,6 +877,8 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     // 3. Assertions
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe('Login successful');
+    expect(res).toHaveProperty('accessToken');
+    expect(res.accessToken).not.toBeNull();
     
     // ตรวจสอบข้อมูล user ที่ Controller คุณแกะและจัดรูปแบบกลับมาให้ Client
     expect(res.body.user).toEqual({
