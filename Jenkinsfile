@@ -391,7 +391,7 @@ pipeline {
                                         --network ${env.COMPOSE_PROJECT_NAME}_stayforget-network \\
                                         curlimages/curl:latest \\
                                         sh -c '
-                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://backend:3000/api/docs &&
+                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://backend:3000/api/docs
                                         '
                                 """,
                                 useCredentials: true
