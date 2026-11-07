@@ -14,7 +14,7 @@ import petsRouter from './auth/pets.js';
 import petsDetailRouter from './auth/petsdetail.js';
 import callCustomerRouter from './auth/callcustomer.js';
 import statusStaffRouter from './auth/statusstaff.js';
-// import entryRouter from './auth/entry.js';
+import entryRouter from './auth/entry.js';
 import { createForgetHandlers } from './auth/forget.js';
 
 export function createApp(options = {}) {
@@ -304,7 +304,7 @@ app.post('/api/forget/reset', resetPassword);
   // Mount staff status router
   app.use('/api', statusStaffRouter);
   // Mount entry router
-  // app.use('/api', entryRouter);
+  app.use('/api', entryRouter);
 
   return app;
 }

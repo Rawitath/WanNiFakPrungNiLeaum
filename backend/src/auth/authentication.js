@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken'
-import dotenv from 'dotenv'
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -14,12 +14,16 @@ const defaultAuthMiddleware = (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const verified = jwt.verify(token, process.env.JWT_SECRET || "secret_key");
-  if (verified) {
-    next();
-  } else {
-    // Access Denied
-    return res.status(401).send({ error: "InvalidToken!" });
+  try {
+    const verified = jwt.verify(token, process.env.JWT_SECRET || "secret_key");
+    if (verified) {
+      req.user = verified;
+      next();
+    } else {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
   }
 };
 
