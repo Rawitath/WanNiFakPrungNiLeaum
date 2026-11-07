@@ -261,6 +261,7 @@ pipeline {
                             expression { env.BUILD_NUMBER == '1' }
                             changeset "backend/**"
                             changeset "Jenkinsfile"
+                            changeRequest()
                         }
                     }
                     stages {
@@ -297,6 +298,7 @@ pipeline {
                             changeset "Jenkinsfile"
                             buildingTag()
                             expression { env.BUILD_NUMBER == '1' }
+                            changeRequest()
                         }
                     }
                     steps {
