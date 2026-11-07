@@ -93,13 +93,13 @@ const googleOauthCallback = async (req, res, next) => {
 
             // 1. Search oauthusers ด้วย provider_user_id และ provider
             const oauthQuery = await client.query(
-                'SELECT user_id FROM oauthusers WHERE provider_user_id = $1 AND provider = $2',
+                'SELECT userid FROM oauthusers WHERE provider_user_id = $1 AND provider = $2',
                 [id, provider]
             );
 
             if (oauthQuery.rows.length > 0) {
-                // [พบบันทึก] ดึง user_id เดิม
-                userId = oauthQuery.rows[0].user_id;
+                // [พบบันทึก] ดึง userid เดิม
+                userId = oauthQuery.rows[0].userid;
             } else {
                 // [ไม่พบบันทึก] Search users ด้วย email
                 const userQuery = await client.query(
@@ -108,11 +108,11 @@ const googleOauthCallback = async (req, res, next) => {
                 );
 
                 if (userQuery.rows.length > 0) {
-                    // [พบบันทึกใน users] เชื่อม OAuth Account เข้ากับ user_id นั้น
+                    // [พบบันทึกใน users] เชื่อม OAuth Account เข้ากับ userid นั้น
                     userId = userQuery.rows[0].userid;
 
                     await client.query(
-                        `INSERT INTO oauthusers (user_id, provider, provider_user_id) 
+                        `INSERT INTO oauthusers (userid, provider, provider_user_id) 
                  VALUES ($1, $2, $3)`,
                         [userId, provider, id]
                     );
@@ -132,7 +132,7 @@ const googleOauthCallback = async (req, res, next) => {
 
                     // ผูก record ใน oauthusers
                     await client.query(
-                        `INSERT INTO oauthusers (user_id, provider, provider_user_id) 
+                        `INSERT INTO oauthusers (userid, provider, provider_user_id) 
                  VALUES ($1, $2, $3)`,
                         [userId, provider, id]
                     );
