@@ -138,7 +138,7 @@ def executeStepWithCheck(Map args) {
     boolean failOnError = args.containsKey('failOnError') ? args.failOnError : true
 
     String safeName = checkName.replaceAll('[^a-zA-Z0-9_-]', '_')
-    String logFile = "${WORKSPACE}/check_${safeName}.log"
+    String logFile = "${WORKSPACE}/check_${safeName}_${env.BUILD_NUMBER}.log"
 
     // 1. Initial Check: IN_PROGRESS
     safePublishChecks(
@@ -354,11 +354,11 @@ pipeline {
                                 title: 'Frontend Run & Healthcheck',
                                 command: """
                                     docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d frontend
-                                    docker run --rm \\
-                                        --network host \\
-                                        curlimages/curl:latest \\
-                                        curl --fail --retry 5 --retry-delay 3 --retry-connrefused \\
-                                        http://localhost:8081/
+                                        docker run --rm \\
+                                            --network ${env.COMPOSE_PROJECT_NAME}_stayforget-network \\
+                                            curlimages/curl:latest \\
+                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused \\
+                                            http://frontend:8081/
                                 """,
                                 useCredentials: false
                             )
@@ -382,15 +382,10 @@ pipeline {
                                 command: """
                                     docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d
                                     docker run --rm \\
-                                        --network host \\
-                                        curlimages/curl:latest \\
-                                        sh -c '
-                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8081/
-                                        '
-                                    docker run --rm \\
                                         --network ${env.COMPOSE_PROJECT_NAME}_stayforget-network \\
                                         curlimages/curl:latest \\
                                         sh -c '
+                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://frontend:8081/ && \\
                                             curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://backend:3000/api/docs
                                         '
                                 """,
@@ -408,7 +403,7 @@ pipeline {
                 executeStepWithCheck(
                     name: 'cleanup',
                     title: 'Docker Cleanup',
-                    command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod down -v --remove-orphans",
+                    command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod down -v --remove-orphans && rm -f ${WORKSPACE}/check_*.log",
                     useCredentials: true,
                     failOnError: false
                 )
