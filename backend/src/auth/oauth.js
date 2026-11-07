@@ -67,7 +67,7 @@ const googleOauthCallback = async (req, res, next) => {
         }
 
         // People API จะ return ข้อมูลมาเป็น Array เราจึงใช้ Optional Chaining (?.) ดึงค่าตัวแรกออกมา
-        const providerUserId = String(googleUser.resourceName).slice(7) || null;
+        const id = String(googleUser.resourceName).slice(7) || null;
         const name = googleUser.names?.[0]?.displayName || null;
         const email = googleUser.emailAddresses?.[0]?.value || null;
         const phone = googleUser.phoneNumbers?.[0]?.value || null;
@@ -76,7 +76,7 @@ const googleOauthCallback = async (req, res, next) => {
 
 
         const user = {
-            providerUserId,
+            id,
             name,
             email,
             phone,
@@ -94,7 +94,7 @@ const googleOauthCallback = async (req, res, next) => {
             // 1. Search oauthusers ด้วย provider_user_id และ provider
             const oauthQuery = await client.query(
                 'SELECT user_id FROM oauthusers WHERE provider_user_id = $1 AND provider = $2',
-                [providerUserId, provider]
+                [id, provider]
             );
 
             if (oauthQuery.rows.length > 0) {
@@ -114,7 +114,7 @@ const googleOauthCallback = async (req, res, next) => {
                     await client.query(
                         `INSERT INTO oauthusers (user_id, provider, provider_user_id) 
                  VALUES ($1, $2, $3)`,
-                        [userId, provider, providerUserId]
+                        [userId, provider, id]
                     );
                 } else {
                     // [ไม่พบบันทึกใน users] สร้าง User ใหม่ใน users และสร้าง record ใน oauthusers
@@ -134,7 +134,7 @@ const googleOauthCallback = async (req, res, next) => {
                     await client.query(
                         `INSERT INTO oauthusers (user_id, provider, provider_user_id) 
                  VALUES ($1, $2, $3)`,
-                        [userId, provider, providerUserId]
+                        [userId, provider, id]
                     );
                 }
             }
