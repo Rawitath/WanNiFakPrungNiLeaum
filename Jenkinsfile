@@ -177,7 +177,8 @@ def executeStepWithCheck(Map args) {
             string(credentialsId: 'JWT_SECRET', variable: 'JWT_SECRET'),
             string(credentialsId: 'JWT_EXPIRATION', variable: 'JWT_EXPIRATION'),
             string(credentialsId: 'GOOGLE_CLIENT_ID', variable: 'GOOGLE_CLIENT_ID'),
-            string(credentialsId: 'GOOGLE_CLIENT_SECRET', variable: 'GOOGLE_CLIENT_SECRET')
+            string(credentialsId: 'GOOGLE_CLIENT_SECRET', variable: 'GOOGLE_CLIENT_SECRET'),
+            string(credentialsId: 'OAUTH_REDIRECT_URI', variable: 'OAUTH_REDIRECT_URI')
         ]) {
             exitCode = runShell()
         }
@@ -381,12 +382,15 @@ pipeline {
                                 title: 'Full Stack Run & Healthcheck',
                                 command: """
                                     docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d
+                                    sleep 10
                                     docker run --rm \\
                                         --network ${env.COMPOSE_PROJECT_NAME}_stayforget-network \\
                                         curlimages/curl:latest \\
                                         sh -c '
-                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://frontend:8081/ && \\
-                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://backend:3000/api/docs
+                                            echo "=== Checking Frontend ===" && \\
+                                            curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://frontend:8081/ && \\
+                                            echo "=== Checking Backend ===" && \\
+                                            curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://backend:3000/api/docs
                                         '
                                 """,
                                 useCredentials: true
