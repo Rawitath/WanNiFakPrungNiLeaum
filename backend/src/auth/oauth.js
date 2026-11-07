@@ -64,6 +64,7 @@ const googleOauthCallback = async (req, res, next) => {
         }
 
         // People API จะ return ข้อมูลมาเป็น Array เราจึงใช้ Optional Chaining (?.) ดึงค่าตัวแรกออกมา
+        const id = googleUser.names?.[0]?.metadata?.id || null;
         const name = googleUser.names?.[0]?.displayName || null;
         const email = googleUser.emailAddresses?.[0]?.value || null;
         const phone = googleUser.phoneNumbers?.[0]?.value || null;
@@ -71,6 +72,7 @@ const googleOauthCallback = async (req, res, next) => {
         return res.status(200).json({
             message: 'Login successful',
             user: {
+                id,
                 name,
                 email,
                 phone,
