@@ -67,30 +67,22 @@ describe("Forget Password Flow (Ethereal SMTP)", () => {
 
   // ---- DB fixture setup ----------------------------------------------------
   beforeAll(async () => {
-    // 1. Create an Ethereal test account (free, ephemeral, no real delivery)
-    const account = await nodemailer.createTestAccount();
-
     etherealTransporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: {
-        user: account.user,
-        pass: account.pass,
-      },
-    });
+    jsonTransport: true,
+  });
 
-    // Spy on sendMail to capture sent messages without network round-trips in
-    // the assertions (the preview URL is enough to confirm delivery).
-    const originalSendMail = etherealTransporter.sendMail.bind(etherealTransporter);
-    etherealTransporter.sendMail = async (mailOptions) => {
-      const info = await originalSendMail(mailOptions);
-      sentMails.push({ mailOptions, info });
-      return info;
+  // 2. Mock sendMail ไม่ให้ทำงานจริง และเก็บค่าเข้า sentMails
+  jest.spyOn(etherealTransporter, "sendMail").mockImplementation(async (mailOptions) => {
+    const info = {
+      messageId: `<test-${Date.now()}@example.com>`,
+      response: "250 OK",
     };
+    sentMails.push({ mailOptions, info });
+    return info;
+  });
 
-    // 2. Build the app with the injected transporter
-    app = createApp({ mailerTransporter: etherealTransporter });
+  // 3. Build App
+  app = createApp({ mailerTransporter: etherealTransporter });
 
     // 3. Insert the test user into the database
     const hashedPassword = await makePassword(TEST_USER.password, TEST_USER.username);
@@ -120,6 +112,7 @@ describe("Forget Password Flow (Ethereal SMTP)", () => {
 
   beforeEach(() => {
     sentMails = [];
+    jest.clearAllMocks(); // ล้างประวัติการเรียก spyOn ในแต่ละเคส
   });
 
   // ==========================================================================
@@ -145,10 +138,10 @@ describe("Forget Password Flow (Ethereal SMTP)", () => {
       expect(mailBody).toMatch(/resetToken=/);
 
       // Ethereal preview URL (useful when debugging)
-      console.log(
-        "Ethereal preview (username lookup):",
-        nodemailer.getTestMessageUrl(sentMails[0].info)
-      );
+      // console.log(
+      //   "Ethereal preview (username lookup):",
+      //   nodemailer.getTestMessageUrl(sentMails[0].info)
+      // );
     });
 
     it("returns 200 and sends an e-mail when email matches", async () => {
@@ -162,10 +155,10 @@ describe("Forget Password Flow (Ethereal SMTP)", () => {
       expect(sentMails).toHaveLength(1);
       expect(sentMails[0].mailOptions.to).toBe(TEST_USER.email);
 
-      console.log(
-        "Ethereal preview (email lookup):",
-        nodemailer.getTestMessageUrl(sentMails[0].info)
-      );
+      // console.log(
+      //   "Ethereal preview (email lookup):",
+      //   nodemailer.getTestMessageUrl(sentMails[0].info)
+      // );
     });
 
     it("returns 200 even when username/email does NOT exist (no e-mail sent)", async () => {
