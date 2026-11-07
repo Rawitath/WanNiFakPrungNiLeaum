@@ -293,10 +293,10 @@ app.post('/api/forget/reset', resetPassword);
   app.use('/api', reservationRouter);
   // Mount cancel router
   app.use('/api', cancelRouter);
+  // Mount pets router (customer & staff)
+  app.use('/api', petsRouter);
   // Mount staff reservation router
   app.use('/api', reservStaffRouter);
-  // Mount staff pets router
-  app.use('/api', petsRouter);
   // Mount staff pets detail router
   app.use('/api', petsDetailRouter);
   // Mount call customer router

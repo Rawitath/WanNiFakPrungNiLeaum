@@ -7,12 +7,14 @@ import { pets, formatPet } from './pets.js';
 const router = express.Router();
 
 // Role middleware: Customer attempting to access /api/staff/* returns 403
-router.use((req, res, next) => {
+const staffOnly = (req, res, next) => {
   if (req.user && req.user.role !== 'staff' && req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden' });
   }
   next();
-});
+};
+
+router.use('/staff', staffOnly);
 
 /** GET /staff/reservation */
 router.get('/staff/reservation', async (req, res, next) => {
