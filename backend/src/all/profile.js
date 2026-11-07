@@ -78,7 +78,105 @@ async function updateProfile(req, res, next) {
 }
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/profile:
+ *   get:
+ *     summary: Get user profile
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 username:
+ *                   type: string
+ *                   example: testuser
+ *                 phone:
+ *                   type: string
+ *                   example: "0812345678"
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   example: test@example.com
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized
+ */
 router.get('/profile', getProfile);
+
+/**
+ * @swagger
+ * /api/profile:
+ *   post:
+ *     summary: Update user profile
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - phone
+ *               - email
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: testuser
+ *               phone:
+ *                 type: string
+ *                 example: "0812345678"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: test@example.com
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 username:
+ *                   type: string
+ *                   example: testuser
+ *                 phone:
+ *                   type: string
+ *                   example: "0812345678"
+ *                 email:
+ *                   type: string
+ *                   example: test@example.com
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: username, phone and email are required
+ *       401:
+ *         description: Unauthorized
+ */
 router.post('/profile', updateProfile);
 
 export default router;

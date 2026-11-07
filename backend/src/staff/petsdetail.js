@@ -40,7 +40,95 @@ function upsertPetDetail(req, res) {
 }
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/staff/pets/detail:
+ *   get:
+ *     summary: Get detailed info for all pets (Staff/Admin)
+ *     tags: [Staff Pets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Detailed info for pets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 pets:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/staff/pets/detail', getPetsDetail);
+
+/**
+ * @swagger
+ * /api/staff/pets/detail:
+ *   post:
+ *     summary: Add or update pet detail (Staff/Admin)
+ *     tags: [Staff Pets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - animal
+ *               - detail
+ *             properties:
+ *               animal:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     example: Dog
+ *                   name:
+ *                     type: string
+ *                     example: Buddy
+ *               detail:
+ *                 type: object
+ *                 properties:
+ *                   age:
+ *                     type: number
+ *                     example: 4
+ *                   weight:
+ *                     type: number
+ *                     example: 12
+ *                   health:
+ *                     type: string
+ *                     example: good
+ *     responses:
+ *       200:
+ *         description: Successfully updated or created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Created
+ *                 pet:
+ *                   type: object
+ *       400:
+ *         description: Missing animal or detail in body
+ *       401:
+ *         description: Unauthorized
+ */
 router.post('/staff/pets/detail', upsertPetDetail);
 
 export default router;

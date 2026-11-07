@@ -16,7 +16,39 @@ const staffOnly = (req, res, next) => {
 
 router.use('/staff', staffOnly);
 
-/** GET /staff/reservation */
+/**
+ * @swagger
+ * /api/staff/reservation:
+ *   get:
+ *     summary: Get reservations for staff (all or by id)
+ *     tags: [Staff Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Optional reservation ID
+ *     responses:
+ *       200:
+ *         description: Reservation(s) returned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: array
+ *                   items:
+ *                     type: object
+ *                 - type: object
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Staff/Admin only)
+ *       404:
+ *         description: Reservation not found
+ */
 router.get('/staff/reservation', async (req, res, next) => {
   try {
     const id = req.query.id;
@@ -66,7 +98,73 @@ router.get('/staff/reservation', async (req, res, next) => {
   }
 });
 
-/** PUT /staff/reservation */
+/**
+ * @swagger
+ * /api/staff/reservation:
+ *   put:
+ *     summary: Update reservation details (Staff/Admin only)
+ *     tags: [Staff Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reservationId
+ *             properties:
+ *               reservationId:
+ *                 type: string
+ *                 example: "1"
+ *               customerName:
+ *                 type: string
+ *               customerPhone:
+ *                 type: string
+ *               customerEmail:
+ *                 type: string
+ *               petName:
+ *                 type: string
+ *               petType:
+ *                 type: string
+ *               petBreed:
+ *                 type: string
+ *               petSex:
+ *                 type: string
+ *               petWeight:
+ *                 type: number
+ *               petBirth:
+ *                 type: string
+ *               petCondition:
+ *                 type: string
+ *               petNote:
+ *                 type: string
+ *               checkIn:
+ *                 type: string
+ *               checkOut:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Reservation updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Reservation updated
+ *       400:
+ *         description: Missing reservationId
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Staff/Admin only)
+ */
 router.put('/staff/reservation', async (req, res, next) => {
   try {
     const {
@@ -154,7 +252,54 @@ router.put('/staff/reservation', async (req, res, next) => {
   }
 });
 
-/** PUT /staff/reservation/:reservationId/confirm */
+/**
+ * @swagger
+ * /api/staff/reservation/{reservationId}/confirm:
+ *   put:
+ *     summary: Confirm or reject a reservation (Staff/Admin only)
+ *     tags: [Staff Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reservationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reservation ID to confirm or reject
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - accept
+ *             properties:
+ *               accept:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Status updated (accepted or rejected)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 status:
+ *                   type: string
+ *                   example: accepted
+ *       400:
+ *         description: Missing accept field
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Staff/Admin only)
+ */
 router.put('/staff/reservation/:reservationId/confirm', async (req, res, next) => {
   try {
     const { id, accept } = req.body || {};
@@ -251,7 +396,37 @@ router.put('/staff/reservation/:reservationId/confirm', async (req, res, next) =
   }
 });
 
-/** GET /staff/reservation/:reservationId/callcustomer */
+/**
+ * @swagger
+ * /api/staff/reservation/{reservationId}/callcustomer:
+ *   get:
+ *     summary: Get customer phone number for a reservation (Staff/Admin only)
+ *     tags: [Staff Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reservationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reservation ID
+ *     responses:
+ *       200:
+ *         description: Customer phone number retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 phone:
+ *                   type: string
+ *                   example: "0891234567"
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Staff/Admin only)
+ */
 router.get('/staff/reservation/:reservationId/callcustomer', async (req, res, next) => {
   try {
     const targetId = req.params.reservationId;

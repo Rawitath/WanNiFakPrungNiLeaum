@@ -75,8 +75,22 @@ export function createApp(options = {}) {
           description: 'Development Server',
         },
       ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+          },
+        },
+      },
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
     },
-    apis: ['./src/index.js'], // ระบุไฟล์ที่มีการเขียน JSDoc annotations
+    apis: ['./src/index.js', './src/**/*.js'], // ระบุไฟล์ที่มีการเขียน JSDoc annotations
   };
 
   const swaggerSpec = swaggerJsDoc(swaggerOptions);
@@ -239,6 +253,12 @@ app.post('/api/forget', requestForget);
  *                 message:
  *                   type: string
  *                   example: Invalid or expired reset token
+ */
+app.get('/api/forget/reset', checkForget);
+
+/**
+ * @swagger
+ * /api/forget/reset:
  *   post:
  *     summary: Reset password using a valid reset token
  *     description: >
@@ -276,11 +296,25 @@ app.post('/api/forget', requestForget);
  *                   example: Password reset successfully
  *       400:
  *         description: Missing resetToken or password in request body
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Missing resetToken or password
  *       401:
  *         description: Token is invalid or expired
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid or expired reset token
  */
-app.get('/api/forget/reset', checkForget);
-
 app.post('/api/forget/reset', resetPassword);
 
 /**

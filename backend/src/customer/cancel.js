@@ -29,6 +29,58 @@ async function cancelReservation(req, res, next) {
 }
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/customer/reservation/cancel:
+ *   post:
+ *     summary: Cancel a customer reservation
+ *     tags: [Customer Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: Reservation ID to cancel
+ *                 example: "1"
+ *     responses:
+ *       200:
+ *         description: Reservation cancelled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Reservation canceled
+ *       400:
+ *         description: Missing reservation id
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Reservation id is required
+ *       401:
+ *         description: Unauthorized
+ */
 router.post('/customer/reservation/cancel', cancelReservation);
 
 export default router;

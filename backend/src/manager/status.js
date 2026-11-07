@@ -46,6 +46,59 @@ async function getStatus(req, res, next) {
 }
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/manager/status:
+ *   get:
+ *     summary: Get overall pet status and branch statistics (Manager/Admin only)
+ *     tags: [Manager]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Overview status and branch data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 total:
+ *                   type: integer
+ *                   example: 5
+ *                 byType:
+ *                   type: object
+ *                   example:
+ *                     cat: 2
+ *                     dog: 2
+ *                     bird: 1
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 branches:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pets:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (User is not an admin or manager)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Forbidden
+ */
 router.get('/manager/status', getStatus);
 
 export default router;

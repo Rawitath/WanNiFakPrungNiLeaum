@@ -226,7 +226,150 @@ async function createReservation(req, res, next) {
 }
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/customer/reservation:
+ *   get:
+ *     summary: Get reservations (all or by id)
+ *     tags: [Customer Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Optional reservation ID to fetch a single reservation
+ *     responses:
+ *       200:
+ *         description: Reservation(s) returned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: array
+ *                   items:
+ *                     type: object
+ *                 - type: object
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Reservation not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Reservation not found
+ */
 router.get('/customer/reservation', getReservations);
+
+/**
+ * @swagger
+ * /api/customer/reservation:
+ *   post:
+ *     summary: Create a new customer reservation
+ *     tags: [Customer Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - customerName
+ *               - customerPhone
+ *               - customerEmail
+ *               - petName
+ *               - petType
+ *               - petBreed
+ *               - petSex
+ *               - petWeight
+ *               - petBirth
+ *               - petCondition
+ *               - petNote
+ *               - checkIn
+ *               - checkOut
+ *               - branch
+ *             properties:
+ *               customerName:
+ *                 type: string
+ *                 example: John Doe
+ *               customerPhone:
+ *                 type: string
+ *                 example: "0890123456"
+ *               customerEmail:
+ *                 type: string
+ *                 format: email
+ *                 example: test@example.com
+ *               petName:
+ *                 type: string
+ *                 example: สุทธิชัย
+ *               petType:
+ *                 type: string
+ *                 example: Dog
+ *               petBreed:
+ *                 type: string
+ *                 example: Golden Retriever
+ *               petSex:
+ *                 type: string
+ *                 example: Male
+ *               petWeight:
+ *                 type: number
+ *                 example: 25
+ *               petBirth:
+ *                 type: string
+ *                 format: date
+ *                 example: "2020-05-15"
+ *               petCondition:
+ *                 type: string
+ *                 example: หอบหืด
+ *               petNote:
+ *                 type: string
+ *                 example: อย่าให้คึกเยอะ
+ *               checkIn:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2026-11-10T19:13:00.000Z"
+ *               checkOut:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2026-11-15T20:00:00.000Z"
+ *               branch:
+ *                 type: string
+ *                 example: ลาดกระบัง
+ *     responses:
+ *       201:
+ *         description: Reservation created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reservationId:
+ *                   type: string
+ *                 reservationDate:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: Validation error or invalid dates
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: checkOut must be after checkIn
+ *       401:
+ *         description: Unauthorized
+ */
 router.post('/customer/reservation', createReservation);
 
 export default router;

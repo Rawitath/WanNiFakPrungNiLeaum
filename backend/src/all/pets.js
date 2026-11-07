@@ -174,7 +174,37 @@ async function recordEntry(req, res, next) {
 
 const router = express.Router();
 
-// Customer pets endpoints
+/**
+ * @swagger
+ * /api/customer/pets:
+ *   get:
+ *     summary: Get pets for customer (list or single pet by petId)
+ *     tags: [Pets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: petId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: ID of pet to retrieve
+ *     responses:
+ *       200:
+ *         description: Pet or list of pets retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: array
+ *                   items:
+ *                     type: object
+ *                 - type: object
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Pet not found
+ */
 router.get('/customer/pets', getPetListOrSingle);
 
 // Staff pets endpoints (requires staff or admin role)
@@ -185,8 +215,141 @@ const staffOnly = (req, res, next) => {
   next();
 };
 
+/**
+ * @swagger
+ * /api/staff/pets:
+ *   get:
+ *     summary: Get pets for staff (list or single pet by petId)
+ *     tags: [Staff Pets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: petId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: ID of pet to retrieve
+ *     responses:
+ *       200:
+ *         description: Pet or list of pets retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: array
+ *                   items:
+ *                     type: object
+ *                 - type: object
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Staff/Admin only)
+ *       404:
+ *         description: Pet not found
+ */
 router.get('/staff/pets', staffOnly, getPetListOrSingle);
+
+/**
+ * @swagger
+ * /api/staff/pets/status:
+ *   post:
+ *     summary: Update pet health/care status (Staff/Admin only)
+ *     tags: [Staff Pets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id
+ *               - status
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 example: "1"
+ *               status:
+ *                 type: string
+ *                 enum: ['สบายดี', 'ไม่สบาย']
+ *                 example: 'สบายดี'
+ *     responses:
+ *       200:
+ *         description: Status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 id:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *       400:
+ *         description: Missing fields or invalid status
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Staff/Admin only)
+ */
 router.post('/staff/pets/status', staffOnly, updateStatus);
+
+/**
+ * @swagger
+ * /api/staff/pets/entry:
+ *   post:
+ *     summary: Record check-in or check-out entry timestamp for pet (Staff/Admin only)
+ *     tags: [Staff Pets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id
+ *               - type
+ *               - timestamp
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 example: "1"
+ *               type:
+ *                 type: string
+ *                 enum: ['check-in', 'check-out']
+ *                 example: 'check-in'
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *                 example: '2026-11-10T19:13:00.000Z'
+ *     responses:
+ *       201:
+ *         description: Entry recorded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Entry recorded
+ *       400:
+ *         description: Missing fields or invalid entry type
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Staff/Admin only)
+ */
 router.post('/staff/pets/entry', staffOnly, recordEntry);
 
 export default router;
