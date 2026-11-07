@@ -326,7 +326,7 @@ pipeline {
                                         --network host \\
                                         curlimages/curl:latest \\
                                         curl --fail --retry 5 --retry-delay 3 --retry-connrefused \\
-                                        http://localhost:3000/
+                                        http://localhost:3000/api/docs
                                 """,
                                 useCredentials: true
                             )
@@ -377,7 +377,7 @@ pipeline {
                                         --network host \\
                                         curlimages/curl:latest \\
                                         sh -c '
-                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:3000/ &&
+                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:3000/api/docs &&
                                             curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8081/
                                         '
                                 """,
