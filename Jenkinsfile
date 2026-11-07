@@ -175,7 +175,9 @@ def executeStepWithCheck(Map args) {
             string(credentialsId: 'POSTGRES_PASSWORD', variable: 'POSTGRES_PASSWORD'),
             string(credentialsId: 'PASSWORD_ENDEC_SALT', variable: 'PASSWORD_ENDEC_SALT'),
             string(credentialsId: 'JWT_SECRET', variable: 'JWT_SECRET'),
-            string(credentialsId: 'JWT_EXPIRATION', variable: 'JWT_EXPIRATION')
+            string(credentialsId: 'JWT_EXPIRATION', variable: 'JWT_EXPIRATION'),
+            string(credentialsId: 'GOOGLE_CLIENT_ID', variable: 'GOOGLE_CLIENT_ID'),
+            string(credentialsId: 'GOOGLE_CLIENT_SECRET', variable: 'GOOGLE_CLIENT_SECRET')
         ]) {
             exitCode = runShell()
         }

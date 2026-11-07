@@ -16,6 +16,7 @@ import callCustomerRouter from './auth/callcustomer.js';
 import statusStaffRouter from './auth/statusstaff.js';
 import entryRouter from './auth/entry.js';
 import { createForgetHandlers } from './auth/forget.js';
+import { googleOauth, googleOauthCallback } from './auth/oauth.js';
 
 export function createApp(options = {}) {
   //-----------------------------Auth Middleware---------------------------------
@@ -51,7 +52,7 @@ export function createApp(options = {}) {
 
   // Protect /api routes except public auth endpoints
   app.use('/api', (req, res, next) => {
-    const publicPaths = ['/login', '/register', '/forget', '/docs'];
+    const publicPaths = ['/login', '/register', '/forget', '/docs', '/oauth'];
     if (publicPaths.some(p => req.path.startsWith(p))) {
       return next();
     }
@@ -281,6 +282,96 @@ app.post('/api/forget', requestForget);
 app.get('/api/forget/reset', checkForget);
 
 app.post('/api/forget/reset', resetPassword);
+
+/**
+ * @openapi
+ * /api/oauth/google:
+ *   get:
+ *     summary: Redirects to Google OAuth 2.0 Login Page
+ *     description: Redirects the user to Google's consent screen to initiate OAuth login process.
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       302:
+ *         description: Redirects user to Google OAuth consent page (`https://accounts.google.com/o/oauth2/v2/auth`).
+ */
+app.get('/api/oauth/google', googleOauth);
+
+/**
+ * @openapi
+ * /api/oauth/google/callback:
+ *   get:
+ *     summary: Handles Google OAuth 2.0 Callback
+ *     description: Receives the authorization code from Google, exchanges it for tokens, retrieves user profile, and authenticates the user.
+ *     tags:
+ *       - Authentication
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Authorization code returned by Google OAuth server after user approval.
+ *         example: 4/0AVG7fiq...
+ *     responses:
+ *       200:
+ *         description: Successfully authenticated with Google.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Login successful
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: "109876543210987654321"
+ *                     email:
+ *                       type: string
+ *                       example: user@example.com
+ *                     verified_email:
+ *                       type: boolean
+ *                       example: true
+ *                     name:
+ *                       type: string
+ *                       example: John Doe
+ *                     given_name:
+ *                       type: string
+ *                       example: John
+ *                     family_name:
+ *                       type: string
+ *                       example: Doe
+ *                     picture:
+ *                       type: string
+ *                       example: https://lh3.googleusercontent.com/a/default-user
+ *       400:
+ *         description: Missing authorization code or Google token exchange failed.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Authorization code missing
+ *                 details:
+ *                   type: object
+ *       500:
+ *         description: Internal server error during authentication flow.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error
+ */
+app.get('/api/oauth/google/callback', googleOauthCallback);
 
   //เขียน Endpoint ในนี้นะ
   // Mount profile router
