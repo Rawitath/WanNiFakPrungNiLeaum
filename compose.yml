@@ -45,6 +45,7 @@ services:
     environment:
       OAUTH_REDIRECT_URI: 'http://backend:3000/api/oauth/google/callback'
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB}
@@ -69,6 +70,7 @@ services:
     environment:
       OAUTH_REDIRECT_URI: 'http://backend-test:3000/api/oauth/google/callback'
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB}
@@ -93,6 +95,7 @@ services:
     environment:
       OAUTH_REDIRECT_URI: 'http://backend-dev:3000/api/oauth/google/callback'
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       DB_HOST: db-dev
       DB_PORT: 5432
       DB_NAME: dev
