@@ -1,5 +1,4 @@
 import { checkPassword } from "../utils/password_endec.js";
-import jwt from "jsonwebtoken";
 import db from "../config/db.js";
 import dotenv from 'dotenv'
 import generateJwtToken from "./generatejwttoken.js";
