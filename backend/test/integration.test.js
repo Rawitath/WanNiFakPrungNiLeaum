@@ -120,7 +120,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
       CREATE TABLE IF NOT EXISTS oauthusers (
           id SERIAL PRIMARY KEY,
-          user_id UUID NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
+          userid UUID NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
           provider TEXT NOT NULL, -- เช่น 'google', 'github'
           provider_user_id TEXT NOT NULL, -- ID ที่ Google ส่งมา (googleUser.id)
           created_at TIMESTAMPTZ DEFAULT NOW(),

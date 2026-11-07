@@ -14,7 +14,7 @@ erDiagram
 
     oauthusers{
         serial id PK
-        uuid user_id FK
+        uuid userid FK
         text provider NN U
         text provider_user_id NN U
         timestampz created_at
