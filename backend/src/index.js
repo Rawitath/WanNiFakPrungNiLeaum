@@ -3,18 +3,18 @@ import defaultAuthMiddleware from './auth/authentication.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc'
 import registerCustomer from './auth/register.js';
-import profileRouter from './auth/profile.js';
+import profileRouter from './all/profile.js';
 import login from './auth/login.js';
-import detailRouter from './auth/detail.js';
-import reservationRouter from './auth/reservation.js';
-import cancelRouter from './auth/cancel.js';
-import statusRouter from './auth/status.js';
+import detailRouter from './customer/detail.js';
+import reservationRouter from './customer/reservation.js';
+import cancelRouter from './customer/cancel.js';
+import statusRouter from './manager/status.js';
 import reservStaffRouter from './auth/reservstaff.js';
-import petsRouter from './auth/pets.js';
-import petsDetailRouter from './auth/petsdetail.js';
-import callCustomerRouter from './auth/callcustomer.js';
+import petsRouter from './all/pets.js';
+import petsDetailRouter from './staff/petsdetail.js';
+import callCustomerRouter from './staff/callcustomer.js';
 import statusStaffRouter from './auth/statusstaff.js';
-import entryRouter from './auth/entry.js';
+import entryRouter from './staff/entry.js';
 import { createForgetHandlers } from './auth/forget.js';
 import { googleOauth, googleOauthCallback } from './auth/oauth.js';
 

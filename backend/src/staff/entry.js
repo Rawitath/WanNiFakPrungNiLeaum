@@ -1,5 +1,5 @@
 import express from 'express';
-import { recordEntry } from './pets.js';
+import { recordEntry } from '../all/pets.js';
 
 const router = express.Router();
 
