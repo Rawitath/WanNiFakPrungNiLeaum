@@ -257,6 +257,8 @@ pipeline {
                 stage('backend - test & build') {
                     when {
                         anyOf {
+                            buildingTag()
+                            expression { env.BUILD_NUMBER == '1' }
                             changeset "backend/**"
                             changeset "Jenkinsfile"
                         }
@@ -293,6 +295,8 @@ pipeline {
                         anyOf {
                             changeset "frontend/**"
                             changeset "Jenkinsfile"
+                            buildingTag()
+                            expression { env.BUILD_NUMBER == '1' }
                         }
                     }
                     steps {
@@ -325,10 +329,10 @@ pipeline {
                                 command: """
                                     docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d backend
                                     docker run --rm \\
-                                        --network host \\
+                                        --network ${env.COMPOSE_PROJECT_NAME}_stayforget-network \\
                                         curlimages/curl:latest \\
                                         curl --fail --retry 5 --retry-delay 3 --retry-connrefused \\
-                                        http://localhost:3000/api/docs
+                                        http://backend:3000/api/docs
                                 """,
                                 useCredentials: true
                             )
@@ -379,8 +383,13 @@ pipeline {
                                         --network host \\
                                         curlimages/curl:latest \\
                                         sh -c '
-                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:3000/api/docs &&
                                             curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8081/
+                                        '
+                                    docker run --rm \\
+                                        --network ${env.COMPOSE_PROJECT_NAME}_stayforget-network \\
+                                        curlimages/curl:latest \\
+                                        sh -c '
+                                            curl --fail --retry 5 --retry-delay 3 --retry-connrefused http://backend:3000/api/docs &&
                                         '
                                 """,
                                 useCredentials: true
