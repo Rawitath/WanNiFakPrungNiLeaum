@@ -1,6 +1,6 @@
 import express from 'express';
 import db from '../config/db.js';
-import { reservations } from './reservation.js';
+import { reservations } from '../all/reservation.js';
 
 async function cancelReservation(req, res, next) {
   try {
