@@ -8,8 +8,6 @@ import {
     StyleSheet,
 } from "react-native";
 
-import LogoutNavbar from "../2components/logoutnavbar";
-
 export default function HomePageGuest({ onLogin }) {
     return (
         <View style={styles.container}>
@@ -64,9 +62,6 @@ export default function HomePageGuest({ onLogin }) {
                                     <ellipse cx="95" cy="22" rx="15" ry="15" />
                                 </svg>
                             </View>
-
-                {/* Navbar */}
-                <LogoutNavbar onLogin={onLogin} />
 
                 {/* Logo และชื่อระบบ */}
                 <View style={styles.brandSection}>
@@ -183,6 +178,8 @@ const styles = StyleSheet.create({
     // ส่วนบน
     topSection: {
         flex: 1,
+        paddingTop: 30,
+        // minHeight: 400,
         backgroundColor: "#103357",
     },
 

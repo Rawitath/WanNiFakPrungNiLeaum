@@ -111,47 +111,45 @@ export default function App() {
           />
         </>
       ) : (
-        // หน้าหลัก
-        //  // หน้าแรก Guest
-        // <HomePageGuest
-        //   onLogin={() => setShowLogin(true)}
-        // />
-
-        // หน้าแรก User
-          <>
-            <HomePageUser
-              onProfile={() => setShowProfile(true)}
-              onMyBooking={() => setShowMyBooking(true)}
-              onLogout={() => setShowLogin(true)}
-            />
-          </>
 
         ///หน้าหลัก Staff
-        // <>
-        //   <NavbarUser
-        //     onProfile={() => setShowProfile(true)}
-        //     onMyBooking={() => setShowMyBooking(true)}
-        //     onLogout={() => setShowLogin(true)}
-        //   />
+        <>
+          <NavbarUser
+            onProfile={() => setShowProfile(true)}
+            onMyBooking={() => setShowMyBooking(true)}
+            onLogout={() => setShowLogin(true)}
+          />
 
-        //   {/* Profile Popup */}
-        //   <UserProfile
-        //     visible={showProfile}
-        //     onClose={() => setShowProfile(false)}
-        //     title={profileData.name}
-        //     name={profileData.name}
-        //     phone={profileData.phone}
-        //     email={profileData.email}
-        //   />
+          {/* Profile Popup */}
+          {/* <UserProfile
+            visible={showProfile}
+            onClose={() => setShowProfile(false)}
+            title={profileData.name}
+            name={profileData.name}
+            phone={profileData.phone}
+            email={profileData.email}
+          />
 
-        //   <HomePageStaff
-        //     onViewBooking={(item) => console.log("รายละเอียดคิว", item)}
-        //     onViewPet={(pet) => console.log("รายละเอียดสัตว์เลี้ยง", pet)}
-        //     onCheckIn={(item) => console.log("รับเข้าพัก", item)}
-        //     onCheckOut={(item) => console.log("รับกลับ", item)}
-        //     />
+          <HomePageStaff
+            onViewBooking={(item) => console.log("รายละเอียดคิว", item)}
+            onViewPet={(pet) => console.log("รายละเอียดสัตว์เลี้ยง", pet)}
+            onCheckIn={(item) => console.log("รับเข้าพัก", item)}
+            onCheckOut={(item) => console.log("รับกลับ", item)}
+            /> */}
 
-        // </>
+          {/* หน้าแรก Guest */}
+          {/* <HomePageGuest
+            onLogin={() => setShowLogin(true)}
+          /> */}
+
+          {/* หน้าแรก User */}
+          <HomePageUser
+            onProfile={() => setShowProfile(true)}
+            onMyBooking={() => setShowMyBooking(true)}
+            onLogout={() => setShowLogin(true)}
+          />
+
+        </>
       )}
 
     </View>

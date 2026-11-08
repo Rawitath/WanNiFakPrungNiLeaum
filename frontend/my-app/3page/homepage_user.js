@@ -9,8 +9,6 @@ import {
     ScrollView,
 } from "react-native";
 
-import NavbarUser from "../2components/navbar_user";
-
 export default function HomePageUser({
     onProfile,
     onMyBooking,
@@ -115,13 +113,6 @@ export default function HomePageUser({
                         <ellipse cx="95" cy="22" rx="15" ry="15" />
                     </svg>
                 </View>
-
-                {/* Navbar เปลี่ยนเป็นของ User */}
-                <NavbarUser
-                    onProfile={onProfile}
-                    onMyBooking={onMyBooking}
-                    onLogout={onLogout}
-                />
 
                 {/* Logo และชื่อระบบ: เหมือน Guest */}
                 <View style={styles.brandSection}>
@@ -422,7 +413,8 @@ const styles = StyleSheet.create({
     // ส่วนบน Guest
     topSection: {
         flex: 1,
-        minHeight: 400,
+        paddingTop: 30,
+        minHeight: "25%",
         backgroundColor: "#103357",
     },
 
@@ -499,6 +491,7 @@ const styles = StyleSheet.create({
 
     // ส่วนล่าง Guest
     bottomSection: {
+        paddingTop: 15,
         minHeight: 350,
         backgroundColor: "#FFF0C9",
         position: "relative",
