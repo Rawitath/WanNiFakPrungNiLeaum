@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { useFonts } from "expo-font";
 
 import LogoutNavbar from "./2components/logoutnavbar";
@@ -36,23 +36,61 @@ export default function App() {
     return null;
   }
 
+  // ข้อมูลผู้ใช้
   const profileData = {
     name: "นายคุ๊กกี้ อร่อย",
     phone: "083xxxxxxx",
     email: "cookie@gmail.com",
   };
 
+  // ข้อมูลสัตว์เลี้ยง
+  const petData = {
+    id: "P001",
+    name: "น้องจุ๊ดจุ๊ด",
+    type: "สุนัข",
+    breed: "สายพันธุ์ โกลเด้นรีทรีฟเวอร์",
+    age: "2 ปี 4 เดือน",
+    gender: "ผู้",
+    weight: "2 กิโล",
+    limitation: "แพ้ช็อกโกแลต",
+    checkIn: "29/03/2569",
+    checkOut: "01/04/2569",
+  };
+
+  // ออกจากระบบ
   const handleLogout = () => {
     setCurrentPage("guest");
+
     setShowBooking(false);
     setShowMyBooking(false);
     setShowProfile(false);
+
+    setShowRegister(false);
+    setShowForgotPassword(false);
+  };
+
+  // กลับหน้า User หลังจากส่งข้อมูลการจอง
+  const handleBookingSubmit = (bookingData) => {
+    console.log("ข้อมูลการจอง:", bookingData);
+
+    Alert.alert(
+      "สำเร็จ",
+      "ส่งข้อมูลการจองเรียบร้อยแล้ว",
+      [
+        {
+          text: "ตกลง",
+          onPress: () => {
+            setShowBooking(false);
+          },
+        },
+      ]
+    );
   };
 
   return (
     <View style={styles.container}>
 
-      {/* หน้า Guest */}
+      {/* ================= หน้า Guest ================= */}
       {currentPage === "guest" && (
         <>
           <LogoutNavbar
@@ -69,7 +107,7 @@ export default function App() {
         </>
       )}
 
-      {/* หน้า Login ไม่มี Navbar */}
+      {/* ================= หน้า Login ================= */}
       {currentPage === "login" && (
         showForgotPassword ? (
           <ForgotPassword
@@ -81,7 +119,13 @@ export default function App() {
         ) : showRegister ? (
           <Register
             onBack={() => setShowRegister(false)}
-            onRegister={(username, email, phone, password, confirmPassword) => {
+            onRegister={(
+              username,
+              email,
+              phone,
+              password,
+              confirmPassword
+            ) => {
               console.log("ข้อมูลสมัครสมาชิก:", {
                 username,
                 email,
@@ -95,13 +139,22 @@ export default function App() {
           <Login
             onBack={() => {
               setCurrentPage("guest");
+              setShowRegister(false);
+              setShowForgotPassword(false);
             }}
             onLogin={(username, password) => {
               if (username === "a" && password === "123") {
                 console.log("เข้าสู่ระบบสำเร็จ");
+
                 setCurrentPage("user");
+                setShowBooking(false);
+                setShowMyBooking(false);
+                setShowProfile(false);
               } else {
-                alert("ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
+                Alert.alert(
+                  "เข้าสู่ระบบไม่สำเร็จ",
+                  "ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง"
+                );
               }
             }}
             onForgotPassword={() => setShowForgotPassword(true)}
@@ -111,33 +164,54 @@ export default function App() {
         )
       )}
 
-      {/* หน้า User */}
+      {/* ================= หน้า User ================= */}
       {currentPage === "user" && (
         <>
-          <NavbarUser
-            onProfile={() => setShowProfile(true)}
-            onMyBooking={() => setShowMyBooking(true)}
-            onLogout={handleLogout}
-          />
+          {/* แสดง Navbar เมื่อไม่ได้อยู่หน้า Booking */}
+          {!showBooking && (
+            <NavbarUser
+              onProfile={() => setShowProfile(true)}
+              onMyBooking={() => setShowMyBooking(true)}
+              onLogout={handleLogout}
+            />
+          )}
 
-          <UserProfile
-            visible={showProfile}
-            onClose={() => setShowProfile(false)}
-            title={profileData.name}
-            name={profileData.name}
-            phone={profileData.phone}
-            email={profileData.email}
-          />
+          {/* หน้าโปรไฟล์ */}
+          {!showBooking && (
+            <UserProfile
+              visible={showProfile}
+              onClose={() => setShowProfile(false)}
+              title={profileData.name}
+              name={profileData.name}
+              phone={profileData.phone}
+              email={profileData.email}
+            />
+          )}
 
-          {showMyBooking ? (
+          {/* หน้า Booking */}
+          {showBooking ? (
+            <BookingUser
+              onBack={() => setShowBooking(false)}
+              onSubmit={handleBookingSubmit}
+            />
+          ) : showMyBooking ? (
+
+            /* หน้าประวัติการจอง */
             <MyBookingUser
               visible={showMyBooking}
               onBack={() => setShowMyBooking(false)}
             />
+
           ) : (
+
+            /* หน้า HomePageUser */
             <HomePageUser
-              visible={showBooking}
-              onBooking={() => setShowBooking(true)}
+              visible={true}
+              onBooking={() => {
+                setShowBooking(true);
+                setShowMyBooking(false);
+                setShowProfile(false);
+              }}
             />
           )}
         </>
