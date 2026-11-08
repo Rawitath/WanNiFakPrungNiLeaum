@@ -23,6 +23,8 @@ export default function App() {
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
+  const [showBooking, setShowBooking] = useState(false);
+
   const [showMyBooking, setShowMyBooking] = useState(false);
 
   // ควบคุม Popup โปรไฟล์
@@ -90,7 +92,13 @@ export default function App() {
         <Login
           onBack={() => setShowLogin(false)}
           onLogin={(username, password) => {
-            console.log("เข้าสู่ระบบ", username);
+            if (username === "a" && password === "123") {
+              console.log("เข้าสู่ระบบสำเร็จ");
+
+              setShowLogin(false);
+            } else {
+              alert("ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
+            }
           }}
           onForgotPassword={() => setShowForgotPassword(true)}
           onGoogleLogin={() => console.log("Google Login")}
@@ -144,9 +152,8 @@ export default function App() {
 
           {/* หน้าแรก User */}
           <HomePageUser
-            onProfile={() => setShowProfile(true)}
-            onMyBooking={() => setShowMyBooking(true)}
-            onLogout={() => setShowLogin(true)}
+            visible={showBooking}
+            onBooking={() => setShowBooking(true)}
           />
 
         </>

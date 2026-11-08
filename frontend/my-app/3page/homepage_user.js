@@ -10,10 +10,7 @@ import {
 } from "react-native";
 
 export default function HomePageUser({
-    onProfile,
-    onMyBooking,
-    onLogout,
-    onLogin,
+    onBooking,
 }) {
     // ข้อมูลสัตว์เลี้ยงตัวอย่าง
     const pets = [
@@ -201,7 +198,7 @@ export default function HomePageUser({
                     {/* ปุ่มเริ่มงาน */}
                     <TouchableOpacity
                         style={styles.startButton}
-                        onPress={onLogin}
+                        onPress={onBooking}
                         activeOpacity={0.8}
                     >
                         <Text style={styles.startButtonText}>
