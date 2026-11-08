@@ -19,116 +19,107 @@ import HomePageGuest from "./3page/homepage_guest";
 import HomePageUser from "./3page/homepage_user";
 
 export default function App() {
-  const [showLogin, setShowLogin] = useState(false);
+  const [currentPage, setCurrentPage] = useState("guest");
+
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const [showBooking, setShowBooking] = useState(false);
-
   const [showMyBooking, setShowMyBooking] = useState(false);
-
-  // ควบคุม Popup โปรไฟล์
   const [showProfile, setShowProfile] = useState(false);
 
-    //font
   const [fontsLoaded] = useFonts({
     Itim: require("./1assets/Itim-Regular.ttf"),
   });
 
   if (!fontsLoaded) {
-  return null;
+    return null;
   }
 
-  // ข้อมูลโปรไฟล์ จัดการจาก App.js
   const profileData = {
     name: "นายคุ๊กกี้ อร่อย",
     phone: "083xxxxxxx",
     email: "cookie@gmail.com",
   };
 
-  // ข้อมูลสัตว์เลี้ยงทั้งหมดจัดการที่นี่
-  const petData = {
-    id: "P001",
-    name: "น้องจุ๊ดจุ๊ด",
-    type: "สุนัข",
-    breed: "สายพันธุ์ โกลเด้นรีทรีฟเวอร์",
-    age: "2 ปี 4 เดือน",
-    gender: "ผู้",
-    weight: "2 กิโล",
-    limitation: "แพ้ช็อกโกแลต",
-    checkIn: "29/03/2569",
-    checkOut: "01/04/2569",
+  const handleLogout = () => {
+    setCurrentPage("guest");
+    setShowBooking(false);
+    setShowMyBooking(false);
+    setShowProfile(false);
   };
 
   return (
     <View style={styles.container}>
 
-      {showForgotPassword ? (
-        // หน้า Forgot Password
-        <ForgotPassword
-          onBack={() => setShowForgotPassword(false)}
-          onSubmit={(email) => {
-            console.log("อีเมลสำหรับรีเซ็ตรหัสผ่าน:", email);
-          }}
-        />
-
-      ) : showRegister ? (
-        // หน้า Register
-        <Register
-          onBack={() => setShowRegister(false)}
-          onRegister={(username, email, phone, password, confirmPassword) => {
-            console.log("ข้อมูลสมัครสมาชิก:", {
-              username,
-              email,
-              phone,
-              password,
-              confirmPassword,
-            });
-          }}
-        />
-
-      ) : showLogin ? (
-        // หน้า Login
-        <Login
-          onBack={() => setShowLogin(false)}
-          onLogin={(username, password) => {
-            if (username === "a" && password === "123") {
-              console.log("เข้าสู่ระบบสำเร็จ");
-
-              setShowLogin(false);
-            } else {
-              alert("ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
-            }
-          }}
-          onForgotPassword={() => setShowForgotPassword(true)}
-          onGoogleLogin={() => console.log("Google Login")}
-          onRegister={() => setShowRegister(true)}
-        />
-
-      ) : showMyBooking ? (
+      {/* หน้า Guest */}
+      {currentPage === "guest" && (
         <>
-          <NavbarUser
-            onProfile={() => setShowProfile(true)}
-            onMyBooking={() => setShowMyBooking(true)}
-            onLogout={() => setShowLogin(true)}
+          <LogoutNavbar
+            onLogin={() => {
+              setCurrentPage("login");
+            }}
           />
 
-          <MyBookingUser 
-            visible={showMyBooking}
-            onBack={() => setShowMyBooking(false)}
+          <HomePageGuest
+            onLogin={() => {
+              setCurrentPage("login");
+            }}
           />
         </>
-      ) : (
+      )}
 
-        ///หน้าหลัก Staff
+      {/* หน้า Login ไม่มี Navbar */}
+      {currentPage === "login" && (
+        showForgotPassword ? (
+          <ForgotPassword
+            onBack={() => setShowForgotPassword(false)}
+            onSubmit={(email) => {
+              console.log("อีเมลสำหรับรีเซ็ตรหัสผ่าน:", email);
+            }}
+          />
+        ) : showRegister ? (
+          <Register
+            onBack={() => setShowRegister(false)}
+            onRegister={(username, email, phone, password, confirmPassword) => {
+              console.log("ข้อมูลสมัครสมาชิก:", {
+                username,
+                email,
+                phone,
+                password,
+                confirmPassword,
+              });
+            }}
+          />
+        ) : (
+          <Login
+            onBack={() => {
+              setCurrentPage("guest");
+            }}
+            onLogin={(username, password) => {
+              if (username === "a" && password === "123") {
+                console.log("เข้าสู่ระบบสำเร็จ");
+                setCurrentPage("user");
+              } else {
+                alert("ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
+              }
+            }}
+            onForgotPassword={() => setShowForgotPassword(true)}
+            onGoogleLogin={() => console.log("Google Login")}
+            onRegister={() => setShowRegister(true)}
+          />
+        )
+      )}
+
+      {/* หน้า User */}
+      {currentPage === "user" && (
         <>
           <NavbarUser
             onProfile={() => setShowProfile(true)}
             onMyBooking={() => setShowMyBooking(true)}
-            onLogout={() => setShowLogin(true)}
+            onLogout={handleLogout}
           />
 
-          {/* Profile Popup */}
           <UserProfile
             visible={showProfile}
             onClose={() => setShowProfile(false)}
@@ -138,24 +129,17 @@ export default function App() {
             email={profileData.email}
           />
 
-          {/* <HomePageStaff
-            onViewBooking={(item) => console.log("รายละเอียดคิว", item)}
-            onViewPet={(pet) => console.log("รายละเอียดสัตว์เลี้ยง", pet)}
-            onCheckIn={(item) => console.log("รับเข้าพัก", item)}
-            onCheckOut={(item) => console.log("รับกลับ", item)}
-            /> */}
-
-          {/* หน้าแรก Guest */}
-          {/* <HomePageGuest
-            onLogin={() => setShowLogin(true)}
-          /> */}
-
-          {/* หน้าแรก User */}
-          <HomePageUser
-            visible={showBooking}
-            onBooking={() => setShowBooking(true)}
-          />
-
+          {showMyBooking ? (
+            <MyBookingUser
+              visible={showMyBooking}
+              onBack={() => setShowMyBooking(false)}
+            />
+          ) : (
+            <HomePageUser
+              visible={showBooking}
+              onBooking={() => setShowBooking(true)}
+            />
+          )}
         </>
       )}
 

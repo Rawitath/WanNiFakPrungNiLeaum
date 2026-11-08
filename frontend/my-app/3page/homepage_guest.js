@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     },
 
     startButtonText: {
-        color: "#f7dfbf",
+        color: "#fdfdfd",
         fontSize: 18,
         fontWeight: "regular",
         fontFamily: "Itim",

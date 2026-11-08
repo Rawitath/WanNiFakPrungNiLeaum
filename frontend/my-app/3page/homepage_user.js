@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     },
 
     startButtonText: {
-        color: "#f7dfbf",
+        color: "#fefefe",
         fontSize: 18,
         fontWeight: "regular",
         fontFamily: "Itim",
