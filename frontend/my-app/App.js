@@ -172,8 +172,6 @@ export default function App() {
           <NavbarUser
             onProfile={() => {
               setShowProfile(true);
-              setShowBooking(false);
-              setShowMyBooking(false);
             }}
             onMyBooking={() => {
               setShowMyBooking(true);
