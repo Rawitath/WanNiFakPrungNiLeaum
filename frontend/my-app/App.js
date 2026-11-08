@@ -121,7 +121,7 @@ export default function App() {
           />
 
           {/* Profile Popup */}
-          {/* <UserProfile
+          <UserProfile
             visible={showProfile}
             onClose={() => setShowProfile(false)}
             title={profileData.name}
@@ -130,7 +130,7 @@ export default function App() {
             email={profileData.email}
           />
 
-          <HomePageStaff
+          {/* <HomePageStaff
             onViewBooking={(item) => console.log("รายละเอียดคิว", item)}
             onViewPet={(pet) => console.log("รายละเอียดสัตว์เลี้ยง", pet)}
             onCheckIn={(item) => console.log("รับเข้าพัก", item)}
