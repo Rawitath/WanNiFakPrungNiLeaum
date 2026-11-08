@@ -166,18 +166,26 @@ export default function App() {
 
       {/* ================= หน้า User ================= */}
       {currentPage === "user" && (
-        <>
-          {/* แสดง Navbar เมื่อไม่ได้อยู่หน้า Booking */}
-          {!showBooking && (
-            <NavbarUser
-              onProfile={() => setShowProfile(true)}
-              onMyBooking={() => setShowMyBooking(true)}
-              onLogout={handleLogout}
-            />
-          )}
+        <View style={styles.userContainer}>
 
-          {/* หน้าโปรไฟล์ */}
-          {!showBooking && (
+          {/* Navbar อยู่ด้านบนตลอด */}
+          <NavbarUser
+            onProfile={() => {
+              setShowProfile(true);
+              setShowBooking(false);
+              setShowMyBooking(false);
+            }}
+            onMyBooking={() => {
+              setShowMyBooking(true);
+              setShowBooking(false);
+              setShowProfile(false);
+            }}
+            onLogout={handleLogout}
+          />
+
+          {/* พื้นที่เนื้อหาด้านล่าง Navbar */}
+          <View style={styles.pageContent}>
+
             <UserProfile
               visible={showProfile}
               onClose={() => setShowProfile(false)}
@@ -186,35 +194,30 @@ export default function App() {
               phone={profileData.phone}
               email={profileData.email}
             />
-          )}
 
-          {/* หน้า Booking */}
-          {showBooking ? (
-            <BookingUser
-              onBack={() => setShowBooking(false)}
-              onSubmit={handleBookingSubmit}
-            />
-          ) : showMyBooking ? (
+            {showBooking ? (
+              <BookingUser
+                onBack={() => setShowBooking(false)}
+                onSubmit={handleBookingSubmit}
+              />
+            ) : showMyBooking ? (
+              <MyBookingUser
+                visible={showMyBooking}
+                onBack={() => setShowMyBooking(false)}
+              />
+            ) : (
+              <HomePageUser
+                visible={true}
+                onBooking={() => {
+                  setShowBooking(true);
+                  setShowMyBooking(false);
+                  setShowProfile(false);
+                }}
+              />
+            )}
 
-            /* หน้าประวัติการจอง */
-            <MyBookingUser
-              visible={showMyBooking}
-              onBack={() => setShowMyBooking(false)}
-            />
-
-          ) : (
-
-            /* หน้า HomePageUser */
-            <HomePageUser
-              visible={true}
-              onBooking={() => {
-                setShowBooking(true);
-                setShowMyBooking(false);
-                setShowProfile(false);
-              }}
-            />
-          )}
-        </>
+          </View>
+        </View>
       )}
 
     </View>
@@ -225,5 +228,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1E1E1E",
+  },
+
+  userContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+
+  pageContent: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
   },
 });
