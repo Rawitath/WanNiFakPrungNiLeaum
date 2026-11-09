@@ -38,5 +38,5 @@ graph LR
     Manager --- UC11
 
     %% Include Relationship
-    UC2 -. "<<include>>" .-> UC1
+    UC2 -. "<< include >>" .-> UC1
 ```
