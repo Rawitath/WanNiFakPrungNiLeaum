@@ -249,7 +249,7 @@ export default function HomePageStaff({
                   }
                 >
                   <Text style={styles.detailButtonText}>
-                    เลื่อนดู
+                    ยกเลิกคิว
                   </Text>
                 </TouchableOpacity>
 
@@ -312,23 +312,12 @@ export default function HomePageStaff({
               สัตว์ที่รับฝาก
             </Text>
 
-            <TouchableOpacity
-              onPress={() => onViewPet && onViewPet()}
-            >
-              <Text style={styles.viewAllText}>
-                ดูทั้งหมด
-              </Text>
-            </TouchableOpacity>
           </View>
 
           {/* TABLE HEAD */}
           <View style={styles.tableRow}>
             <Text style={[styles.tableHeading, styles.petNameCol]}>
               สัตว์เลี้ยง
-            </Text>
-
-            <Text style={[styles.tableHeading, styles.roomCol]}>
-              ห้อง
             </Text>
 
             <Text style={[styles.tableHeading, styles.ownerCol]}>
@@ -350,10 +339,6 @@ export default function HomePageStaff({
 
               <Text style={[styles.tableText, styles.petNameCol]}>
                 {pet.name}
-              </Text>
-
-              <Text style={[styles.tableText, styles.roomCol]}>
-                {pet.room}
               </Text>
 
               <Text style={[styles.tableText, styles.ownerCol]}>
@@ -393,7 +378,7 @@ export default function HomePageStaff({
                   onPress={() => onViewBooking && onViewBooking(pet)}
                 >
                   <Text style={styles.tableButtonText}>
-                    ดูรายละเอียดห้อง
+                    ดูรายละเอียดเจ้าของ
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -710,10 +695,6 @@ const styles = StyleSheet.create({
 
   petNameCol: {
     flex: 1.5,
-  },
-
-  roomCol: {
-    flex: 0.7,
   },
 
   ownerCol: {
