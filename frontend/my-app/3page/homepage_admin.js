@@ -7,8 +7,14 @@ import {
   ScrollView,
   TouchableOpacity,
   useWindowDimensions,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
 
+// ==============================
+// BRANCH DATA
+// ==============================
 const branches = [
   {
     name: "สาขาลาดกระบัง",
@@ -64,6 +70,9 @@ const animalSummary = [
   { name: "หนู", count: 35 },
 ];
 
+// ==============================
+// PAW PRINT
+// ==============================
 function PawPrint({ style }) {
   return (
     <View style={[styles.paw, style]}>
@@ -76,11 +85,15 @@ function PawPrint({ style }) {
   );
 }
 
+// ==============================
+// STATUS BAR
+// ==============================
 function StatusBar({ item }) {
   return (
     <View style={styles.statusItem}>
       <View style={styles.statusTop}>
         <Text style={styles.statusLabel}>{item.label}</Text>
+
         <Text style={styles.statusCount}>
           {item.count.toLocaleString()} ตัว
         </Text>
@@ -98,43 +111,199 @@ function StatusBar({ item }) {
   );
 }
 
-export default function HomepageAdmin({ onBack }) {
+// ==============================
+// HOMEPAGE ADMIN
+// ==============================
+export default function HomepageAdmin({
+  onBack,
+  onCreateStaff,
+}) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
 
   const [selectedBranch, setSelectedBranch] = useState("ทุกสาขา");
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const branchOptions = ["ทุกสาขา", ...branches.map((b) => b.name)];
+  // CREATE STAFF MODAL
+  const [showCreateStaff, setShowCreateStaff] = useState(false);
+
+  const [staffForm, setStaffForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const branchOptions = [
+    "ทุกสาขา",
+    ...branches.map((b) => b.name),
+  ];
 
   const displayedBranches =
     selectedBranch === "ทุกสาขา"
       ? branches
       : branches.filter((b) => b.name === selectedBranch);
 
+  // ==============================
+  // OPEN CREATE STAFF
+  // ==============================
+  const openCreateStaff = () => {
+    setStaffForm({
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setShowCreateStaff(true);
+  };
+
+  // ==============================
+  // CLOSE CREATE STAFF
+  // ==============================
+  const closeCreateStaff = () => {
+    setShowCreateStaff(false);
+
+    setStaffForm({
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  // ==============================
+  // UPDATE FORM
+  // ==============================
+  const updateStaffForm = (field, value) => {
+    setStaffForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // ==============================
+  // CREATE STAFF ACCOUNT
+  // ==============================
+  const handleCreateStaff = async () => {
+    const {
+      username,
+      email,
+      password,
+      confirmPassword,
+    } = staffForm;
+
+    if (
+      !username.trim() ||
+      !email.trim() ||
+      !password ||
+      !confirmPassword
+    ) {
+      Alert.alert(
+        "แจ้งเตือน",
+        "กรุณากรอกข้อมูลให้ครบทุกช่อง"
+      );
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert(
+        "แจ้งเตือน",
+        "กรุณากรอก Email ให้ถูกต้อง"
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert(
+        "แจ้งเตือน",
+        "Password ต้องมีอย่างน้อย 6 ตัวอักษร"
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert(
+        "แจ้งเตือน",
+        "Password และ Confirm Password ไม่ตรงกัน"
+      );
+      return;
+    }
+
+    if (typeof onCreateStaff !== "function") {
+      Alert.alert(
+        "แจ้งเตือน",
+        "ยังไม่ได้เชื่อมต่อระบบสร้างบัญชีพนักงาน"
+      );
+      return;
+    }
+
+    try {
+      const result = await onCreateStaff({
+        username: username.trim(),
+        email: email.trim(),
+        password,
+        role: "staff",
+      });
+
+      if (result === false) {
+        return;
+      }
+
+      closeCreateStaff();
+
+      Alert.alert(
+        "สำเร็จ",
+        "สร้างบัญชีพนักงานเรียบร้อยแล้ว"
+      );
+    } catch (error) {
+      Alert.alert(
+        "เกิดข้อผิดพลาด",
+        error?.message || "ไม่สามารถสร้างบัญชีพนักงานได้"
+      );
+    }
+  };
+
+  // ==============================
+  // RENDER
+  // ==============================
   return (
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-
         <View style={styles.content}>
-          {/* Header */}
+
+          {/* HEADER */}
           <View style={styles.header}>
             <View style={styles.headerText}>
               <Text style={styles.title}>
                 ยินดีต้อนรับสู่ระบบจัดการเว็บรับฝากสัตว์เลี้ยง
               </Text>
+
               <Text style={styles.subtitle}>
                 ดูภาพรวมสถานะสัตว์เลี้ยงและข้อมูลทุกสาขาได้ที่นี่
               </Text>
             </View>
 
+            {/* BRANCH DROPDOWN */}
             <View style={styles.dropdownContainer}>
               <TouchableOpacity
                 style={styles.dropdownButton}
-                onPress={() => setShowDropdown(!showDropdown)}
+                onPress={() =>
+                  setShowDropdown(!showDropdown)
+                }
                 activeOpacity={0.8}
               >
                 <Text style={styles.dropdownText}>
@@ -161,22 +330,35 @@ export default function HomepageAdmin({ onBack }) {
                 </View>
               )}
             </View>
+
+            {/* CREATE STAFF BUTTON */}
+            <View style={styles.CreateStaff}>
+              <TouchableOpacity
+                style={styles.CreateStaffButton}
+                onPress={openCreateStaff}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.CreateStaffText}>
+                  + เพิ่มพนักงาน
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.headerLine} />
 
-          {/* Decorative paws */}
+          {/* PAW DECORATIONS */}
           <PawPrint style={styles.pawLeft} />
           <PawPrint style={styles.pawRight} />
 
-          {/* Main content */}
+          {/* MAIN CONTENT */}
           <View
             style={[
               styles.mainContent,
               isMobile && styles.mainContentMobile,
             ]}
           >
-            {/* Left: Branch information */}
+            {/* BRANCH INFORMATION */}
             <View
               style={[
                 styles.branchCard,
@@ -200,14 +382,16 @@ export default function HomepageAdmin({ onBack }) {
                     </Text>
 
                     <View style={styles.animalList}>
-                      {branch.animals.map((animal, animalIndex) => (
-                        <Text
-                          key={animalIndex}
-                          style={styles.animalText}
-                        >
-                          {animal.type}  {animal.count} ตัว
-                        </Text>
-                      ))}
+                      {branch.animals.map(
+                        (animal, animalIndex) => (
+                          <Text
+                            key={animalIndex}
+                            style={styles.animalText}
+                          >
+                            {animal.type} {animal.count} ตัว
+                          </Text>
+                        )
+                      )}
                     </View>
                   </View>
 
@@ -220,14 +404,14 @@ export default function HomepageAdmin({ onBack }) {
               ))}
             </View>
 
-            {/* Right: Dashboard */}
+            {/* RIGHT DASHBOARD */}
             <View
               style={[
                 styles.rightColumn,
                 isMobile && styles.rightColumnMobile,
               ]}
             >
-              {/* Animal summary */}
+              {/* ANIMAL SUMMARY */}
               <View style={styles.summaryCard}>
                 <Text style={styles.summaryTitle}>
                   ชนิดสัตว์เลี้ยง (รวมทุกสาขา)
@@ -237,7 +421,9 @@ export default function HomepageAdmin({ onBack }) {
 
                 <View style={styles.summaryContent}>
                   <View style={styles.totalNumberContainer}>
-                    <Text style={styles.totalNumber}>800 ตัว</Text>
+                    <Text style={styles.totalNumber}>
+                      800 ตัว
+                    </Text>
                   </View>
 
                   <View style={styles.animalSummaryList}>
@@ -253,7 +439,7 @@ export default function HomepageAdmin({ onBack }) {
                 </View>
               </View>
 
-              {/* Overall status */}
+              {/* OVERALL STATUS */}
               <View style={styles.statusCard}>
                 <Text style={styles.statusTitle}>
                   สถานะสัตว์เลี้ยงโดยรวม
@@ -271,10 +457,161 @@ export default function HomepageAdmin({ onBack }) {
           </View>
         </View>
       </ScrollView>
+
+      {/* ==================================
+          CREATE STAFF MODAL
+      ================================== */}
+      <Modal
+        visible={showCreateStaff}
+        transparent
+        animationType="fade"
+        onRequestClose={closeCreateStaff}
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+
+            {/* MODAL HEADER */}
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>
+                  สร้างบัญชีพนักงาน
+                </Text>
+
+                <Text style={styles.modalSubtitle}>
+                  กรอกข้อมูลเพื่อเพิ่มพนักงานเข้าสู่ระบบ
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={closeCreateStaff}
+              >
+                <Text style={styles.closeButtonText}>
+                  ✕
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalDivider} />
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* USERNAME */}
+              <Text style={styles.inputLabel}>
+                Username
+              </Text>
+
+              <TextInput
+                style={styles.modalInput}
+                placeholder="กรอก Username"
+                placeholderTextColor="#A0A0A0"
+                value={staffForm.username}
+                onChangeText={(value) =>
+                  updateStaffForm("username", value)
+                }
+                autoCapitalize="none"
+              />
+
+              {/* EMAIL */}
+              <Text style={styles.inputLabel}>
+                Email
+              </Text>
+
+              <TextInput
+                style={styles.modalInput}
+                placeholder="กรอก Email"
+                placeholderTextColor="#A0A0A0"
+                value={staffForm.email}
+                onChangeText={(value) =>
+                  updateStaffForm("email", value)
+                }
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              {/* PASSWORD */}
+              <Text style={styles.inputLabel}>
+                Password
+              </Text>
+
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="กรอก Password"
+                  placeholderTextColor="#A0A0A0"
+                  value={staffForm.password}
+                  onChangeText={(value) =>
+                    updateStaffForm("password", value)
+                  }
+                  secureTextEntry={!showPassword}
+                />
+
+                <TouchableOpacity
+                  onPress={() =>
+                    setShowPassword(!showPassword)
+                  }
+                >
+                  <Text style={styles.showPasswordText}>
+                    {showPassword ? "ซ่อน" : "แสดง"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* CONFIRM PASSWORD */}
+              <Text style={styles.inputLabel}>
+                Confirm Password
+              </Text>
+
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="ยืนยัน Password"
+                  placeholderTextColor="#A0A0A0"
+                  value={staffForm.confirmPassword}
+                  onChangeText={(value) =>
+                    updateStaffForm("confirmPassword", value)
+                  }
+                  secureTextEntry={!showConfirmPassword}
+                />
+
+                <TouchableOpacity
+                  onPress={() =>
+                    setShowConfirmPassword(!showConfirmPassword)
+                  }
+                >
+                  <Text style={styles.showPasswordText}>
+                    {showConfirmPassword ? "ซ่อน" : "แสดง"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* BUTTONS */}
+              <View style={styles.modalButtons}>
+
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleCreateStaff}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.submitButtonText}>
+                    สร้างบัญชี
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
+// ==================================
+// STYLES
+// ==================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -290,17 +627,17 @@ const styles = StyleSheet.create({
     width: "86%",
     maxWidth: 1100,
     alignSelf: "center",
-    marginTop: 42,
+    marginTop: 72,
     position: "relative",
   },
 
+  // HEADER
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 8,
     paddingBottom: 8,
-
     position: "relative",
     zIndex: 100,
     elevation: 100,
@@ -323,16 +660,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
+  // DROPDOWN
   dropdownContainer: {
     position: "relative",
-    zIndex: 999,
-    elevation: 999,
+    zIndex: 9999,
+    elevation: 9999,
   },
 
   dropdownButton: {
     backgroundColor: "#FFBD00",
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 10,
   },
 
@@ -349,7 +687,6 @@ const styles = StyleSheet.create({
     width: 130,
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
-
     elevation: 20,
     shadowColor: "#000",
     shadowOpacity: 0.2,
@@ -358,8 +695,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 3,
     },
-
-    zIndex: 999,
+    zIndex: 9999,
   },
 
   dropdownOption: {
@@ -374,6 +710,27 @@ const styles = StyleSheet.create({
     color: "#222222",
   },
 
+  // CREATE STAFF BUTTON
+  CreateStaff: {
+    position: "relative",
+    marginLeft: 12,
+    zIndex: 999,
+    elevation: 999,
+  },
+
+  CreateStaffButton: {
+    backgroundColor: "#FFBD00",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+
+  CreateStaffText: {
+    color: "#111111",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
   headerLine: {
     height: 1,
     backgroundColor: "#555555",
@@ -381,6 +738,7 @@ const styles = StyleSheet.create({
     marginBottom: 26,
   },
 
+  // MAIN CONTENT
   mainContent: {
     flexDirection: "row",
     alignItems: "stretch",
@@ -391,7 +749,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
 
-  // Branch card
+  // BRANCH CARD
   branchCard: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -403,7 +761,10 @@ const styles = StyleSheet.create({
     shadowColor: "#000000",
     shadowOpacity: 0.16,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
 
   branchCardMobile: {
@@ -471,7 +832,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  // Right column
+  // RIGHT COLUMN
   rightColumn: {
     flex: 1.05,
     gap: 10,
@@ -481,6 +842,7 @@ const styles = StyleSheet.create({
     flex: 0,
   },
 
+  // SUMMARY CARD
   summaryCard: {
     backgroundColor: "#0D2C46",
     borderRadius: 10,
@@ -491,7 +853,10 @@ const styles = StyleSheet.create({
     shadowColor: "#000000",
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
 
   summaryTitle: {
@@ -537,7 +902,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 
-  // Status card
+  // STATUS CARD
   statusCard: {
     backgroundColor: "#0D2C46",
     borderRadius: 10,
@@ -548,7 +913,10 @@ const styles = StyleSheet.create({
     shadowColor: "#000000",
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
 
   statusTitle: {
@@ -598,7 +966,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
 
-  // Paw decorations
+  // PAW DECORATIONS
   paw: {
     width: 35,
     height: 35,
@@ -665,5 +1033,128 @@ const styles = StyleSheet.create({
     right: -42,
     top: -30,
     transform: [{ scale: 1.1 }],
+  },
+
+  // ==================================
+  // CREATE STAFF MODAL
+  // ==================================
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  modalContainer: {
+    width: "100%",
+    maxWidth: 460,
+    maxHeight: "90%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 25,
+    elevation: 15,
+    shadowColor: "#000000",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+  },
+
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#102F4B",
+  },
+
+  modalSubtitle: {
+    fontSize: 12,
+    color: "#888888",
+    marginTop: 5,
+  },
+
+  closeButton: {
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  closeButtonText: {
+    fontSize: 20,
+    color: "#777777",
+  },
+
+  modalDivider: {
+    height: 1,
+    backgroundColor: "#DDDDDD",
+    marginVertical: 18,
+  },
+
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#17344D",
+    marginBottom: 7,
+    marginTop: 12,
+  },
+
+  modalInput: {
+    height: 43,
+    borderWidth: 1,
+    borderColor: "#D9E0E6",
+    borderRadius: 7,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    color: "#222222",
+    backgroundColor: "#FFFFFF",
+  },
+
+  passwordContainer: {
+    height: 43,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D9E0E6",
+    borderRadius: 7,
+    paddingHorizontal: 12,
+  },
+
+  passwordInput: {
+    flex: 1,
+    height: "100%",
+    fontSize: 13,
+    color: "#222222",
+  },
+
+  showPasswordText: {
+    color: "#216AA8",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: 25,
+    marginBottom: 5,
+  },
+
+  submitButton: {
+    backgroundColor: "#216AA8",
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: 7,
+  },
+
+  submitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "bold",
   },
 });
