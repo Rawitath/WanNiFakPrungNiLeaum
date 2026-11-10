@@ -17,7 +17,7 @@ import statusStaffRouter from './all/statusstaff.js';
 import entryRouter from './staff/entry.js';
 import { createForgetHandlers } from './auth/forget.js';
 import { googleOauth, googleOauthCallback } from './auth/oauth.js';
-import { registerStaff, adminCheck } from './auth/registerStaff.js';
+import { registerStaff, updateStaff, adminCheck } from './auth/registerStaff.js';
 
 export function createApp(options = {}) {
   //-----------------------------Auth Middleware---------------------------------
@@ -181,6 +181,53 @@ app.post('/api/register', registerCustomer);
  *         description: Username or email already exists
  */
 app.post('/api/manager/register', adminCheck, registerStaff);
+
+/**
+ * @swagger
+ * /api/manager/staff/{userid}:
+ *   put:
+ *     summary: Update staff details (Admin/Manager only)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID of the staff member
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: updated_staff
+ *               phone:
+ *                 type: string
+ *                 example: "0898887766"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: updated_staff@test.com
+ *               branch_id:
+ *                 type: string
+ *                 example: "b0000000-0000-0000-0000-000000000002"
+ *     responses:
+ *       200:
+ *         description: Staff updated successfully
+ *       401:
+ *         description: This action can be done only by admin
+ *       404:
+ *         description: Staff user not found
+ *       409:
+ *         description: Username or email already exists
+ */
+app.put('/api/manager/staff/:userid', adminCheck, updateStaff);
 
 /**
  * @swagger

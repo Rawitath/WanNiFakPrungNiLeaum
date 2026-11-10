@@ -50,6 +50,8 @@ const app = createApp({ mailerTransporter: mockTransporter });
 // Shared Fixture Identifiers (UUID format matching DB_SCHEMA.md)
 const TEST_BRANCH_ID = "b0000000-0000-0000-0000-000000000001";
 const TEST_BRANCH_NAME = "ลาดกระบัง";
+const TEST_BRANCH_ID_2 = "b0000000-0000-0000-0000-000000000002";
+const TEST_BRANCH_NAME_2 = "สยาม";
 
 const CUSTOMER_USER_ID = "c0000000-0000-0000-0000-000000000001";
 const CUSTOMER_ID = "c1000000-0000-0000-0000-000000000001";
@@ -198,12 +200,12 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       STAFF_USER_ID,
       MANAGER_USER_ID
     ]);
-    await pool.query("DELETE FROM branches WHERE branch_id = $1", [TEST_BRANCH_ID]);
+    await pool.query("DELETE FROM branches WHERE branch_id IN ($1, $2)", [TEST_BRANCH_ID, TEST_BRANCH_ID_2]);
 
     // 3. Seed test fixtures
     await pool.query(
-      "INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2) ON CONFLICT (branch_id) DO NOTHING",
-      [TEST_BRANCH_ID, TEST_BRANCH_NAME]
+      "INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2), ($3, $4) ON CONFLICT (branch_id) DO NOTHING",
+      [TEST_BRANCH_ID, TEST_BRANCH_NAME, TEST_BRANCH_ID_2, TEST_BRANCH_NAME_2]
     );
 
     // Seed customer user & record
@@ -267,7 +269,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       await pool.query("DELETE FROM staffs WHERE userid IN ($1)", [STAFF_USER_ID]);
       await pool.query("DELETE FROM managers WHERE userid IN ($1)", [MANAGER_USER_ID]);
       await pool.query("DELETE FROM users WHERE email LIKE '%@test.com'");
-      await pool.query("DELETE FROM branches WHERE branch_id = $1", [TEST_BRANCH_ID]);
+      await pool.query("DELETE FROM branches WHERE branch_id IN ($1, $2)", [TEST_BRANCH_ID, TEST_BRANCH_ID_2]);
     } catch (err) {
       console.warn("Cleanup warning:", err.message);
     } finally {
@@ -980,6 +982,45 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         .send(newStaff);
       expect(res.status).toBe(401);
     });
+
+    it("Admin updates staff profile (name, branch, etc...)", async () => {
+      const updatedStaff = {
+        username: "staff_updated_name",
+        phone: "0898887766",
+        email: STAFF_CREDENTIALS.email,
+        branch_id: TEST_BRANCH_ID_2
+      };
+
+      const res = await request(server)
+        .put(`/api/manager/staff/${STAFF_USER_ID}`)
+        .set("Authorization", `Bearer ${managerToken}`)
+        .send(updatedStaff);
+
+      expect(res.status).toBe(200);
+
+      // Check database to ensure updated profile and branch are written
+      const dbUser = await pool.query(
+        "SELECT username, phone FROM users WHERE userid = $1",
+        [STAFF_USER_ID]
+      );
+      expect(dbUser.rows[0].username).toBe(updatedStaff.username);
+      expect(dbUser.rows[0].phone).toBe(updatedStaff.phone);
+
+      const dbStaff = await pool.query(
+        "SELECT branch_id FROM staffs WHERE userid = $1",
+        [STAFF_USER_ID]
+      );
+      expect(dbStaff.rows[0].branch_id).toBe(TEST_BRANCH_ID_2);
+    });
+
+    it("should not let non-admin update staff data", async () => {
+      const res = await request(server)
+        .put(`/api/manager/staff/${STAFF_USER_ID}`)
+        .set("Authorization", `Bearer ${staffToken}`)
+        .send({ phone: "0890000000" });
+      expect(res.status).toBe(401);
+    });
+
   });
 
 });
