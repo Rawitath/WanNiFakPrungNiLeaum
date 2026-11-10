@@ -77,7 +77,7 @@ export default function HomePageStaff({
       id: 2,
       name: "มินนี่ - สุนัข",
       detail: "ออก 14:00 • คุณหมวย",
-      action: "รับกลับออก",
+      action: "รับกลับ",
       color: "#F39A13",
     },
     {
