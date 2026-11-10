@@ -16,7 +16,7 @@ export default function HomePageStaff({
   onCheckIn,
   onCheckOut,
 }) {
-  const [selectedBranch, setSelectedBranch] = useState("สาขา");
+  const [selectedBranch, setSelectedBranch] = useState("สาขาลาดกระบัง");
   const [showBranches, setShowBranches] = useState(false);
   //ทำ panel รายละเอียดการจอง
   const [showPanel, setShowPanel] = useState(false);
