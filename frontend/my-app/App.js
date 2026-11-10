@@ -1,7 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Components
 import LogoutNavbar from "./2components/logoutnavbar";
@@ -24,6 +25,9 @@ import PetDetails from "./3page/petdetails";
 import BookingUser from "./3page/booking_user";
 import MyBookingUser from "./3page/mybooking_user";
 
+// Key สำหรับเก็บสถานะหน้า
+const APP_STORAGE_KEY = "pet_app_page_state";
+
 export default function App() {
   // ===============================
   // PAGE STATE
@@ -39,10 +43,105 @@ export default function App() {
 
   const [activeUser, setActiveUser] = useState(null);
 
+  // ป้องกันการบันทึกค่าเริ่มต้นทับข้อมูลเดิมก่อนโหลดเสร็จ
+  const [isRestoring, setIsRestoring] = useState(true);
+
+  // ===============================
+  // RESTORE PAGE STATE
+  // โหลดสถานะเดิมเมื่อเปิดแอป
+  // ===============================
+  useEffect(() => {
+    const restoreAppState = async () => {
+      try {
+        const savedState = await AsyncStorage.getItem(APP_STORAGE_KEY);
+
+        if (savedState) {
+          const data = JSON.parse(savedState);
+
+          const validPages = [
+            "guest",
+            "login",
+            "user",
+            "staff",
+            "admin",
+          ];
+
+          if (validPages.includes(data.currentPage)) {
+            setCurrentPage(data.currentPage);
+          }
+
+          setActiveUser(data.activeUser || null);
+
+          setShowRegister(data.showRegister || false);
+          setShowForgotPassword(data.showForgotPassword || false);
+
+          setShowBooking(data.showBooking || false);
+          setShowMyBooking(data.showMyBooking || false);
+
+          // ไม่เปิด Popup หรือ Profile ค้างหลัง Refresh
+          setShowProfile(false);
+        }
+      } catch (error) {
+        console.log("Restore app state error:", error);
+      } finally {
+        setIsRestoring(false);
+      }
+    };
+
+    restoreAppState();
+  }, []);
+
+  // ===============================
+  // SAVE PAGE STATE
+  // บันทึกทุกครั้งที่เปลี่ยนหน้า
+  // ===============================
+  useEffect(() => {
+    if (isRestoring) return;
+
+    const saveAppState = async () => {
+      try {
+        // ไม่เก็บรหัสผ่านลง Storage
+        const safeUser = activeUser
+          ? {
+              username: activeUser.username,
+              role: activeUser.role,
+              name: activeUser.name,
+              email: activeUser.email,
+              phone: activeUser.phone,
+            }
+          : null;
+
+        const appState = {
+          currentPage,
+          activeUser: safeUser,
+          showRegister,
+          showForgotPassword,
+          showBooking,
+          showMyBooking,
+        };
+
+        await AsyncStorage.setItem(
+          APP_STORAGE_KEY,
+          JSON.stringify(appState)
+        );
+      } catch (error) {
+        console.log("Save app state error:", error);
+      }
+    };
+
+    saveAppState();
+  }, [
+    isRestoring,
+    currentPage,
+    activeUser,
+    showRegister,
+    showForgotPassword,
+    showBooking,
+    showMyBooking,
+  ]);
+
   // ===============================
   // PET DATA
-  // ข้อมูลสัตว์เลี้ยงส่งต่อไปยัง HomePageUser
-  // เพิ่ม/ลบ/แก้ไขข้อมูลได้จากส่วนนี้
   // ===============================
   const [pets, setPets] = useState([
     {
@@ -69,19 +168,16 @@ export default function App() {
       image: require("./1assets/piclogo.png"),
       status: "ตาย",
     },
-    // ตัวอย่าง: เพิ่มสัตว์เลี้ยงตัวที่ 5 ได้
     {
       id: "P005",
       name: "น้อง...",
       image: require("./1assets/piclogo.png"),
       status: "อยู่ระหว่างดูแล",
     },
-    
   ]);
 
   // ===============================
   // POPUP STATE
-  // ใช้เฉพาะ Login ไม่สำเร็จ
   // ===============================
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupType, setPopupType] = useState("loginFailed");
@@ -125,7 +221,8 @@ export default function App() {
     Itim: require("./1assets/Itim-Regular.ttf"),
   });
 
-  if (!fontsLoaded) {
+  // รอโหลด Font และสถานะเดิมให้เสร็จก่อนแสดงหน้า
+  if (!fontsLoaded || isRestoring) {
     return null;
   }
 
@@ -148,13 +245,11 @@ export default function App() {
         item.password === password
     );
 
-    // Login ไม่สำเร็จ
     if (!account) {
       showLoginError("ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
       return;
     }
 
-    // ตรวจสอบ Role
     if (
       account.role !== "user" &&
       account.role !== "staff" &&
@@ -164,17 +259,14 @@ export default function App() {
       return;
     }
 
-    // Login สำเร็จ ไม่แสดง Popup
     setActiveUser(account);
 
-    // ปิดหน้าต่างและหน้ารองทั้งหมด
     setShowRegister(false);
     setShowForgotPassword(false);
     setShowBooking(false);
     setShowMyBooking(false);
     setShowProfile(false);
 
-    // เปลี่ยนหน้าตาม Role ทันที
     switch (account.role) {
       case "user":
         setCurrentPage("user");
@@ -196,7 +288,6 @@ export default function App() {
 
   // ===============================
   // REGISTER
-  // สมัครสมาชิกได้เฉพาะ USER
   // ===============================
   const handleRegister = (
     username,
@@ -234,7 +325,6 @@ export default function App() {
       return;
     }
 
-    // บัญชีที่สมัครใหม่เป็น USER เท่านั้น
     const newAccount = {
       username: cleanUsername,
       password: password,
@@ -246,7 +336,6 @@ export default function App() {
 
     setAccounts((prev) => [...prev, newAccount]);
 
-    // สมัครสำเร็จ กลับไปหน้า Login
     setShowRegister(false);
     setShowForgotPassword(false);
   };
@@ -254,7 +343,7 @@ export default function App() {
   // ===============================
   // LOGOUT
   // ===============================
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setActiveUser(null);
 
     setCurrentPage("guest");
@@ -265,6 +354,13 @@ export default function App() {
 
     setShowRegister(false);
     setShowForgotPassword(false);
+
+    // ล้างสถานะที่บันทึกไว้
+    try {
+      await AsyncStorage.removeItem(APP_STORAGE_KEY);
+    } catch (error) {
+      console.log("Clear app state error:", error);
+    }
   };
 
   // ===============================
@@ -291,14 +387,12 @@ export default function App() {
   );
 
   // ===============================
-  // LOADING
+  // RENDER
   // ===============================
   return (
     <View style={styles.container}>
 
-      {/* =================================
-          GUEST
-      ================================= */}
+      {/* GUEST */}
       {currentPage === "guest" && (
         <View style={styles.pageContainer}>
           <LogoutNavbar
@@ -315,9 +409,7 @@ export default function App() {
         </View>
       )}
 
-      {/* =================================
-          LOGIN / REGISTER / FORGOT
-      ================================= */}
+      {/* LOGIN / REGISTER / FORGOT */}
       {currentPage === "login" && (
         showForgotPassword ? (
           <ForgotPassword
@@ -349,9 +441,7 @@ export default function App() {
         )
       )}
 
-      {/* =================================
-          USER ROLE
-      ================================= */}
+      {/* USER */}
       {currentPage === "user" && (
         <View style={styles.userContainer}>
           <NavbarUser
@@ -392,9 +482,7 @@ export default function App() {
         </View>
       )}
 
-      {/* =================================
-          STAFF ROLE
-      ================================= */}
+      {/* STAFF */}
       {currentPage === "staff" && (
         <View style={styles.userContainer}>
           <NavbarSA
@@ -423,9 +511,7 @@ export default function App() {
         </View>
       )}
 
-      {/* =================================
-          ADMIN ROLE
-      ================================= */}
+      {/* ADMIN */}
       {currentPage === "admin" && (
         <View style={styles.userContainer}>
           <NavbarSA
@@ -445,10 +531,7 @@ export default function App() {
         </View>
       )}
 
-      {/* =================================
-          SHARED POPUP
-          แสดงเฉพาะกรณี Login ไม่สำเร็จ
-      ================================= */}
+      {/* SHARED POPUP */}
       <Popup
         visible={popupVisible}
         type={popupType}
