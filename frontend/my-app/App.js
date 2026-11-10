@@ -40,6 +40,46 @@ export default function App() {
   const [activeUser, setActiveUser] = useState(null);
 
   // ===============================
+  // PET DATA
+  // ข้อมูลสัตว์เลี้ยงส่งต่อไปยัง HomePageUser
+  // เพิ่ม/ลบ/แก้ไขข้อมูลได้จากส่วนนี้
+  // ===============================
+  const [pets, setPets] = useState([
+    {
+      id: "P001",
+      name: "น้องคุกกี้",
+      image: require("./1assets/piclogo.png"),
+      status: "อยู่ระหว่างดูแล",
+    },
+    {
+      id: "P002",
+      name: "น้องมะลิ",
+      image: require("./1assets/piclogo.png"),
+      status: "อยู่ระหว่างดูแล",
+    },
+    {
+      id: "P003",
+      name: "น้องโมจิ",
+      image: require("./1assets/piclogo.png"),
+      status: "อยู่ระหว่างดูแล",
+    },
+    {
+      id: "P004",
+      name: "น้องจู",
+      image: require("./1assets/piclogo.png"),
+      status: "ตาย",
+    },
+    // ตัวอย่าง: เพิ่มสัตว์เลี้ยงตัวที่ 5 ได้
+    {
+      id: "P005",
+      name: "น้อง...",
+      image: require("./1assets/piclogo.png"),
+      status: "อยู่ระหว่างดูแล",
+    },
+    
+  ]);
+
+  // ===============================
   // POPUP STATE
   // ใช้เฉพาะ Login ไม่สำเร็จ
   // ===============================
@@ -340,6 +380,7 @@ export default function App() {
             ) : (
               <HomePageUser
                 visible={true}
+                pets={pets}
                 onBooking={() => {
                   setShowBooking(true);
                   setShowMyBooking(false);

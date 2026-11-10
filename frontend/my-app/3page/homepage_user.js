@@ -11,46 +11,35 @@ import {
 
 export default function HomePageUser({
     onBooking,
+    pets = [],
 }) {
-    // ข้อมูลสัตว์เลี้ยงตัวอย่าง
-    const pets = [
-        {
-            id: "P001",
-            name: "น้องคุกกี้",
-            image: require("../1assets/piclogo.png"),
-            status: "อยู่ระหว่างดูแล",
-        },
-        {
-            id: "P002",
-            name: "น้องมะลิ",
-            image: require("../1assets/piclogo.png"),
-            status: "อยู่ระหว่างดูแล",
-        },
-        {
-            id: "P003",
-            name: "น้องโมจิ",
-            image: require("../1assets/piclogo.png"),
-            status: "อยู่ระหว่างดูแล",
-        },
-        {
-            id: "P004",
-            name: "น้องจู",
-            image: require("../1assets/piclogo.png"),
-            status: "ตาย",
-        },
-    ];
+    // แสดงสัตว์เลี้ยงครั้งละไม่เกิน 4 ตัว
+    const [currentPetPage, setCurrentPetPage] = useState(0);
+    const PETS_PER_PAGE = 4;
 
-    const [currentPet, setCurrentPet] = useState(0);
+    const totalPetPages = Math.ceil(pets.length / PETS_PER_PAGE);
 
-    // กดต่อไปเพื่อเลื่อนลำดับสัตว์เลี้ยง
-    const nextPet = () => {
-        setCurrentPet((prev) => (prev + 1) % pets.length);
+    // ถ้าจำนวนสัตว์เลี้ยงลดลง ให้กลับมาอยู่หน้าที่มีข้อมูล
+    React.useEffect(() => {
+        if (currentPetPage >= totalPetPages) {
+            setCurrentPetPage(Math.max(0, totalPetPages - 1));
+        }
+    }, [currentPetPage, totalPetPages]);
+
+    const previousPetPage = () => {
+        setCurrentPetPage((prev) => Math.max(0, prev - 1));
     };
 
-    const displayedPets = [
-        ...pets.slice(currentPet),
-        ...pets.slice(0, currentPet),
-    ];
+    const nextPetPage = () => {
+        setCurrentPetPage((prev) =>
+            Math.min(totalPetPages - 1, prev + 1)
+        );
+    };
+
+    const displayedPets = pets.slice(
+        currentPetPage * PETS_PER_PAGE,
+        currentPetPage * PETS_PER_PAGE + PETS_PER_PAGE
+    );
 
     return (
         <ScrollView
@@ -323,21 +312,16 @@ export default function HomePageUser({
                             ติดตามข้อมูลและสถานะของสัตว์เลี้ยงที่อยู่ในการดูแลทั้งหมดของเรา
                         </Text>
 
-                        <TouchableOpacity
-                            onPress={nextPet}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={styles.nextText}>
-                                ต่อไป
-                            </Text>
-                        </TouchableOpacity>
-
                     </View>
 
                     {/* การ์ดสัตว์เลี้ยง */}
                     <View style={styles.petSection}>
 
-                        {displayedPets.map((pet) => (
+                        {displayedPets.length === 0 ? (
+                            <Text style={styles.emptyPetText}>
+                                ยังไม่มีข้อมูลสัตว์เลี้ยง
+                            </Text>
+                        ) : displayedPets.map((pet) => (
                             <View
                                 key={pet.id}
                                 style={styles.petCard}
@@ -365,6 +349,37 @@ export default function HomePageUser({
                         ))}
 
                     </View>
+                        {pets.length > PETS_PER_PAGE && (
+                            <View style={styles.petPagination}>
+                                <TouchableOpacity
+                                    onPress={previousPetPage}
+                                    disabled={currentPetPage === 0}
+                                    activeOpacity={0.7}
+                                    style={[
+                                        styles.arrowButton,
+                                        currentPetPage === 0 && styles.arrowButtonDisabled,
+                                    ]}
+                                >
+                                    <Text style={styles.arrowText}>‹</Text>
+                                </TouchableOpacity>
+
+                                <Text style={styles.pageText}>
+                                    {currentPetPage + 1} / {totalPetPages}
+                                </Text>
+
+                                <TouchableOpacity
+                                    onPress={nextPetPage}
+                                    disabled={currentPetPage >= totalPetPages - 1}
+                                    activeOpacity={0.7}
+                                    style={[
+                                        styles.arrowButton,
+                                        currentPetPage >= totalPetPages - 1 && styles.arrowButtonDisabled,
+                                    ]}
+                                >
+                                    <Text style={styles.arrowText}>›</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
 
                 </View>
                 
@@ -652,26 +667,28 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
-    nextText: {
-        color: "#fcfcfa",
-        fontSize: 20,
-        fontFamily: "Itim",
+    // รายการสัตว์เลี้ยง: แสดงได้ไม่เกิน 4 การ์ดต่อหน้า
+    petSection: {
+        flexDirection: "row",
+        flexWrap: "nowrap",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        gap: 35,
+        marginTop: 25,
+        marginLeft: 0,
     },
 
-    // รายการสัตว์เลี้ยง
-        petSection: {
-            flexDirection: "row",
-            flexWrap: "nowrap",
-            justifyContent: "flex-start",
-            gap: 50,
-            marginTop: 25,
-            marginLeft: 250,
-        },
+    petCard: {
+        alignItems: "center",
+        width: 140,
+    },
 
-        petCard: {
-            alignItems: "center",
-            width: 140,
-        },
+    emptyPetText: {
+        color: "#FFFFFF",
+        fontSize: 18,
+        fontFamily: "Itim",
+        marginVertical: 30,
+    },
 
     petImage: {
         width: 120,
@@ -699,6 +716,40 @@ const styles = StyleSheet.create({
     statusText: {
         color: "#347343",
         fontSize: 18,
+        fontFamily: "Itim",
+    },
+
+    petPagination: {
+        marginTop: 40,
+        flexDirection: "row",
+        alignSelf: "center",
+        gap: 12,
+    },
+
+    arrowButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: "#F28C28",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    arrowButtonDisabled: {
+        opacity: 0.35,
+    },
+
+    arrowText: {
+        color: "#FFFFFF",
+        fontSize: 30,
+        lineHeight: 34,
+        fontWeight: "bold",
+    },
+
+    pageText: {
+        paddingTop: 8,
+        color: "#FFFFFF",
+        fontSize: 16,
         fontFamily: "Itim",
     },
 
