@@ -532,6 +532,23 @@ export default function HomepageAdmin({
                 autoCapitalize="none"
               />
 
+            {/* Phone */}
+              <Text style={styles.inputLabel}>
+                Phone
+              </Text>
+
+              <TextInput
+                style={styles.modalInput}
+                placeholder="กรอกเบอร์โทร"
+                placeholderTextColor="#A0A0A0"
+                value={staffForm.email}
+                onChangeText={(value) =>
+                  updateStaffForm("email", value)
+                }
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+              />
+
               {/* PASSWORD */}
               <Text style={styles.inputLabel}>
                 Password

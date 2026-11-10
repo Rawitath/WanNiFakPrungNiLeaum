@@ -30,6 +30,13 @@ const POPUP_CONFIG = {
     borderColor: "#008F00",
     message: "จองสำเร็จ",
   },
+
+  bookingFailed: {
+    icon: "✕",
+    color: "#D90000",
+    borderColor: "#B80000",
+    message: "จองล้มเหลว",
+  },
 };
 
 const Paw = ({ style }) => (
