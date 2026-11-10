@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         right: 0,
         top: 0,
-        padding: 5,
+        padding: 3,
     },
 
     closeText: {
