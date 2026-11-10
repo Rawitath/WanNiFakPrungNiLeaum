@@ -1,5 +1,7 @@
 
 import React, { useState } from "react";
+import StaffSidePanel from "../2components/booking_SidePanel.js";
+import UserSidePanel from "../2components/information_SidePanel.js";
 import {
   View,
   Text,
@@ -16,6 +18,24 @@ export default function HomePageStaff({
 }) {
   const [selectedBranch, setSelectedBranch] = useState("สาขา");
   const [showBranches, setShowBranches] = useState(false);
+  //ทำ panel รายละเอียดการจอง
+  const [showPanel, setShowPanel] = useState(false);
+  const [selectedPet, setSelectedPet] = useState(null);
+
+  // Panel ข้อมูลเพิ่มเติม
+  const [showInformationPanel, setShowInformationPanel] = useState(false);
+  const [selectedInformation, setSelectedInformation] = useState(null);
+
+
+  const handleViewPet = (pet) => {
+    setSelectedPet(pet);
+    setShowPanel(true);
+  };
+
+const handleViewInformation = (information) => {
+  setSelectedInformation(information);
+  setShowInformationPanel(true);
+};
 
   const branches = [
     "สาขาลาดกระบัง",
@@ -126,6 +146,7 @@ export default function HomePageStaff({
   };
 
   return (
+
     <View style={styles.container}>
 
       {/* TOP DARK SECTION */}
@@ -366,16 +387,17 @@ export default function HomePageStaff({
               <View style={[styles.actionCol, styles.actionButtons]}>
                 <TouchableOpacity
                   style={styles.tableButton}
-                  onPress={() => onViewPet && onViewPet(pet)}
+                  onPress={() => handleViewPet(pet)}
                 >
                   <Text style={styles.tableButtonText}>
                     ดูรายละเอียด
                   </Text>
                 </TouchableOpacity>
 
+
                 <TouchableOpacity
                   style={styles.tableButton}
-                  onPress={() => onViewBooking && onViewBooking(pet)}
+                  onPress={() => handleViewInformation(pet)}
                 >
                   <Text style={styles.tableButtonText}>
                     ดูรายละเอียดเจ้าของ
@@ -384,11 +406,27 @@ export default function HomePageStaff({
               </View>
 
             </View>
+
           ))}
+
+          {/* /* SIDE PANELS อันนี้เป็นหน้าข้อมูลการจอง */ }
+          <StaffSidePanel
+            visible={showPanel}
+            pet={selectedPet}
+            onClose={() => setShowPanel(false)}
+          />
+
+          {/* /* SIDE PANELS อันนี้เป็นหน้าข้อมูลลูกค้า */}
+          <UserSidePanel
+            visible={showInformationPanel}
+            information={selectedInformation}
+            onClose={() => setShowInformationPanel(false)}
+          />
 
         </View>
 
       </ScrollView>
+
     </View>
   );
 }
@@ -532,7 +570,7 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     paddingHorizontal: 24,
     paddingVertical: 20,
-    minHeight: 180,
+    minHeight: 100,
   },
 
   cardHeader: {
