@@ -178,7 +178,7 @@ def executeStepWithCheck(Map args) {
             string(credentialsId: 'JWT_EXPIRATION', variable: 'JWT_EXPIRATION'),
             string(credentialsId: 'GOOGLE_CLIENT_ID', variable: 'GOOGLE_CLIENT_ID'),
             string(credentialsId: 'GOOGLE_CLIENT_SECRET', variable: 'GOOGLE_CLIENT_SECRET'),
-            string(credentialsId: 'OAUTH_REDIRECT_URI', variable: 'OAUTH_REDIRECT_URI')
+            string(credentialsId: 'OAUTH_REDIRECT_URI', variable: 'OAUTH_REDIRECT_URI'),
             string(credentialsId: 'ADMIN_USERNAME', variable: 'ADMIN_USERNAME'),
             string(credentialsId: 'ADMIN_EMAIL', variable: 'ADMIN_EMAIL'),
             string(credentialsId: 'ADMIN_PHONE', variable: 'ADMIN_PHONE'),
