@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import StaffSidePanel from "../2components/Booking_SidePanel";
+import StaffSidePanel from "../2components/booking_SidePanel";
 import {
   View,
   Text,
