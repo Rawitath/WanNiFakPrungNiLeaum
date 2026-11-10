@@ -50,6 +50,8 @@ const app = createApp({ mailerTransporter: mockTransporter });
 // Shared Fixture Identifiers (UUID format matching DB_SCHEMA.md)
 const TEST_BRANCH_ID = "b0000000-0000-0000-0000-000000000001";
 const TEST_BRANCH_NAME = "ลาดกระบัง";
+const TEST_BRANCH_ID_2 = "b0000000-0000-0000-0000-000000000002";
+const TEST_BRANCH_NAME_2 = "สยาม";
 
 const CUSTOMER_USER_ID = "c0000000-0000-0000-0000-000000000001";
 const CUSTOMER_ID = "c1000000-0000-0000-0000-000000000001";
@@ -198,12 +200,12 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       STAFF_USER_ID,
       MANAGER_USER_ID
     ]);
-    await pool.query("DELETE FROM branches WHERE branch_id = $1", [TEST_BRANCH_ID]);
+    await pool.query("DELETE FROM branches WHERE branch_id IN ($1, $2)", [TEST_BRANCH_ID, TEST_BRANCH_ID_2]);
 
     // 3. Seed test fixtures
     await pool.query(
-      "INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2) ON CONFLICT (branch_id) DO NOTHING",
-      [TEST_BRANCH_ID, TEST_BRANCH_NAME]
+      "INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2), ($3, $4) ON CONFLICT (branch_id) DO NOTHING",
+      [TEST_BRANCH_ID, TEST_BRANCH_NAME, TEST_BRANCH_ID_2, TEST_BRANCH_NAME_2]
     );
 
     // Seed customer user & record
@@ -267,7 +269,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       await pool.query("DELETE FROM staffs WHERE userid IN ($1)", [STAFF_USER_ID]);
       await pool.query("DELETE FROM managers WHERE userid IN ($1)", [MANAGER_USER_ID]);
       await pool.query("DELETE FROM users WHERE email LIKE '%@test.com'");
-      await pool.query("DELETE FROM branches WHERE branch_id = $1", [TEST_BRANCH_ID]);
+      await pool.query("DELETE FROM branches WHERE branch_id IN ($1, $2)", [TEST_BRANCH_ID, TEST_BRANCH_ID_2]);
     } catch (err) {
       console.warn("Cleanup warning:", err.message);
     } finally {
@@ -831,97 +833,194 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
   });
 
   describe('Google OAuth2 Login (GET /api/oauth/google/callback)', () => {
-  const originalFetch = global.fetch;
+    const originalFetch = global.fetch;
 
-  afterEach(() => {
-    global.fetch = originalFetch; // คืนค่า fetch เดิมหลังจบแต่ละ test
-    jest.restoreAllMocks();
-  });
+    afterEach(() => {
+      global.fetch = originalFetch; // คืนค่า fetch เดิมหลังจบแต่ละ test
+      jest.restoreAllMocks();
+    });
 
-  it('should return 400 if code parameter is missing', async () => {
-    const res = await request(app).get('/api/oauth/google/callback');
+    it('should return 400 if code parameter is missing', async () => {
+      const res = await request(app).get('/api/oauth/google/callback');
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body.error).toBe('Authorization code missing');
-  });
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toBe('Authorization code missing');
+    });
 
-  it('should login successfully when Google returns valid tokens and profile via People API', async () => {
-    // 1. Mock fetch สำหรับ 2 Calls (1st: Exchange Token, 2nd: Get User Info via People API)
-    const oauthEmail = 'test@example.com';
-    const oauthPhone = '0812345678'; // เพิ่มเบอร์มือถือ
-    
-    global.fetch = jest.fn()
-      // Call 1: Mock response จาก https://oauth2.googleapis.com/token
-      .mockResolvedValueOnce({
-        ok: true,
+    it('should login successfully when Google returns valid tokens and profile via People API', async () => {
+      // 1. Mock fetch สำหรับ 2 Calls (1st: Exchange Token, 2nd: Get User Info via People API)
+      const oauthEmail = 'test@example.com';
+      const oauthPhone = '0812345678'; // เพิ่มเบอร์มือถือ
+
+      global.fetch = jest.fn()
+        // Call 1: Mock response จาก https://oauth2.googleapis.com/token
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            access_token: 'mock_access_token',
+            id_token: 'mock_id_token',
+            token_type: 'Bearer',
+          }),
+        })
+        // Call 2: Mock response จาก https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,phoneNumbers
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            resourceName: 'people/1234567890', // People API จะใช้ format นี้แทน id เฉยๆ
+            names: [{ displayName: 'Test User' }],
+            emailAddresses: [{ value: oauthEmail }],
+            phoneNumbers: [{ value: oauthPhone }]
+          }),
+        });
+
+      // 2. ยิง Request พร้อม query code
+      const res = await request(app).get('/api/oauth/google/callback?code=mock_authorization_code');
+
+      // 3. Assertions
+      expect(res.statusCode).toBe(200);
+      expect(res.body.message).toBe('Login successful');
+      expect(res.body).toHaveProperty('accessToken');
+      expect(res.body.accessToken).not.toBeNull();
+
+      // ตรวจสอบข้อมูล user ที่ Controller คุณแกะและจัดรูปแบบกลับมาให้ Client
+      expect(res.body.user).toEqual({
+        id: '1234567890', // สมมติว่าฝั่ง Controller คุณตัดคำว่า 'people/' ออกไปแล้ว
+        email: oauthEmail,
+        name: 'Test User',
+        phone: oauthPhone // ตรวจสอบเบอร์มือถือ
+      });
+
+      // ตรวจสอบว่า fetch ถูกเรียก 2 ครั้งถูกต้อง
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+
+      const usersCheck = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [oauthEmail]
+      );
+      // เช็คว่า oauth user ถูกบันทึกลง users ยัง
+      expect(usersCheck.rowCount).toBeGreaterThan(0);
+      // ถ้ามีการเซฟเบอร์โทรลง Database ด้วย สามารถเพิ่ม assertion ตรงนี้ได้
+      // expect(usersCheck.rows[0].phone).toBe(oauthPhone);
+
+      const oauthUsersCheck = await pool.query(
+        "SELECT * FROM oauthusers WHERE userid = $1",
+        [usersCheck.rows[0].userid]
+      );
+      expect(oauthUsersCheck.rowCount).toBeGreaterThan(0);
+    });
+
+    it('should return 400 if Google token exchange fails', async () => {
+      // Mock เมื่อ Google ตอบกลับมาเป็น Error
+      global.fetch = jest.fn().mockResolvedValueOnce({
+        ok: false,
         json: async () => ({
-          access_token: 'mock_access_token',
-          id_token: 'mock_id_token',
-          token_type: 'Bearer',
-        }),
-      })
-      // Call 2: Mock response จาก https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,phoneNumbers
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          resourceName: 'people/1234567890', // People API จะใช้ format นี้แทน id เฉยๆ
-          names: [{ displayName: 'Test User' }],
-          emailAddresses: [{ value: oauthEmail }],
-          phoneNumbers: [{ value: oauthPhone }]
+          error: 'invalid_grant',
+          error_description: 'Bad Request',
         }),
       });
 
-    // 2. ยิง Request พร้อม query code
-    const res = await request(app).get('/api/oauth/google/callback?code=mock_authorization_code');
+      const res = await request(app).get('/api/oauth/google/callback?code=invalid_code');
 
-    // 3. Assertions
-    expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe('Login successful');
-    expect(res.body).toHaveProperty('accessToken');
-    expect(res.body.accessToken).not.toBeNull();
-    
-    // ตรวจสอบข้อมูล user ที่ Controller คุณแกะและจัดรูปแบบกลับมาให้ Client
-    expect(res.body.user).toEqual({
-      id: '1234567890', // สมมติว่าฝั่ง Controller คุณตัดคำว่า 'people/' ออกไปแล้ว
-      email: oauthEmail,
-      name: 'Test User',
-      phone: oauthPhone // ตรวจสอบเบอร์มือถือ
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toBe('Failed to fetch tokens');
     });
-
-    // ตรวจสอบว่า fetch ถูกเรียก 2 ครั้งถูกต้อง
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-
-    const usersCheck = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
-      [oauthEmail]
-    );
-    // เช็คว่า oauth user ถูกบันทึกลง users ยัง
-    expect(usersCheck.rowCount).toBeGreaterThan(0);
-    // ถ้ามีการเซฟเบอร์โทรลง Database ด้วย สามารถเพิ่ม assertion ตรงนี้ได้
-    // expect(usersCheck.rows[0].phone).toBe(oauthPhone);
-
-    const oauthUsersCheck = await pool.query(
-      "SELECT * FROM oauthusers WHERE userid = $1",
-      [usersCheck.rows[0].userid]
-    );
-    expect(oauthUsersCheck.rowCount).toBeGreaterThan(0);
   });
 
-  it('should return 400 if Google token exchange fails', async () => {
-    // Mock เมื่อ Google ตอบกลับมาเป็น Error
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({
-        error: 'invalid_grant',
-        error_description: 'Bad Request',
-      }),
+  describe("Staff creation", () => {
+    it("should be able to register new staff", async () => {
+      const newStaff = {
+        username: "somying_staff",
+        password: "password123",
+        email: "somying_new@test.com",
+        phone: "0819998877"
+      };
+
+      const res = await request(server)
+        .post("/api/manager/register")
+        .set("Authorization", `Bearer ${managerToken}`)
+        .send(newStaff);
+
+      expect(res.status).toBe(201);
+
+      const dbUser = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [newStaff.email]
+      );
+      expect(dbUser.rows.length).toBe(1);
+      expect(dbUser.rows[0].role).toBe("staff");
+      expect(dbUser.rows[0].phone).toBe(newStaff.phone);
+
+      const dbStaff = await pool.query(
+        "SELECT * FROM staffs WHERE userid = $1",
+        [dbUser.rows[0].userid]
+      );
+      expect(dbStaff.rows.length).toBe(1);
     });
 
-    const res = await request(app).get('/api/oauth/google/callback?code=invalid_code');
+    it("should not let anyone except admin to register staff", async () => {
+      const newStaff = {
+        username: "somying_staff",
+        password: "password123",
+        email: "somying_new@test.com",
+        phone: "0819998877"
+      };
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body.error).toBe('Failed to fetch tokens');
+      const res1 = await request(server)
+        .post("/api/manager/register")
+        .set("Authorization", `Bearer ${staffToken}`)
+        .send(newStaff);
+      expect(res1.status).toBe(401);
+
+      const res2 = await request(server)
+        .post("/api/manager/register")
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send(newStaff);
+      expect(res2.status).toBe(401);
+
+      const res3 = await request(server)
+        .post("/api/manager/register")
+        .send(newStaff);
+      expect(res3.status).toBe(401);
+    });
+
+    it("Admin updates staff profile (name, branch, etc...)", async () => {
+      const updatedStaff = {
+        username: "staff_updated_name",
+        phone: "0898887766",
+        email: STAFF_CREDENTIALS.email,
+        branch_id: TEST_BRANCH_ID_2
+      };
+
+      const res = await request(server)
+        .put(`/api/manager/staff/${STAFF_USER_ID}`)
+        .set("Authorization", `Bearer ${managerToken}`)
+        .send(updatedStaff);
+
+      expect(res.status).toBe(200);
+
+      // Check database to ensure updated profile and branch are written
+      const dbUser = await pool.query(
+        "SELECT username, phone FROM users WHERE userid = $1",
+        [STAFF_USER_ID]
+      );
+      expect(dbUser.rows[0].username).toBe(updatedStaff.username);
+      expect(dbUser.rows[0].phone).toBe(updatedStaff.phone);
+
+      const dbStaff = await pool.query(
+        "SELECT branch_id FROM staffs WHERE userid = $1",
+        [STAFF_USER_ID]
+      );
+      expect(dbStaff.rows[0].branch_id).toBe(TEST_BRANCH_ID_2);
+    });
+
+    it("should not let non-admin update staff data", async () => {
+      const res = await request(server)
+        .put(`/api/manager/staff/${STAFF_USER_ID}`)
+        .set("Authorization", `Bearer ${staffToken}`)
+        .send({ phone: "0890000000" });
+      expect(res.status).toBe(401);
+    });
+
   });
-});
 
 });
