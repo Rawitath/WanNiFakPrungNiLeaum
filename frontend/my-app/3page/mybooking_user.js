@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
 } from "react-native";
 
 const bookingData = [
@@ -46,20 +45,45 @@ const bookingData = [
     endDate: "13/03/2569",
     status: "จองไม่สำเร็จ",
   },
+  {
+    id: "#O17",
+    branch: "ลาดกระบัง",
+    name: "นางสาววิลักษณ์ อ่อน",
+    phone: "089xxxxxxxx",
+    pet: "มีนา",
+    breed: "สุริน โกลเด้น",
+    age: "โตเต็มวัย",
+    startDate: "10/03/2569",
+    endDate: "13/03/2569",
+    status: "จองไม่สำเร็จ",
+  },
+  {
+    id: "#O18",
+    branch: "ลาดกระบัง",
+    name: "นางสาววิลักษณ์ อ่อน",
+    phone: "089xxxxxxxx",
+    pet: "มีนา",
+    breed: "สุริน โกลเด้น",
+    age: "โตเต็มวัย",
+    startDate: "10/03/2569",
+    endDate: "13/03/2569",
+    status: "จองไม่สำเร็จ",
+  },
 ];
 
 export default function MyBookingUser({
   visible = false,
   onBack,
 }) {
-  
   const [filter, setFilter] = useState("ทั้งหมด");
   const [showFilter, setShowFilter] = useState(false);
 
   const filteredBookings =
     filter === "ทั้งหมด"
       ? bookingData
-      : bookingData.filter((item) => item.status === filter);
+      : bookingData.filter(
+          (item) => item.status === filter
+        );
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -76,43 +100,39 @@ export default function MyBookingUser({
 
   return (
     <View style={styles.container}>
-        {/* ส่วนหัวสีน้ำเงิน */}
-        <View style={styles.header}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={onBack}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.backButtonText}>
+            ย้อนกลับ
+          </Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={onBack}
+        <Text style={styles.headerTitle}>
+          การจองของฉัน
+        </Text>
+      </View>
+
+      {/* FILTER AREA - FIXED ไม่เลื่อนตามรายการ */}
+      <View style={styles.filterArea}>
+        <View style={styles.filterWrapper}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowFilter(!showFilter)}
             activeOpacity={0.8}
           >
-            <Text style={styles.backButtonText}>
-              ย้อนกลับ
+            <Text style={styles.filterText}>
+              {filter === "ทั้งหมด"
+                ? "สถานะ"
+                : filter} ▼
             </Text>
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>
-            การจองของฉัน
-          </Text>
-        </View>
-
-        {/* เนื้อหา */}
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-
-          {/* ตัวกรองสถานะ */}
-          <View style={styles.filterContainer}>
-            <TouchableOpacity
-              style={styles.filterButton}
-              onPress={() => setShowFilter(!showFilter)}
-            >
-              <Text style={styles.filterText}>
-                {filter === "ทั้งหมด" ? "สถานะ" : filter} ▼
-              </Text>
-            </TouchableOpacity>
-          </View>
-
+          {/* DROPDOWN */}
           {showFilter && (
             <View style={styles.filterDropdown}>
               {[
@@ -129,98 +149,119 @@ export default function MyBookingUser({
                     setShowFilter(false);
                   }}
                 >
-                  <Text style={styles.filterOptionText}>
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      filter === status &&
+                        styles.selectedFilterText,
+                    ]}
+                  >
                     {status}
+                    {filter === status ? " ✓" : ""}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
+        </View>
+      </View>
 
-          {/* รายการจอง */}
-          <View style={styles.bookingList}>
-            {filteredBookings.length > 0 ? (
-              filteredBookings.map((booking) => (
-                <View
-                  key={booking.id}
-                  style={styles.bookingCard}
-                >
-                  {/* แถบสีน้ำเงินด้านซ้าย */}
-                  <View style={styles.cardBar} />
+      {/* BOOKING LIST - เลื่อนเฉพาะรายการ */}
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.bookingList}>
+          {filteredBookings.length > 0 ? (
+            filteredBookings.map((booking) => (
+              <View
+                key={booking.id}
+                style={styles.bookingCard}
+              >
+                {/* แถบสีน้ำเงินด้านซ้าย */}
+                <View style={styles.cardBar} />
 
-                  <View style={styles.cardContent}>
+                <View style={styles.cardContent}>
+                  {/* รหัสและสถานะ */}
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.bookingId}>
+                      รหัสนัดหมาย {booking.id}
+                    </Text>
 
-                    {/* รหัสและสถานะ */}
-                    <View style={styles.cardHeader}>
-                      <Text style={styles.bookingId}>
-                        รหัสนัดหมาย {booking.id}
+                    <Text
+                      style={[
+                        styles.bookingStatus,
+                        {
+                          color: getStatusColor(
+                            booking.status
+                          ),
+                        },
+                      ]}
+                    >
+                      {booking.status}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.branchText}>
+                    สาขา {booking.branch}
+                  </Text>
+
+                  {/* ข้อมูล */}
+                  <View style={styles.infoContainer}>
+                    <View style={styles.infoColumn}>
+                      <Text style={styles.infoLabel}>
+                        ข้อมูลผู้จอง
                       </Text>
 
-                      <Text
-                        style={[
-                          styles.bookingStatus,
-                          { color: getStatusColor(booking.status) },
-                        ]}
-                      >
-                        {booking.status}
+                      <Text style={styles.infoValue}>
+                        {booking.name}
+                      </Text>
+
+                      <Text style={styles.infoValue}>
+                        {booking.phone}
                       </Text>
                     </View>
 
-                    <Text style={styles.branchText}>
-                      สาขา {booking.branch}
-                    </Text>
+                    <View style={styles.infoColumn}>
+                      <Text style={styles.infoLabel}>
+                        ข้อมูลสัตว์เลี้ยง
+                      </Text>
 
-                    {/* ข้อมูล */}
-                    <View style={styles.infoContainer}>
+                      <Text style={styles.infoValue}>
+                        {booking.pet}
+                      </Text>
 
-                      <View style={styles.infoColumn}>
-                        <Text style={styles.infoLabel}>
-                          ข้อมูลผู้จอง
-                        </Text>
-                        <Text style={styles.infoValue}>
-                          {booking.name}
-                        </Text>
-                        <Text style={styles.infoValue}>
-                          {booking.phone}
-                        </Text>
-                      </View>
+                      <Text style={styles.infoValue}>
+                        {booking.breed}
+                      </Text>
 
-                      <View style={styles.infoColumn}>
-                        <Text style={styles.infoLabel}>
-                          ข้อมูลสัตว์เลี้ยง
-                        </Text>
-                        <Text style={styles.infoValue}>
-                          {booking.pet}
-                        </Text>
-                        <Text style={styles.infoValue}>
-                          {booking.breed}
-                        </Text>
-                        <Text style={styles.infoValue}>
-                          {booking.age}
-                        </Text>
-                      </View>
+                      <Text style={styles.infoValue}>
+                        {booking.age}
+                      </Text>
+                    </View>
 
-                      <View style={styles.dateColumn}>
-                        <Text style={styles.infoLabel}>
-                          วันที่เริ่ม-สิ้นสุดบริการ
-                        </Text>
-                        <Text style={styles.infoValue}>
-                          {booking.startDate}-{booking.endDate}
-                        </Text>
-                      </View>
+                    <View style={styles.dateColumn}>
+                      <Text style={styles.infoLabel}>
+                        วันที่เริ่ม-สิ้นสุดบริการ
+                      </Text>
 
+                      <Text style={styles.infoValue}>
+                        {booking.startDate}-
+                        {booking.endDate}
+                      </Text>
                     </View>
                   </View>
                 </View>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>
-                ไม่พบรายการจอง
-              </Text>
-            )}
-          </View>
-
-        </ScrollView>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>
+              ไม่พบรายการจอง
+            </Text>
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -229,14 +270,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
-    // height: "100%",
     backgroundColor: "#FFFFFF",
   },
 
+  // HEADER
   header: {
     height: 135,
     backgroundColor: "#0b2d47",
-    // justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 30,
   },
@@ -257,25 +297,25 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontSize: 25,
     fontWeight: "bold",
   },
 
-  content: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-
-  contentContainer: {
+  // FILTER AREA
+  filterArea: {
     paddingHorizontal: 300,
     paddingTop: 25,
-    paddingBottom: 40,
+    paddingBottom: 10,
+    backgroundColor: "#FFFFFF",
+    zIndex: 100,
+    elevation: 100,
   },
 
-  filterContainer: {
+  filterWrapper: {
     alignItems: "flex-end",
-    marginBottom: 16,
+    position: "relative",
+    zIndex: 100,
   },
 
   filterButton: {
@@ -294,26 +334,52 @@ const styles = StyleSheet.create({
   },
 
   filterDropdown: {
-    alignSelf: "flex-end",
+    position: "absolute",
+    top: 38,
+    right: 0,
     width: 150,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
-    elevation: 4,
-    marginBottom: 15,
-    zIndex: 10,
+    elevation: 15,
+    zIndex: 200,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
 
   filterOption: {
     padding: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#ddd",
+    borderBottomColor: "#DDDDDD",
   },
 
   filterOptionText: {
     fontSize: 12,
-    color: "#333",
+    color: "#333333",
   },
 
+  selectedFilterText: {
+    color: "#246AA5",
+    fontWeight: "bold",
+  },
+
+  // CONTENT
+  content: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+
+  contentContainer: {
+    paddingHorizontal: 300,
+    paddingTop: 10,
+    paddingBottom: 40,
+  },
+
+  // BOOKING LIST
   bookingList: {
     gap: 22,
     paddingHorizontal: 5,
@@ -322,11 +388,14 @@ const styles = StyleSheet.create({
   bookingCard: {
     flexDirection: "row",
     minHeight: 120,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 9,
     elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.2,
     shadowRadius: 3,
     overflow: "hidden",
@@ -364,7 +433,7 @@ const styles = StyleSheet.create({
 
   branchText: {
     fontSize: 11,
-    color: "#111",
+    color: "#111111",
     marginBottom: 7,
   },
 
@@ -390,14 +459,14 @@ const styles = StyleSheet.create({
   },
 
   infoValue: {
-    color: "#111",
+    color: "#111111",
     fontSize: 10,
     marginBottom: 3,
   },
 
   emptyText: {
     textAlign: "center",
-    color: "#888",
+    color: "#888888",
     marginTop: 50,
     fontSize: 14,
   },

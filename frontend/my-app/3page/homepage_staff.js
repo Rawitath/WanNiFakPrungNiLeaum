@@ -92,6 +92,24 @@ export default function HomePageStaff({
       color: "#DDF1E5",
       textColor: "#4B9D73",
     },
+    // {
+    //   id: 4,
+    //   time: "16:00",
+    //   name: "มินนี่ - แมว",
+    //   detail: "คุณหมวย - 18-22 ธ.ค.",
+    //   status: "ยืนยันแล้ว",
+    //   color: "#DDF1E5",
+    //   textColor: "#4B9D73",
+    // },
+    // {
+    //   id: 4,
+    //   time: "16:00",
+    //   name: "มินนี่ - แมว",
+    //   detail: "คุณหมวย - 18-22 ธ.ค.",
+    //   status: "ยืนยันแล้ว",
+    //   color: "#DDF1E5",
+    //   textColor: "#4B9D73",
+    // },
   ];
 
   // ข้อมูลบันทึกเข้า-ออกรับคืน
@@ -117,6 +135,48 @@ export default function HomePageStaff({
       action: "รับเข้าพัก",
       color: "#174F83",
     },
+    // {
+    //   id: 1,
+    //   name: "มิลค์ - แมว",
+    //   detail: "เข้า 10:00 • คุณจุ๊ดจุ๊ด",
+    //   action: "รับเข้าพัก",
+    //   color: "#174F83",
+    // },
+    // {
+    //   id: 2,
+    //   name: "มินนี่ - สุนัข",
+    //   detail: "ออก 14:00 • คุณหมวย",
+    //   action: "รับกลับ",
+    //   color: "#F39A13",
+    // },
+    // {
+    //   id: 3,
+    //   name: "โบโบ้ - สุนัข",
+    //   detail: "เข้า 16:00 • คุณหมวย",
+    //   action: "รับเข้าพัก",
+    //   color: "#174F83",
+    // },
+    // {
+    //   id: 1,
+    //   name: "มิลค์ - แมว",
+    //   detail: "เข้า 10:00 • คุณจุ๊ดจุ๊ด",
+    //   action: "รับเข้าพัก",
+    //   color: "#174F83",
+    // },
+    // {
+    //   id: 2,
+    //   name: "มินนี่ - สุนัข",
+    //   detail: "ออก 14:00 • คุณหมวย",
+    //   action: "รับกลับ",
+    //   color: "#F39A13",
+    // },
+    // {
+    //   id: 3,
+    //   name: "โบโบ้ - สุนัข",
+    //   detail: "เข้า 16:00 • คุณหมวย",
+    //   action: "รับเข้าพัก",
+    //   color: "#174F83",
+    // },
   ];
 
   // ข้อมูลสัตว์เลี้ยงที่รับฝาก
@@ -135,9 +195,9 @@ export default function HomePageStaff({
       name: "หมี - แมว",
       room: "A5",
       owner: "คุณหมวย",
-      status: "ไม่ผ่าน",
-      statusColor: "#FCE1DC",
-      textColor: "#DB6658",
+      status: "พร้อมรับกลับ",
+      statusColor: "#DDF1E5",
+      textColor: "#4B9D73",
     },
     {
       id: 3,
@@ -148,6 +208,33 @@ export default function HomePageStaff({
       statusColor: "#DDF1E5",
       textColor: "#4B9D73",
     },
+    // {
+    //   id: 1,
+    //   name: "แมวขาวดำ - สุขี",
+    //   room: "A2",
+    //   owner: "คุณสายฝน",
+    //   status: "In Care",
+    //   statusColor: "#FCE9CC",
+    //   textColor: "#D99035",
+    // },
+    // {
+    //   id: 2,
+    //   name: "หมี - แมว",
+    //   room: "A5",
+    //   owner: "คุณหมวย",
+    //   status: "พร้อมรับกลับ",
+    //   statusColor: "#DDF1E5",
+    //   textColor: "#4B9D73",
+    // },
+    // {
+    //   id: 3,
+    //   name: "โบ้ - สุนัข",
+    //   room: "B1",
+    //   owner: "คุณจุ๊ด",
+    //   status: "พร้อมรับกลับ",
+    //   statusColor: "#DDF1E5",
+    //   textColor: "#4B9D73",
+    // },
   ]);
 
   // เปลี่ยนสถานะทันทีเมื่อเลือก Dropdown
@@ -260,61 +347,67 @@ export default function HomePageStaff({
               </Text>
             </View>
 
-            {bookingQueue.map((item) => (
-              <View key={item.id} style={styles.queueRow}>
-                <Text style={styles.queueTime}>
-                  {item.time}
-                </Text>
-
-                <View style={styles.queueInfo}>
-                  <Text style={styles.queueName}>
-                    {item.name}
+            <ScrollView
+              style={styles.cardInnerScroll}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={true}
+            >
+              {bookingQueue.map((item) => (
+                <View key={item.id} style={styles.queueRow}>
+                  <Text style={styles.queueTime}>
+                    {item.time}
                   </Text>
 
-                  <Text style={styles.queueDetail}>
-                    {item.detail}
-                  </Text>
-                </View>
+                  <View style={styles.queueInfo}>
+                    <Text style={styles.queueName}>
+                      {item.name}
+                    </Text>
 
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: item.color },
-                  ]}
-                >
-                  <Text
+                    <Text style={styles.queueDetail}>
+                      {item.detail}
+                    </Text>
+                  </View>
+
+                  <View
                     style={[
-                      styles.statusText,
-                      { color: item.textColor },
+                      styles.statusBadge,
+                      { backgroundColor: item.color },
                     ]}
                   >
-                    {item.status}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.statusText,
+                        { color: item.textColor },
+                      ]}
+                    >
+                      {item.status}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.detailButton}
+                    onPress={() =>
+                      onViewBooking && onViewBooking(item)
+                    }
+                  >
+                    <Text style={styles.detailButtonText}>
+                      ยืนยันคิว
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.detailButton}
+                    onPress={() =>
+                      onViewBooking && onViewBooking(item)
+                    }
+                  >
+                    <Text style={styles.detailButtonText}>
+                      ปฏิเสธคิว
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity
-                  style={styles.detailButton}
-                  onPress={() =>
-                    onViewBooking && onViewBooking(item)
-                  }
-                >
-                  <Text style={styles.detailButtonText}>
-                    ยืนยันคิว
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.detailButton}
-                  onPress={() =>
-                    onViewBooking && onViewBooking(item)
-                  }
-                >
-                  <Text style={styles.detailButtonText}>
-                    ปฏิเสธคิว
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+              ))}
+            </ScrollView>
           </View>
 
           {/* CHECK IN / OUT */}
@@ -325,39 +418,45 @@ export default function HomePageStaff({
               </Text>
             </View>
 
-            {activityList.map((item) => (
-              <View key={item.id} style={styles.activityRow}>
-                <View style={styles.petAvatar} />
+            <ScrollView
+              style={styles.cardInnerScroll}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={true}
+            >
+              {activityList.map((item) => (
+                <View key={item.id} style={styles.activityRow}>
+                  <View style={styles.petAvatar} />
 
-                <View style={styles.activityInfo}>
-                  <Text style={styles.activityName}>
-                    {item.name}
-                  </Text>
+                  <View style={styles.activityInfo}>
+                    <Text style={styles.activityName}>
+                      {item.name}
+                    </Text>
 
-                  <Text style={styles.activityDetail}>
-                    {item.detail}
-                  </Text>
+                    <Text style={styles.activityDetail}>
+                      {item.detail}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.activityButton,
+                      { backgroundColor: item.color },
+                    ]}
+                    onPress={() => {
+                      if (item.action === "รับเข้าพัก") {
+                        onCheckIn && onCheckIn(item);
+                      } else {
+                        onCheckOut && onCheckOut(item);
+                      }
+                    }}
+                  >
+                    <Text style={styles.activityButtonText}>
+                      {item.action}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity
-                  style={[
-                    styles.activityButton,
-                    { backgroundColor: item.color },
-                  ]}
-                  onPress={() => {
-                    if (item.action === "รับเข้าพัก") {
-                      onCheckIn && onCheckIn(item);
-                    } else {
-                      onCheckOut && onCheckOut(item);
-                    }
-                  }}
-                >
-                  <Text style={styles.activityButtonText}>
-                    {item.action}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+              ))}
+            </ScrollView>
           </View>
         </View>
 
@@ -369,7 +468,7 @@ export default function HomePageStaff({
             </Text>
           </View>
 
-          {/* TABLE HEAD */}
+          {/* TABLE HEAD - ไม่เลื่อน */}
           <View style={styles.tableRow}>
             <Text style={[styles.tableHeading, styles.petNameCol]}>
               สัตว์เลี้ยง
@@ -388,114 +487,120 @@ export default function HomePageStaff({
             </Text>
           </View>
 
-          {/* TABLE DATA */}
-          {petList.map((pet) => (
-            <View
-              key={pet.id}
-              style={[
-                styles.tableRow,
-                {
-                  zIndex:
-                    showStatusDropdownId === pet.id ? 100 : 1,
-                },
-              ]}
-            >
-              <Text style={[styles.tableText, styles.petNameCol]}>
-                {pet.name}
-              </Text>
-
-              <Text style={[styles.tableText, styles.ownerCol]}>
-                {pet.owner}
-              </Text>
-
-              {/* STATUS DROPDOWN */}
+          {/* TABLE DATA - เลื่อนเฉพาะรายการ */}
+          <ScrollView
+            style={styles.petTableScroll}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={true}
+          >
+            {petList.map((pet) => (
               <View
+                key={pet.id}
                 style={[
-                  styles.statusCol,
+                  styles.tableRow,
                   {
                     zIndex:
-                      showStatusDropdownId === pet.id ? 101 : 1,
+                      showStatusDropdownId === pet.id ? 100 : 1,
                   },
                 ]}
               >
-                <TouchableOpacity
-                  activeOpacity={0.8}
+                <Text style={[styles.tableText, styles.petNameCol]}>
+                  {pet.name}
+                </Text>
+
+                <Text style={[styles.tableText, styles.ownerCol]}>
+                  {pet.owner}
+                </Text>
+
+                {/* STATUS DROPDOWN */}
+                <View
                   style={[
-                    styles.tableStatus,
-                    { backgroundColor: pet.statusColor },
+                    styles.statusCol,
+                    {
+                      zIndex:
+                        showStatusDropdownId === pet.id ? 101 : 1,
+                    },
                   ]}
-                  onPress={() =>
-                    setShowStatusDropdownId(
-                      showStatusDropdownId === pet.id
-                        ? null
-                        : pet.id
-                    )
-                  }
                 >
-                  <Text
+                  <TouchableOpacity
+                    activeOpacity={0.8}
                     style={[
-                      styles.tableStatusText,
-                      { color: pet.textColor },
+                      styles.tableStatus,
+                      { backgroundColor: pet.statusColor },
                     ]}
+                    onPress={() =>
+                      setShowStatusDropdownId(
+                        showStatusDropdownId === pet.id
+                          ? null
+                          : pet.id
+                      )
+                    }
                   >
-                    {pet.status} ▼
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.tableStatusText,
+                        { color: pet.textColor },
+                      ]}
+                    >
+                      {pet.status} ▼
+                    </Text>
+                  </TouchableOpacity>
 
-                {showStatusDropdownId === pet.id && (
-                  <View style={styles.statusDropdown}>
-                    {statusOptions.map((option) => (
-                      <TouchableOpacity
-                        key={option}
-                        activeOpacity={0.7}
-                        style={styles.statusDropdownItem}
-                        onPress={() =>
-                          handleSelectStatus(pet, option)
-                        }
-                      >
-                        <Text
-                          style={[
-                            styles.statusDropdownText,
-                            pet.status === option &&
-                              styles.selectedStatusText,
-                          ]}
+                  {showStatusDropdownId === pet.id && (
+                    <View style={styles.statusDropdown}>
+                      {statusOptions.map((option) => (
+                        <TouchableOpacity
+                          key={option}
+                          activeOpacity={0.7}
+                          style={styles.statusDropdownItem}
+                          onPress={() =>
+                            handleSelectStatus(pet, option)
+                          }
                         >
-                          {option}
-                          {pet.status === option ? " ✓" : ""}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
+                          <Text
+                            style={[
+                              styles.statusDropdownText,
+                              pet.status === option &&
+                                styles.selectedStatusText,
+                            ]}
+                          >
+                            {option}
+                            {pet.status === option ? " ✓" : ""}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
 
-              {/* ACTION BUTTONS */}
-              <View
-                style={[
-                  styles.actionCol,
-                  styles.actionButtons,
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.tableButton}
-                  onPress={() => handleViewPet(pet)}
+                {/* ACTION BUTTONS */}
+                <View
+                  style={[
+                    styles.actionCol,
+                    styles.actionButtons,
+                  ]}
                 >
-                  <Text style={styles.tableButtonText}>
-                    ดูรายละเอียด
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.tableButton}
+                    onPress={() => handleViewPet(pet)}
+                  >
+                    <Text style={styles.tableButtonText}>
+                      ดูรายละเอียด
+                    </Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.tableButton}
-                  onPress={() => handleViewInformation(pet)}
-                >
-                  <Text style={styles.tableButtonText}>
-                    ดูรายละเอียดเจ้าของ
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.tableButton}
+                    onPress={() => handleViewInformation(pet)}
+                  >
+                    <Text style={styles.tableButtonText}>
+                      ดูรายละเอียดเจ้าของ
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))}
+            ))}
+          </ScrollView>
 
           {/* SIDE PANELS */}
           <StaffSidePanel
@@ -640,19 +745,21 @@ const styles = StyleSheet.create({
     paddingBottom: 35,
   },
 
+  // TOP CARDS
   topCards: {
     flexDirection: "row",
     gap: 14,
+    alignItems: "stretch",
   },
 
   card: {
     flex: 1,
     minWidth: 0,
+    height: 330,
     backgroundColor: "#FFFFFF",
     borderRadius: 9,
     paddingHorizontal: 24,
     paddingVertical: 20,
-    minHeight: 100,
   },
 
   cardHeader: {
@@ -671,6 +778,10 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     color: "#8795A3",
     fontSize: 12,
+  },
+
+  cardInnerScroll: {
+    flex: 1,
   },
 
   // QUEUE
@@ -786,6 +897,7 @@ const styles = StyleSheet.create({
     marginHorizontal: "10%",
     paddingHorizontal: 24,
     paddingVertical: 20,
+    height: 360,
   },
 
   tableHeader: {
@@ -841,6 +953,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  petTableScroll: {
+    flex: 1,
+  },
+
   // STATUS DROPDOWN
   statusDropdown: {
     position: "absolute",
@@ -878,6 +994,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  // ACTION BUTTONS
   actionButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
