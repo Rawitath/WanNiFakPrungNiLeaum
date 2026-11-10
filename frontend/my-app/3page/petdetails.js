@@ -19,6 +19,7 @@ const PetDetails = ({
   const [status, setStatus] = useState(initialStatus);
 
   const statusOptions = [
+    "รอรับเข้า",
     "In Care",
     "พร้อมรับกลับบ้าน",
     "รับกลับบ้านแล้ว",
@@ -464,8 +465,8 @@ const styles = StyleSheet.create({
   statusProgressLine: {
     position: "absolute",
     top: 13,
-    left: "20%",
-    right: "20%",
+    left: "10%",
+    right: "10%",
     height: 3,
     backgroundColor: "#246AA5",
   },

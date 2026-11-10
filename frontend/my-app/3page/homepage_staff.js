@@ -15,10 +15,12 @@ export default function HomePageStaff({
   onViewPet,
   onCheckIn,
   onCheckOut,
+  onUpdatePetStatus,
 }) {
   const [selectedBranch, setSelectedBranch] = useState("สาขาลาดกระบัง");
   const [showBranches, setShowBranches] = useState(false);
-  //ทำ panel รายละเอียดการจอง
+
+  // Panel รายละเอียดการจอง
   const [showPanel, setShowPanel] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
 
@@ -26,16 +28,24 @@ export default function HomePageStaff({
   const [showInformationPanel, setShowInformationPanel] = useState(false);
   const [selectedInformation, setSelectedInformation] = useState(null);
 
+  // Dropdown สถานะสัตว์เลี้ยง
+  const [showStatusDropdownId, setShowStatusDropdownId] = useState(null);
+
+  const statusOptions = ["In Care", "พร้อมรับกลับ"];
 
   const handleViewPet = (pet) => {
     setSelectedPet(pet);
     setShowPanel(true);
+
+    if (onViewPet) {
+      onViewPet(pet);
+    }
   };
 
-const handleViewInformation = (information) => {
-  setSelectedInformation(information);
-  setShowInformationPanel(true);
-};
+  const handleViewInformation = (information) => {
+    setSelectedInformation(information);
+    setShowInformationPanel(true);
+  };
 
   const branches = [
     "สาขาลาดกระบัง",
@@ -110,7 +120,7 @@ const handleViewInformation = (information) => {
   ];
 
   // ข้อมูลสัตว์เลี้ยงที่รับฝาก
-  const petList = [
+  const [petList, setPetList] = useState([
     {
       id: 1,
       name: "แมวขาวดำ - สุขี",
@@ -138,7 +148,37 @@ const handleViewInformation = (information) => {
       statusColor: "#DDF1E5",
       textColor: "#4B9D73",
     },
-  ];
+  ]);
+
+  // เปลี่ยนสถานะทันทีเมื่อเลือก Dropdown
+  const handleSelectStatus = (pet, newStatus) => {
+    const newStatusColor =
+      newStatus === "In Care" ? "#FCE9CC" : "#DDF1E5";
+
+    const newTextColor =
+      newStatus === "In Care" ? "#D99035" : "#4B9D73";
+
+    setPetList((prevList) =>
+      prevList.map((item) =>
+        item.id === pet.id
+          ? {
+              ...item,
+              status: newStatus,
+              statusColor: newStatusColor,
+              textColor: newTextColor,
+            }
+          : item
+      )
+    );
+
+    // ส่งค่าไปยัง App.js ทันที
+    if (onUpdatePetStatus) {
+      onUpdatePetStatus(pet.id, newStatus);
+    }
+
+    // ปิด Dropdown หลังเลือก
+    setShowStatusDropdownId(null);
+  };
 
   const handleBranchSelect = (branch) => {
     setSelectedBranch(branch);
@@ -146,12 +186,9 @@ const handleViewInformation = (information) => {
   };
 
   return (
-
     <View style={styles.container}>
-
       {/* TOP DARK SECTION */}
       <View style={styles.topSection}>
-
         <View style={styles.welcomeSection}>
           <View style={styles.welcomeRow}>
             <Text style={styles.welcomeText}>
@@ -187,23 +224,18 @@ const handleViewInformation = (information) => {
               )}
             </View>
           </View>
-
         </View>
 
         {/* STATISTICS */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>24</Text>
-            <Text style={styles.statLabel}>
-              กำลังเข้าพัก
-            </Text>
+            <Text style={styles.statLabel}>กำลังเข้าพัก</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>8</Text>
-            <Text style={styles.statLabel}>
-              รอรับคืน
-            </Text>
+            <Text style={styles.statLabel}>รอรับคืน</Text>
           </View>
         </View>
       </View>
@@ -214,10 +246,8 @@ const handleViewInformation = (information) => {
         contentContainerStyle={styles.mainContent}
         showsVerticalScrollIndicator={false}
       >
-
         {/* TOP CARDS */}
         <View style={styles.topCards}>
-
           {/* BOOKING QUEUE */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -232,7 +262,6 @@ const handleViewInformation = (information) => {
 
             {bookingQueue.map((item) => (
               <View key={item.id} style={styles.queueRow}>
-
                 <Text style={styles.queueTime}>
                   {item.time}
                 </Text>
@@ -270,10 +299,20 @@ const handleViewInformation = (information) => {
                   }
                 >
                   <Text style={styles.detailButtonText}>
-                    ยกเลิกคิว
+                    ยืนยันคิว
                   </Text>
                 </TouchableOpacity>
 
+                <TouchableOpacity
+                  style={styles.detailButton}
+                  onPress={() =>
+                    onViewBooking && onViewBooking(item)
+                  }
+                >
+                  <Text style={styles.detailButtonText}>
+                    ปฏิเสธคิว
+                  </Text>
+                </TouchableOpacity>
               </View>
             ))}
           </View>
@@ -288,7 +327,6 @@ const handleViewInformation = (information) => {
 
             {activityList.map((item) => (
               <View key={item.id} style={styles.activityRow}>
-
                 <View style={styles.petAvatar} />
 
                 <View style={styles.activityInfo}>
@@ -318,21 +356,17 @@ const handleViewInformation = (information) => {
                     {item.action}
                   </Text>
                 </TouchableOpacity>
-
               </View>
             ))}
           </View>
-
         </View>
 
         {/* PET TABLE */}
         <View style={styles.petTableCard}>
-
           <View style={styles.tableHeader}>
             <Text style={styles.cardTitle}>
               สัตว์ที่รับฝาก
             </Text>
-
           </View>
 
           {/* TABLE HEAD */}
@@ -356,8 +390,16 @@ const handleViewInformation = (information) => {
 
           {/* TABLE DATA */}
           {petList.map((pet) => (
-            <View key={pet.id} style={styles.tableRow}>
-
+            <View
+              key={pet.id}
+              style={[
+                styles.tableRow,
+                {
+                  zIndex:
+                    showStatusDropdownId === pet.id ? 100 : 1,
+                },
+              ]}
+            >
               <Text style={[styles.tableText, styles.petNameCol]}>
                 {pet.name}
               </Text>
@@ -366,12 +408,29 @@ const handleViewInformation = (information) => {
                 {pet.owner}
               </Text>
 
-              <View style={styles.statusCol}>
-                <View
+              {/* STATUS DROPDOWN */}
+              <View
+                style={[
+                  styles.statusCol,
+                  {
+                    zIndex:
+                      showStatusDropdownId === pet.id ? 101 : 1,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.8}
                   style={[
                     styles.tableStatus,
                     { backgroundColor: pet.statusColor },
                   ]}
+                  onPress={() =>
+                    setShowStatusDropdownId(
+                      showStatusDropdownId === pet.id
+                        ? null
+                        : pet.id
+                    )
+                  }
                 >
                   <Text
                     style={[
@@ -381,10 +440,42 @@ const handleViewInformation = (information) => {
                   >
                     {pet.status} ▼
                   </Text>
-                </View>
+                </TouchableOpacity>
+
+                {showStatusDropdownId === pet.id && (
+                  <View style={styles.statusDropdown}>
+                    {statusOptions.map((option) => (
+                      <TouchableOpacity
+                        key={option}
+                        activeOpacity={0.7}
+                        style={styles.statusDropdownItem}
+                        onPress={() =>
+                          handleSelectStatus(pet, option)
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.statusDropdownText,
+                            pet.status === option &&
+                              styles.selectedStatusText,
+                          ]}
+                        >
+                          {option}
+                          {pet.status === option ? " ✓" : ""}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
 
-              <View style={[styles.actionCol, styles.actionButtons]}>
+              {/* ACTION BUTTONS */}
+              <View
+                style={[
+                  styles.actionCol,
+                  styles.actionButtons,
+                ]}
+              >
                 <TouchableOpacity
                   style={styles.tableButton}
                   onPress={() => handleViewPet(pet)}
@@ -393,7 +484,6 @@ const handleViewInformation = (information) => {
                     ดูรายละเอียด
                   </Text>
                 </TouchableOpacity>
-
 
                 <TouchableOpacity
                   style={styles.tableButton}
@@ -404,29 +494,23 @@ const handleViewInformation = (information) => {
                   </Text>
                 </TouchableOpacity>
               </View>
-
             </View>
-
           ))}
 
-          {/* /* SIDE PANELS อันนี้เป็นหน้าข้อมูลการจอง */ }
+          {/* SIDE PANELS */}
           <StaffSidePanel
             visible={showPanel}
             pet={selectedPet}
             onClose={() => setShowPanel(false)}
           />
 
-          {/* /* SIDE PANELS อันนี้เป็นหน้าข้อมูลลูกค้า */}
           <UserSidePanel
             visible={showInformationPanel}
             information={selectedInformation}
             onClose={() => setShowInformationPanel(false)}
           />
-
         </View>
-
       </ScrollView>
-
     </View>
   );
 }
@@ -445,8 +529,6 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     flexDirection: "row",
     justifyContent: "space-between",
-
-    // แก้ Dropdown ถูกการ์ดบัง
     position: "relative",
     zIndex: 100,
     elevation: 100,
@@ -756,6 +838,43 @@ const styles = StyleSheet.create({
 
   tableStatusText: {
     fontSize: 11,
+    fontWeight: "bold",
+  },
+
+  // STATUS DROPDOWN
+  statusDropdown: {
+    position: "absolute",
+    top: 38,
+    left: 0,
+    width: 145,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    elevation: 12,
+    zIndex: 999,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    overflow: "hidden",
+  },
+
+  statusDropdownItem: {
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EDF0F3",
+  },
+
+  statusDropdownText: {
+    color: "#314B62",
+    fontSize: 12,
+  },
+
+  selectedStatusText: {
+    color: "#F39A13",
     fontWeight: "bold",
   },
 

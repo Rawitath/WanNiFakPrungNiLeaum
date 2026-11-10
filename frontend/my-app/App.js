@@ -39,6 +39,8 @@ export default function App() {
 
   const [showBooking, setShowBooking] = useState(false);
   const [showMyBooking, setShowMyBooking] = useState(false);
+  const [showPetDetails, setShowPetDetails] = useState(false);
+  const [selectedPet, setSelectedPet] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
 
   const [activeUser, setActiveUser] = useState(null);
@@ -77,6 +79,17 @@ export default function App() {
 
           setShowBooking(data.showBooking || false);
           setShowMyBooking(data.showMyBooking || false);
+
+          // คืนหน้ารายละเอียดสัตว์เลี้ยงหลัง Refresh
+          if (data.showPetDetails && data.selectedPetId) {
+            const savedPet = pets.find(
+              (item) => item.id === data.selectedPetId
+            );
+            if (savedPet) {
+              setSelectedPet(savedPet);
+              setShowPetDetails(true);
+            }
+          }
 
           // ไม่เปิด Popup หรือ Profile ค้างหลัง Refresh
           setShowProfile(false);
@@ -118,6 +131,8 @@ export default function App() {
           showForgotPassword,
           showBooking,
           showMyBooking,
+          showPetDetails,
+          selectedPetId: selectedPet?.id || null,
         };
 
         await AsyncStorage.setItem(
@@ -138,6 +153,8 @@ export default function App() {
     showForgotPassword,
     showBooking,
     showMyBooking,
+    showPetDetails,
+    selectedPet?.id,
   ]);
 
   // ===============================
@@ -265,6 +282,8 @@ export default function App() {
     setShowForgotPassword(false);
     setShowBooking(false);
     setShowMyBooking(false);
+    setShowPetDetails(false);
+    setSelectedPet(null);
     setShowProfile(false);
 
     switch (account.role) {
@@ -350,6 +369,8 @@ export default function App() {
 
     setShowBooking(false);
     setShowMyBooking(false);
+    setShowPetDetails(false);
+    setSelectedPet(null);
     setShowProfile(false);
 
     setShowRegister(false);
@@ -457,7 +478,27 @@ export default function App() {
           <View style={styles.pageContent}>
             {renderProfile()}
 
-            {showBooking ? (
+            {showPetDetails && selectedPet ? (
+              <PetDetails
+                key={selectedPet.id}
+                pet={selectedPet}
+                petImage={selectedPet.image}
+                initialStatus={selectedPet.detailStatus || "In Care"}
+                onBack={() => setShowPetDetails(false)}
+                onStatusChange={(newStatus) => {
+                  setSelectedPet((previous) =>
+                    previous ? { ...previous, detailStatus: newStatus } : previous
+                  );
+                  setPets((previousPets) =>
+                    previousPets.map((item) =>
+                      item.id === selectedPet.id
+                        ? { ...item, detailStatus: newStatus }
+                        : item
+                    )
+                  );
+                }}
+              />
+            ) : showBooking ? (
               <BookingUser
                 onBack={() => setShowBooking(false)}
                 onSubmit={handleBookingSubmit}
@@ -471,9 +512,17 @@ export default function App() {
               <HomePageUser
                 visible={true}
                 pets={pets}
+                onPetPress={(pet) => {
+                  setSelectedPet(pet);
+                  setShowPetDetails(true);
+                  setShowBooking(false);
+                  setShowMyBooking(false);
+                  setShowProfile(false);
+                }}
                 onBooking={() => {
                   setShowBooking(true);
                   setShowMyBooking(false);
+                  setShowPetDetails(false);
                   setShowProfile(false);
                 }}
               />
@@ -493,20 +542,14 @@ export default function App() {
           <View style={styles.pageContent}>
             {renderProfile()}
 
-            <HomePageStaff
-              onViewBooking={(item) => {
-                console.log("ดูรายละเอียดการจอง:", item);
-              }}
-              onViewPet={(item) => {
-                console.log("ดูรายละเอียดสัตว์เลี้ยง:", item);
-              }}
-              onCheckIn={(item) => {
-                console.log("รับสัตว์เลี้ยงเข้าพัก:", item);
-              }}
-              onCheckOut={(item) => {
-                console.log("รับสัตว์เลี้ยงกลับ:", item);
-              }}
-            />
+          <HomePageStaff
+            onUpdatePetStatus={(petId, newStatus) => {
+              console.log("Pet ID:", petId);
+              console.log("สถานะใหม่:", newStatus);
+
+              // สามารถเรียก API เพื่อบันทึกสถานะลง Backend ตรงนี้ได้
+            }}
+          />
           </View>
         </View>
       )}

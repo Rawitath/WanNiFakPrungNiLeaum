@@ -11,6 +11,7 @@ import {
 
 export default function HomePageUser({
     onBooking,
+    onPetPress,
     pets = [],
 }) {
     // แสดงสัตว์เลี้ยงครั้งละไม่เกิน 4 ตัว
@@ -326,12 +327,17 @@ export default function HomePageUser({
                                 key={pet.id}
                                 style={styles.petCard}
                             >
-                                {/* รูปสัตว์แบบวงกลม */}
-                                <Image
-                                    source={pet.image}
-                                    style={styles.petImage}
-                                    resizeMode="cover"
-                                />
+                                {/* กดที่รูปเพื่อเปิดรายละเอียดสัตว์เลี้ยง */}
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={() => onPetPress && onPetPress(pet)}
+                                >
+                                    <Image
+                                        source={pet.image}
+                                        style={styles.petImage}
+                                        resizeMode="cover"
+                                    />
+                                </TouchableOpacity>
 
                                 {/* ชื่อสัตว์ */}
                                 <Text style={styles.petName}>
