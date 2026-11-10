@@ -965,22 +965,22 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         phone: "0819998877"
       };
 
-      const res = await request(server)
+      const res1 = await request(server)
         .post("/api/manager/register")
         .set("Authorization", `Bearer ${staffToken}`)
         .send(newStaff);
-      expect(res.status).toBe(401);
+      expect(res1.status).toBe(401);
 
-      res = await request(server)
+      const res2 = await request(server)
         .post("/api/manager/register")
         .set("Authorization", `Bearer ${customerToken}`)
         .send(newStaff);
-      expect(res.status).toBe(401);
+      expect(res2.status).toBe(401);
 
-      res = await request(server)
+      const res3 = await request(server)
         .post("/api/manager/register")
         .send(newStaff);
-      expect(res.status).toBe(401);
+      expect(res3.status).toBe(401);
     });
 
     it("Admin updates staff profile (name, branch, etc...)", async () => {
