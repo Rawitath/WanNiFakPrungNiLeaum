@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useFonts } from "expo-font";
 
 // Components
@@ -8,6 +8,7 @@ import LogoutNavbar from "./2components/logoutnavbar";
 import NavbarUser from "./2components/navbar_user";
 import NavbarSA from "./2components/navbar_s_a";
 import UserProfile from "./2components/userprofile";
+import Popup from "./2components/popup";
 
 // Pages
 import Login from "./3page/login";
@@ -37,6 +38,24 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false);
 
   const [activeUser, setActiveUser] = useState(null);
+
+  // ===============================
+  // POPUP STATE
+  // ใช้เฉพาะ Login ไม่สำเร็จ
+  // ===============================
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupType, setPopupType] = useState("loginFailed");
+  const [popupMessage, setPopupMessage] = useState("");
+
+  const showLoginError = (message) => {
+    setPopupType("loginFailed");
+    setPopupMessage(message);
+    setPopupVisible(true);
+  };
+
+  const handlePopupClose = () => {
+    setPopupVisible(false);
+  };
 
   // ===============================
   // ACCOUNT SYSTEM
@@ -89,15 +108,23 @@ export default function App() {
         item.password === password
     );
 
+    // Login ไม่สำเร็จ
     if (!account) {
-      Alert.alert(
-        "เข้าสู่ระบบไม่สำเร็จ",
-        "ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง"
-      );
+      showLoginError("ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
       return;
     }
 
-    // บันทึกข้อมูลบัญชีที่เข้าสู่ระบบ
+    // ตรวจสอบ Role
+    if (
+      account.role !== "user" &&
+      account.role !== "staff" &&
+      account.role !== "admin"
+    ) {
+      showLoginError("ไม่พบสิทธิ์ของบัญชีนี้");
+      return;
+    }
+
+    // Login สำเร็จ ไม่แสดง Popup
     setActiveUser(account);
 
     // ปิดหน้าต่างและหน้ารองทั้งหมด
@@ -107,7 +134,7 @@ export default function App() {
     setShowMyBooking(false);
     setShowProfile(false);
 
-    // เปลี่ยนหน้าตาม Role
+    // เปลี่ยนหน้าตาม Role ทันที
     switch (account.role) {
       case "user":
         setCurrentPage("user");
@@ -122,7 +149,7 @@ export default function App() {
         break;
 
       default:
-        Alert.alert("ข้อผิดพลาด", "ไม่พบสิทธิ์ของบัญชีนี้");
+        setCurrentPage("guest");
         break;
     }
   };
@@ -147,50 +174,41 @@ export default function App() {
       !password ||
       !confirmPassword
     ) {
-      Alert.alert("แจ้งเตือน", "กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      showLoginError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("แจ้งเตือน", "รหัสผ่านไม่ตรงกัน");
+      showLoginError("รหัสผ่านไม่ตรงกัน");
       return;
     }
 
     if (
       accounts.some(
         (item) =>
-          item.username.toLowerCase() === cleanUsername.toLowerCase()
+          item.username.toLowerCase() ===
+          cleanUsername.toLowerCase()
       )
     ) {
-      Alert.alert("แจ้งเตือน", "ชื่อบัญชีนี้ถูกใช้งานแล้ว");
+      showLoginError("ชื่อบัญชีนี้ถูกใช้งานแล้ว");
       return;
     }
 
-    // ทุกบัญชีที่สมัครใหม่จะเป็น USER เท่านั้น
+    // บัญชีที่สมัครใหม่เป็น USER เท่านั้น
     const newAccount = {
       username: cleanUsername,
       password: password,
       role: "user",
-      name: username.trim(),
+      name: cleanUsername,
       email: email.trim(),
       phone: phone.trim(),
     };
 
     setAccounts((prev) => [...prev, newAccount]);
 
-    Alert.alert(
-      "สมัครสมาชิกสำเร็จ",
-      "สร้างบัญชีผู้ใช้งานเรียบร้อยแล้ว กรุณาเข้าสู่ระบบ",
-      [
-        {
-          text: "ตกลง",
-          onPress: () => {
-            setShowRegister(false);
-            setShowForgotPassword(false);
-          },
-        },
-      ]
-    );
+    // สมัครสำเร็จ กลับไปหน้า Login
+    setShowRegister(false);
+    setShowForgotPassword(false);
   };
 
   // ===============================
@@ -215,18 +233,7 @@ export default function App() {
   const handleBookingSubmit = (bookingData) => {
     console.log("ข้อมูลการจอง:", bookingData);
 
-    Alert.alert(
-      "สำเร็จ",
-      "ส่งข้อมูลการจองเรียบร้อยแล้ว",
-      [
-        {
-          text: "ตกลง",
-          onPress: () => {
-            setShowBooking(false);
-          },
-        },
-      ]
-    );
+    setShowBooking(false);
   };
 
   // ===============================
@@ -307,8 +314,6 @@ export default function App() {
       ================================= */}
       {currentPage === "user" && (
         <View style={styles.userContainer}>
-
-          {/* Navbar User */}
           <NavbarUser
             onProfile={() => setShowProfile(true)}
             onMyBooking={() => {
@@ -320,7 +325,6 @@ export default function App() {
           />
 
           <View style={styles.pageContent}>
-
             {renderProfile()}
 
             {showBooking ? (
@@ -343,7 +347,6 @@ export default function App() {
                 }}
               />
             )}
-
           </View>
         </View>
       )}
@@ -353,15 +356,12 @@ export default function App() {
       ================================= */}
       {currentPage === "staff" && (
         <View style={styles.userContainer}>
-
-          {/* Navbar Staff / Admin */}
           <NavbarSA
             onProfile={() => setShowProfile(true)}
             onLogout={handleLogout}
           />
 
           <View style={styles.pageContent}>
-
             {renderProfile()}
 
             <HomePageStaff
@@ -378,7 +378,6 @@ export default function App() {
                 console.log("รับสัตว์เลี้ยงกลับ:", item);
               }}
             />
-
           </View>
         </View>
       )}
@@ -388,15 +387,12 @@ export default function App() {
       ================================= */}
       {currentPage === "admin" && (
         <View style={styles.userContainer}>
-
-          {/* Navbar Staff / Admin */}
           <NavbarSA
             onProfile={() => setShowProfile(true)}
             onLogout={handleLogout}
           />
 
           <View style={styles.pageContent}>
-
             {renderProfile()}
 
             <HomepageAdmin
@@ -404,10 +400,20 @@ export default function App() {
                 // คงอยู่ในหน้า Admin
               }}
             />
-
           </View>
         </View>
       )}
+
+      {/* =================================
+          SHARED POPUP
+          แสดงเฉพาะกรณี Login ไม่สำเร็จ
+      ================================= */}
+      <Popup
+        visible={popupVisible}
+        type={popupType}
+        message={popupMessage}
+        onClose={handlePopupClose}
+      />
 
     </View>
   );
