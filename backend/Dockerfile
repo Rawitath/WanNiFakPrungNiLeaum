@@ -11,4 +11,4 @@ WORKDIR /app
 COPY . .
 RUN npm prune --omit=dev
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["/app/entrypoint.sh"]

@@ -1,6 +1,7 @@
 services:
   frontend:
     profiles: ["prod", "frontend"]
+    restart: unless-stopped
     image: wannifakprungnileaum-frontend:latest
     build:
       context: ./frontend
@@ -12,6 +13,7 @@ services:
 
   frontend-dev:
     profiles: ["dev", "dev-frontend"]
+    restart: on-failure
     image: wannifakprungnileaum-frontend:dev
     build:
       context: ./frontend
@@ -37,6 +39,7 @@ services:
   backend:
     profiles: ["prod", "backend"]
     image: wannifakprungnileaum-backend:latest
+    restart: unless-stopped
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -52,6 +55,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       PASSWORD_ENDEC_SALT: ${PASSWORD_ENDEC_SALT}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_PHONE: ${ADMIN_PHONE}
     depends_on:
       db:
         condition: service_healthy
@@ -61,6 +68,7 @@ services:
   backend-test:
     profiles: ["test", "test-backend"]
     image: wannifakprungnileaum-backend:test
+    restart: on-failure
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -87,6 +95,7 @@ services:
   backend-dev:
     profiles: ["dev", "dev-backend"]
     image: wannifakprungnileaum-backend:dev
+    restart: unless-stopped
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
@@ -102,6 +111,10 @@ services:
       JWT_SECRET: secret123
       JWT_EXPIRATION: 1h
       PASSWORD_ENDEC_SALT: saltSALT
+      ADMIN_USERNAME: admin
+      ADMIN_EMAIL: admin@test.com
+      ADMIN_PASSWORD: admin1234
+      ADMIN_PHONE: 0888888888
     volumes:
       - ./backend/src:/app/src
     ports:
@@ -114,8 +127,10 @@ services:
   db:
     image: postgres:18-alpine
     profiles: ["prod", "test", "backend"]
+    restart: unless-stopped
     volumes:
       - stayforget_db:/var/lib/postgresql
+      - ./init-scripts/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -131,8 +146,10 @@ services:
   db-dev:
     image: postgres:18-alpine
     profiles: ["dev", "dev-backend"]
+    restart: on-failure
     volumes:
       - stayforget_dev_db:/var/lib/postgresql
+      - ./init-scripts/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     environment:
       POSTGRES_DB: dev
       POSTGRES_USER: dev
