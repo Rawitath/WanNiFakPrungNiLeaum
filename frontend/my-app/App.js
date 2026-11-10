@@ -3,22 +3,30 @@ import React, { useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { useFonts } from "expo-font";
 
+// Components
 import LogoutNavbar from "./2components/logoutnavbar";
 import NavbarUser from "./2components/navbar_user";
 import NavbarSA from "./2components/navbar_s_a";
 import UserProfile from "./2components/userprofile";
 
+// Pages
 import Login from "./3page/login";
 import Register from "./3page/register";
 import ForgotPassword from "./3page/forgotpassword";
+
+import HomePageGuest from "./3page/homepage_guest";
+import HomePageUser from "./3page/homepage_user";
+import HomePageStaff from "./3page/homepage_staff";
+import HomepageAdmin from "./3page/homepage_admin";
+
 import PetDetails from "./3page/petdetails";
 import BookingUser from "./3page/booking_user";
 import MyBookingUser from "./3page/mybooking_user";
-import HomePageStaff from "./3page/homepage_staff";
-import HomePageGuest from "./3page/homepage_guest";
-import HomePageUser from "./3page/homepage_user";
 
 export default function App() {
+  // ===============================
+  // PAGE STATE
+  // ===============================
   const [currentPage, setCurrentPage] = useState("guest");
 
   const [showRegister, setShowRegister] = useState(false);
@@ -28,6 +36,32 @@ export default function App() {
   const [showMyBooking, setShowMyBooking] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
+  const [activeUser, setActiveUser] = useState(null);
+
+  // ===============================
+  // ACCOUNT SYSTEM
+  // ===============================
+  const [accounts, setAccounts] = useState([
+    {
+      username: "a",
+      password: "123",
+      role: "user",
+      name: "ผู้ใช้งาน A",
+    },
+    {
+      username: "b",
+      password: "123",
+      role: "staff",
+      name: "พนักงาน B",
+    },
+    {
+      username: "c",
+      password: "123",
+      role: "admin",
+      name: "ผู้ดูแลระบบ C",
+    },
+  ]);
+
   const [fontsLoaded] = useFonts({
     Itim: require("./1assets/Itim-Regular.ttf"),
   });
@@ -36,29 +70,135 @@ export default function App() {
     return null;
   }
 
-  // ข้อมูลผู้ใช้
+  // ===============================
+  // PROFILE DATA
+  // ===============================
   const profileData = {
-    name: "นายคุ๊กกี้ อร่อย",
+    name: activeUser?.name || "ผู้ใช้งาน",
     phone: "083xxxxxxx",
-    email: "cookie@gmail.com",
+    email: "user@gmail.com",
   };
 
-  // ข้อมูลสัตว์เลี้ยง
-  const petData = {
-    id: "P001",
-    name: "น้องจุ๊ดจุ๊ด",
-    type: "สุนัข",
-    breed: "สายพันธุ์ โกลเด้นรีทรีฟเวอร์",
-    age: "2 ปี 4 เดือน",
-    gender: "ผู้",
-    weight: "2 กิโล",
-    limitation: "แพ้ช็อกโกแลต",
-    checkIn: "29/03/2569",
-    checkOut: "01/04/2569",
+  // ===============================
+  // LOGIN
+  // ===============================
+  const handleLogin = (username, password) => {
+    const account = accounts.find(
+      (item) =>
+        item.username === username.trim() &&
+        item.password === password
+    );
+
+    if (!account) {
+      Alert.alert(
+        "เข้าสู่ระบบไม่สำเร็จ",
+        "ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง"
+      );
+      return;
+    }
+
+    // บันทึกข้อมูลบัญชีที่เข้าสู่ระบบ
+    setActiveUser(account);
+
+    // ปิดหน้าต่างและหน้ารองทั้งหมด
+    setShowRegister(false);
+    setShowForgotPassword(false);
+    setShowBooking(false);
+    setShowMyBooking(false);
+    setShowProfile(false);
+
+    // เปลี่ยนหน้าตาม Role
+    switch (account.role) {
+      case "user":
+        setCurrentPage("user");
+        break;
+
+      case "staff":
+        setCurrentPage("staff");
+        break;
+
+      case "admin":
+        setCurrentPage("admin");
+        break;
+
+      default:
+        Alert.alert("ข้อผิดพลาด", "ไม่พบสิทธิ์ของบัญชีนี้");
+        break;
+    }
   };
 
-  // ออกจากระบบ
+  // ===============================
+  // REGISTER
+  // สมัครสมาชิกได้เฉพาะ USER
+  // ===============================
+  const handleRegister = (
+    username,
+    email,
+    phone,
+    password,
+    confirmPassword
+  ) => {
+    const cleanUsername = username.trim();
+
+    if (
+      !cleanUsername ||
+      !email.trim() ||
+      !phone.trim() ||
+      !password ||
+      !confirmPassword
+    ) {
+      Alert.alert("แจ้งเตือน", "กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("แจ้งเตือน", "รหัสผ่านไม่ตรงกัน");
+      return;
+    }
+
+    if (
+      accounts.some(
+        (item) =>
+          item.username.toLowerCase() === cleanUsername.toLowerCase()
+      )
+    ) {
+      Alert.alert("แจ้งเตือน", "ชื่อบัญชีนี้ถูกใช้งานแล้ว");
+      return;
+    }
+
+    // ทุกบัญชีที่สมัครใหม่จะเป็น USER เท่านั้น
+    const newAccount = {
+      username: cleanUsername,
+      password: password,
+      role: "user",
+      name: username.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+    };
+
+    setAccounts((prev) => [...prev, newAccount]);
+
+    Alert.alert(
+      "สมัครสมาชิกสำเร็จ",
+      "สร้างบัญชีผู้ใช้งานเรียบร้อยแล้ว กรุณาเข้าสู่ระบบ",
+      [
+        {
+          text: "ตกลง",
+          onPress: () => {
+            setShowRegister(false);
+            setShowForgotPassword(false);
+          },
+        },
+      ]
+    );
+  };
+
+  // ===============================
+  // LOGOUT
+  // ===============================
   const handleLogout = () => {
+    setActiveUser(null);
+
     setCurrentPage("guest");
 
     setShowBooking(false);
@@ -69,7 +209,9 @@ export default function App() {
     setShowForgotPassword(false);
   };
 
-  // กลับหน้า User หลังจากส่งข้อมูลการจอง
+  // ===============================
+  // BOOKING SUBMIT
+  // ===============================
   const handleBookingSubmit = (bookingData) => {
     console.log("ข้อมูลการจอง:", bookingData);
 
@@ -87,12 +229,31 @@ export default function App() {
     );
   };
 
+  // ===============================
+  // PROFILE
+  // ===============================
+  const renderProfile = () => (
+    <UserProfile
+      visible={showProfile}
+      onClose={() => setShowProfile(false)}
+      title={profileData.name}
+      name={profileData.name}
+      phone={activeUser?.phone || profileData.phone}
+      email={activeUser?.email || profileData.email}
+    />
+  );
+
+  // ===============================
+  // LOADING
+  // ===============================
   return (
     <View style={styles.container}>
 
-      {/* ================= หน้า Guest ================= */}
+      {/* =================================
+          GUEST
+      ================================= */}
       {currentPage === "guest" && (
-        <>
+        <View style={styles.pageContainer}>
           <LogoutNavbar
             onLogin={() => {
               setCurrentPage("login");
@@ -104,10 +265,12 @@ export default function App() {
               setCurrentPage("login");
             }}
           />
-        </>
+        </View>
       )}
 
-      {/* ================= หน้า Login ================= */}
+      {/* =================================
+          LOGIN / REGISTER / FORGOT
+      ================================= */}
       {currentPage === "login" && (
         showForgotPassword ? (
           <ForgotPassword
@@ -119,21 +282,8 @@ export default function App() {
         ) : showRegister ? (
           <Register
             onBack={() => setShowRegister(false)}
-            onRegister={(
-              username,
-              email,
-              phone,
-              password,
-              confirmPassword
-            ) => {
-              console.log("ข้อมูลสมัครสมาชิก:", {
-                username,
-                email,
-                phone,
-                password,
-                confirmPassword,
-              });
-            }}
+            onLogin={() => setShowRegister(false)}
+            onRegister={handleRegister}
           />
         ) : (
           <Login
@@ -142,37 +292,25 @@ export default function App() {
               setShowRegister(false);
               setShowForgotPassword(false);
             }}
-            onLogin={(username, password) => {
-              if (username === "a" && password === "123") {
-                console.log("เข้าสู่ระบบสำเร็จ");
-
-                setCurrentPage("user");
-                setShowBooking(false);
-                setShowMyBooking(false);
-                setShowProfile(false);
-              } else {
-                Alert.alert(
-                  "เข้าสู่ระบบไม่สำเร็จ",
-                  "ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง"
-                );
-              }
-            }}
+            onLogin={handleLogin}
             onForgotPassword={() => setShowForgotPassword(true)}
-            onGoogleLogin={() => console.log("Google Login")}
+            onGoogleLogin={() => {
+              console.log("Google Login");
+            }}
             onRegister={() => setShowRegister(true)}
           />
         )
       )}
 
-      {/* ================= หน้า User ================= */}
+      {/* =================================
+          USER ROLE
+      ================================= */}
       {currentPage === "user" && (
         <View style={styles.userContainer}>
 
-          {/* Navbar อยู่ด้านบนตลอด */}
+          {/* Navbar User */}
           <NavbarUser
-            onProfile={() => {
-              setShowProfile(true);
-            }}
+            onProfile={() => setShowProfile(true)}
             onMyBooking={() => {
               setShowMyBooking(true);
               setShowBooking(false);
@@ -181,17 +319,9 @@ export default function App() {
             onLogout={handleLogout}
           />
 
-          {/* พื้นที่เนื้อหาด้านล่าง Navbar */}
           <View style={styles.pageContent}>
 
-            <UserProfile
-              visible={showProfile}
-              onClose={() => setShowProfile(false)}
-              title={profileData.name}
-              name={profileData.name}
-              phone={profileData.phone}
-              email={profileData.email}
-            />
+            {renderProfile()}
 
             {showBooking ? (
               <BookingUser
@@ -218,14 +348,83 @@ export default function App() {
         </View>
       )}
 
+      {/* =================================
+          STAFF ROLE
+      ================================= */}
+      {currentPage === "staff" && (
+        <View style={styles.userContainer}>
+
+          {/* Navbar Staff / Admin */}
+          <NavbarSA
+            onProfile={() => setShowProfile(true)}
+            onLogout={handleLogout}
+          />
+
+          <View style={styles.pageContent}>
+
+            {renderProfile()}
+
+            <HomePageStaff
+              onViewBooking={(item) => {
+                console.log("ดูรายละเอียดการจอง:", item);
+              }}
+              onViewPet={(item) => {
+                console.log("ดูรายละเอียดสัตว์เลี้ยง:", item);
+              }}
+              onCheckIn={(item) => {
+                console.log("รับสัตว์เลี้ยงเข้าพัก:", item);
+              }}
+              onCheckOut={(item) => {
+                console.log("รับสัตว์เลี้ยงกลับ:", item);
+              }}
+            />
+
+          </View>
+        </View>
+      )}
+
+      {/* =================================
+          ADMIN ROLE
+      ================================= */}
+      {currentPage === "admin" && (
+        <View style={styles.userContainer}>
+
+          {/* Navbar Staff / Admin */}
+          <NavbarSA
+            onProfile={() => setShowProfile(true)}
+            onLogout={handleLogout}
+          />
+
+          <View style={styles.pageContent}>
+
+            {renderProfile()}
+
+            <HomepageAdmin
+              onBack={() => {
+                // คงอยู่ในหน้า Admin
+              }}
+            />
+
+          </View>
+        </View>
+      )}
+
     </View>
   );
 }
 
+// ===============================
+// STYLES
+// ===============================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1E1E1E",
+    backgroundColor: "#FFFFFF",
+  },
+
+  pageContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
   },
 
   userContainer: {

@@ -132,15 +132,6 @@ export default function Register({
                             />
                         </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>เบอร์โทร</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={phone}
-                                onChangeText={setPhone}
-                                keyboardType="phone-pad"
-                            />
-                        </View>
                     </View>
 
                     {/* แถวที่ 2: รหัสผ่าน และยืนยันรหัสผ่าน */}

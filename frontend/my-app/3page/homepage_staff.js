@@ -416,18 +416,23 @@ const styles = StyleSheet.create({
 
   // TOP SECTION
   topSection: {
-    height: 146,
+    height: 106,
     backgroundColor: "#0C2B43",
     paddingHorizontal: 68,
-    paddingTop: 36,
+    paddingTop: 32,
     flexDirection: "row",
     justifyContent: "space-between",
+
+    // แก้ Dropdown ถูกการ์ดบัง
+    position: "relative",
+    zIndex: 100,
+    elevation: 100,
   },
 
   welcomeSection: {
     flex: 1,
     marginLeft: 10,
-    paddingTop: 5,
+    paddingTop: 2,
   },
 
   welcomeRow: {
@@ -522,7 +527,7 @@ const styles = StyleSheet.create({
   // MAIN CONTENT
   mainScroll: {
     flex: 1,
-    marginTop: -29,
+    marginTop: 29,
   },
 
   mainContent: {
