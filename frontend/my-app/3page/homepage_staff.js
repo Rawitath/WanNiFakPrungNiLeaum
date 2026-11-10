@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import StaffSidePanel from "../2components/Booking_SidePanel";
 import {
   View,
   Text,
@@ -16,6 +17,14 @@ export default function HomePageStaff({
 }) {
   const [selectedBranch, setSelectedBranch] = useState("สาขา");
   const [showBranches, setShowBranches] = useState(false);
+  //ทำ panel รายละเอียดการจอง
+  const [showPanel, setShowPanel] = useState(false);
+  const [selectedPet, setSelectedPet] = useState(null);
+  
+  const handleViewPet = (pet) => {
+    setSelectedPet(pet);
+    setShowPanel(true);
+  };
 
   const branches = [
     "สาขาลาดกระบัง",
@@ -126,6 +135,7 @@ export default function HomePageStaff({
   };
 
   return (
+
     <View style={styles.container}>
 
       {/* TOP DARK SECTION */}
@@ -381,12 +391,13 @@ export default function HomePageStaff({
               <View style={[styles.actionCol, styles.actionButtons]}>
                 <TouchableOpacity
                   style={styles.tableButton}
-                  onPress={() => onViewPet && onViewPet(pet)}
+                  onPress={() => handleViewPet(pet)}
                 >
                   <Text style={styles.tableButtonText}>
                     ดูรายละเอียด
                   </Text>
                 </TouchableOpacity>
+                
 
                 <TouchableOpacity
                   style={styles.tableButton}
@@ -399,11 +410,18 @@ export default function HomePageStaff({
               </View>
 
             </View>
+            
           ))}
+        <StaffSidePanel
+        visible={showPanel}
+        pet={selectedPet}
+        onClose={() => setShowPanel(false)}
+        />
 
         </View>
 
       </ScrollView>
+      
     </View>
   );
 }
