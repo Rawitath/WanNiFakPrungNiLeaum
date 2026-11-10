@@ -17,6 +17,7 @@ import statusStaffRouter from './all/statusstaff.js';
 import entryRouter from './staff/entry.js';
 import { createForgetHandlers } from './auth/forget.js';
 import { googleOauth, googleOauthCallback } from './auth/oauth.js';
+import { registerStaff, adminCheck } from './auth/registerStaff.js';
 
 export function createApp(options = {}) {
   //-----------------------------Auth Middleware---------------------------------
@@ -137,6 +138,49 @@ export function createApp(options = {}) {
  *         description: Username or email already exists
  */
 app.post('/api/register', registerCustomer);
+
+/**
+ * @swagger
+ * /api/manager/register:
+ *   post:
+ *     summary: Register a new staff
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *               - email
+ *               - phone
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: newuser
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: new@test.com
+ *               phone:
+ *                 type: string
+ *                 example: "0812345678"
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       401:
+ *         description: This action can be done only by admin
+ *       409:
+ *         description: Username or email already exists
+ */
+app.post('/api/manager/register', adminCheck, registerStaff);
 
 /**
  * @swagger
