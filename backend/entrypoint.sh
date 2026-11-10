@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # เพิ่ม .catch เพื่อลบ unhandled rejection และแสดง log ชัดเจน
