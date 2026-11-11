@@ -3,7 +3,7 @@
 > "The ultimate open-source comfort food architecture." 
 > สูตรข้าวมันไก่ระดับโปรดักชัน เนื้อไก่นุ่มฉ่ำ ข้าวมันเรียงเม็ด น้ำจิ้มซอสเข้มข้นจัดเต็ม
 
-----
+-----
 
 ## 🛠️ System Dependencies (วัตถุดิบ)
 
