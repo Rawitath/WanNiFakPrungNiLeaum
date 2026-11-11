@@ -1,6 +1,6 @@
 services:
   frontend:
-    profiles: ["prod", "frontend"]
+    profiles: ["", "prod", "frontend"]
     restart: unless-stopped
     image: wannifakprungnileaum-frontend:latest
     build:
@@ -42,33 +42,33 @@ services:
     tty: true
 
   backend:
-    profiles: ["prod", "backend"]
+    profiles: ["", "prod", "backend"]
     image: wannifakprungnileaum-backend:latest
     restart: unless-stopped
     build:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:8081/api/oauth/google/callback}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-none}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-none}
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION: ${JWT_EXPIRATION}
-      PASSWORD_ENDEC_SALT: ${PASSWORD_ENDEC_SALT}
-      ADMIN_USERNAME: ${ADMIN_USERNAME}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      ADMIN_PHONE: ${ADMIN_PHONE}
-    ports:
-      - "3000:3000"
+      DB_NAME: ${POSTGRES_DB:-stayforget}
+      DB_USER: ${POSTGRES_USER:-stayforget}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-aa1234}
+      JWT_SECRET: ${JWT_SECRET:-secret123}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-1h}
+      PASSWORD_ENDEC_SALT: ${PASSWORD_ENDEC_SALT:-saltSALT}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin1234}
+      ADMIN_PHONE: ${ADMIN_PHONE:-0899999999}
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "3000:3000"
     networks:
       - stayforget-network
 
@@ -135,17 +135,17 @@ services:
 
   db:
     image: postgres:18-alpine
-    profiles: ["prod", "test", "backend"]
+    profiles: ["", "prod", "test", "backend"]
     restart: unless-stopped
     volumes:
       - stayforget_db:/var/lib/postgresql
       - ./init-scripts/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-stayforget}
+      POSTGRES_USER: ${POSTGRES_USER:-stayforget}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aa1234}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-stayforget} -d $${POSTGRES_DB:-stayforget}"]
       interval: 3s
       timeout: 3s
       retries: 5
