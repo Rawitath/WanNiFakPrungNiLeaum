@@ -264,6 +264,9 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
     try {
       // 1. สั่งปิด Server ก่อนเป็นอันดับแรก เพื่อหยุดรับ/ตัด Request ที่ค้างอยู่ (แก้ TCPSERVERWRAP)
       if (server) {
+        // closeAllConnections() ตัด keep-alive socket ที่ supertest ทิ้งไว้ทันที (Node 18.2+)
+        // หากไม่เรียก server.close() จะรอ connection เหล่านั้นปิดเองซึ่งไม่มีวันเกิดขึ้น
+        server.closeAllConnections();
         await new Promise((resolve, reject) => {
           server.close((err) => {
             if (err) return reject(err);
