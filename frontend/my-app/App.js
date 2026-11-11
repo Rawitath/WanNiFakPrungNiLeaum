@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, StyleSheet, Alert, Platform, Linking } from "react-native";
 import { useFonts } from "expo-font";
 
 import {
@@ -19,6 +19,8 @@ import {
   parseJwt,
   clearAuthToken,
   apiManagerRegisterStaff,
+  oAuthLogin,
+  oAuthCallback
 } from "./api";
 
 import LogoutNavbar from "./2components/logoutnavbar";
@@ -94,6 +96,62 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [activeUser, setActiveUser] = useState(null);
   const [isRestoring, setIsRestoring] = useState(true);
+  const processedOAuthCodeRef = useRef(null);
+
+  // ตรวจจับ OAuth Callback (เช่น http://localhost:8081/oauth/google/callback หรือ deep link)                                                                                                     
+      useEffect(() => {                                                             
+        const handleOAuthUrl = async (rawUrl) => {                                  
+          if (!rawUrl) return;                                                      
+          try {                                                                     
+            const parsedUrl = new URL(rawUrl, "http://localhost:8081");             
+            if (                                                                    
+              parsedUrl.pathname.includes("/oauth/google/callback") ||              
+              parsedUrl.pathname.includes("/oauth/callback")                        
+            ) {                                                                     
+              const code = parsedUrl.searchParams.get("code");                      
+              // ถ้าไม่มี code หรือ code นี้ถูกประมวลผลไปแล้ว ให้ข้ามทันที                      
+              if (!code || processedOAuthCodeRef.current === code) return;          
+              processedOAuthCodeRef.current = code;                                 
+                                                                                    
+              // เคลียร์ URL บน browser ทันทีเพื่อไม่ให้ค้าง query string                    
+              if (Platform.OS === "web" && typeof window !== "undefined" &&         
+              window.history?.replaceState) {                                       
+                window.history.replaceState({}, document.title,                     
+                window.location.pathname.replace(/\/oauth\/.*$/, "") || "/");       
+              }                                                                     
+                                                                                    
+              const res = await oAuthCallback(code);                                
+              if (!res.ok || !res.data?.accessToken) {                              
+                showMessage(res.data?.message || res.data?.error ||                 
+                "ยืนยันการเข้าสู่ระบบด้วย Google ไม่สำเร็จ");                                
+                return;                                                             
+              }                                                                     
+              await processUserAuth(res.data.accessToken);                          
+            }                                                                       
+          } catch (err) {                                                           
+            console.warn("handleOAuthUrl error:", err);                             
+          }                                                                         
+        }
+
+    // 1. ตรวจสอบในโหมด Web
+    if (Platform.OS === "web" && typeof window !== "undefined" && window.location) {
+      handleOAuthUrl(window.location.href);
+    }
+
+    // 2. ตรวจสอบ Initial URL สำหรับ Native หรือ Deep Link
+    Linking.getInitialURL().then((url) => {
+      if (url) handleOAuthUrl(url);
+    });
+
+    // 3. ฟัง URL Event ในกรณี redirect กลับมาตอนแอปเปิดอยู่
+    const subscription = Linking.addEventListener("url", (event) => {
+      handleOAuthUrl(event.url);
+    });
+
+    return () => {
+      subscription?.remove?.();
+    };
+  }, []);
 
   const [dataSets, setDataSets] = useState([]);
   const [activityList, setActivityList] = useState([]);
@@ -580,6 +638,40 @@ export default function App() {
     setPopupVisible(true);
   };
 
+  const processUserAuth = async (token) => {
+    const payload = parseJwt(token);
+    const backendRole = String(payload?.role || "customer").toLowerCase();
+    const role = backendRole === "customer" ? "user" :
+      backendRole === "manager" ? "admin" : backendRole;
+
+    const profRes = await apiGetProfile();
+    const profile = profRes.ok ? profRes.data : {};
+    const userObj = {
+      userid: payload?.userid || "",
+      username: profile.username || payload?.username || payload?.email || "ผู้ใช้งาน",
+      name: profile.username || profile.name || payload?.name || payload?.email || "ผู้ใช้งาน",
+      email: profile.email || payload?.email || "",
+      phone: profile.phone || payload?.phone || "",
+      role,
+    };
+
+    setActiveUser(userObj);
+    setShowRegister(false);
+    setShowForgotPassword(false);
+    setShowBooking(false);
+    setShowMyBooking(false);
+    setShowProfile(false);
+    setCurrentPage(role);
+    setDataSets([]);
+
+    if (role === "user") await loadCustomerData(userObj);
+    else if (role === "staff") await loadStaffData();
+    else if (role === "admin") {
+      const overview = await apiGetManagerStatus();
+      if (overview.ok) setAdminOverview(overview.data);
+    }
+  };
+
   const handleLogin = async (username, password) => {
     if (!username?.trim() || !password) {
       showMessage("กรุณากรอกชื่อบัญชีและรหัสผ่าน");
@@ -592,40 +684,24 @@ export default function App() {
         return;
       }
 
-      const payload = parseJwt(res.data.accessToken);
-      const backendRole = String(payload?.role || "customer").toLowerCase();
-      const role = backendRole === "customer" ? "user" :
-        backendRole === "manager" ? "admin" : backendRole;
-
-      const profRes = await apiGetProfile();
-      const profile = profRes.ok ? profRes.data : {};
-      const userObj = {
-        userid: payload?.userid || "",
-        username: profile.username || username.trim(),
-        name: profile.username || username.trim(),
-        email: profile.email || payload?.email || "",
-        phone: profile.phone || payload?.phone || "",
-        role,
-      };
-
-      setActiveUser(userObj);
-      setShowRegister(false);
-      setShowForgotPassword(false);
-      setShowBooking(false);
-      setShowMyBooking(false);
-      setShowProfile(false);
-      setCurrentPage(role);
-      setDataSets([]);
-
-      if (role === "user") await loadCustomerData(userObj);
-      else if (role === "staff") await loadStaffData();
-      else if (role === "admin") {
-        const overview = await apiGetManagerStatus();
-        if (overview.ok) setAdminOverview(overview.data);
-      }
+      await processUserAuth(res.data.accessToken);
     } catch (err) {
       console.warn("handleLogin error:", err);
       showMessage("ไม่สามารถเข้าสู่ระบบได้ กรุณาตรวจสอบการเชื่อมต่อ Backend");
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const loginUrl = await oAuthLogin();
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.location.href = loginUrl;
+      } else {
+        await Linking.openURL(loginUrl);
+      }
+    } catch (err) {
+      console.warn("handleGoogleLogin error:", err);
+      showMessage("ไม่สามารถเปิดหน้าเข้าสู่ระบบของ Google ได้");
     }
   };
 
@@ -692,6 +768,7 @@ export default function App() {
           onLogin={handleLogin}
           onRegister={() => setShowRegister(true)}
           onForgotPassword={() => setShowForgotPassword(true)}
+          onGoogleLogin={handleGoogleLogin}
         />
       )}
 

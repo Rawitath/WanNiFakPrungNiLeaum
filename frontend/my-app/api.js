@@ -279,3 +279,16 @@ export async function apiGetStaffCallCustomerList() {
 export async function apiGetManagerStatus() {
   return apiRequest("/api/manager/status", { method: "GET" });
 }
+
+export async function oAuthLogin() {
+  return `${API_BASE_URL}/api/oauth/google`;
+}
+
+export async function oAuthCallback(code) {
+  const query = code ? `?code=${encodeURIComponent(code)}` : "";
+  const result = await apiRequest(`/api/oauth/google/callback${query}`, { method: "GET" });
+  if (result.ok && result.data?.accessToken) {
+    await setAuthToken(result.data.accessToken);
+  }
+  return result;
+}
