@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -18,12 +18,24 @@ const PetDetails = ({
 }) => {
   const [status, setStatus] = useState(initialStatus);
 
+  useEffect(() => {
+    setStatus(initialStatus || "รอรับเข้า");
+  }, [initialStatus, pet?.id]);
+
   const statusOptions = [
     "รอรับเข้า",
     "In Care",
-    "พร้อมรับกลับบ้าน",
-    "รับกลับบ้านแล้ว",
+    "รอรับกลับ",
+    "รับกลับแล้ว",
+    "ถูกปฏิเสธ",
   ];
+
+  const displayValue = (value) => {
+    if (value === null || value === undefined || String(value).trim() === "") {
+      return "ไม่ได้ระบุ";
+    }
+    return String(value);
+  };
 
   const activeStatusIndex = statusOptions.indexOf(status);
 
@@ -36,7 +48,7 @@ const PetDetails = ({
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.containerContent} showsVerticalScrollIndicator={false}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
@@ -73,44 +85,49 @@ const PetDetails = ({
             <Text style={styles.ticketLogo}>StayTodayForgotTomorrow</Text>
 
             <View style={styles.petId}>
-              <Text style={styles.petIdText}>{pet.id}</Text>
+              <Text style={styles.petIdText}>{displayValue(pet?.id)}</Text>
             </View>
           </View>
 
           {/* Pet Information */}
           <View style={styles.ticketBody}>
             <View style={styles.petInfo}>
-              <Text style={styles.petName}>{pet.name}</Text>
+              <Text style={styles.petName}>{displayValue(pet?.name)}</Text>
 
               {/* หัวข้อและข้อมูลรับมาจาก App.js */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>ชนิด</Text>
-                <Text style={styles.infoValue}>{pet.type}</Text>
+                <Text style={styles.infoValue}>{displayValue(pet?.petType || pet?.type)}</Text>
               </View>
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>สายพันธุ์</Text>
-                <Text style={styles.infoValue}>{pet.breed}</Text>
+                <Text style={styles.infoValue}>{displayValue(pet?.breed)}</Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>อายุ</Text>
-                <Text style={styles.infoValue}>{pet.age}</Text>
+                <Text style={styles.infoLabel}>วันเกิด</Text>
+                <Text style={styles.infoValue}>{displayValue(pet?.birth || pet?.age)}</Text>
               </View>
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>เพศ</Text>
-                <Text style={styles.infoValue}>{pet.gender}</Text>
+                <Text style={styles.infoValue}>{displayValue(pet?.gender)}</Text>
               </View>
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>น้ำหนัก</Text>
-                <Text style={styles.infoValue}>{pet.weight}</Text>
+                <Text style={styles.infoValue}>{pet?.weight ? `${pet.weight} กก.` : "ไม่ได้ระบุ"}</Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>ข้อจำกัด</Text>
-                <Text style={styles.infoValue}>{pet.limitation}</Text>
+                <Text style={styles.infoLabel}>สุขภาพ/การแพ้</Text>
+                <Text style={styles.infoValue}>{displayValue(pet?.health || pet?.limitation)}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>คำแนะนำดูแล</Text>
+                <Text style={styles.infoValue}>{displayValue(pet?.careNotes)}</Text>
               </View>
             </View>
 
@@ -129,7 +146,10 @@ const PetDetails = ({
               )}
 
               <Text style={styles.dateText}>
-                วันที่เข้าพัก {pet.checkIn}-{pet.checkOut}
+                วันที่เข้าพัก {displayValue(pet?.checkIn || pet?.startDate)} - {displayValue(pet?.checkOut || pet?.endDate)}
+              </Text>
+              <Text style={styles.dateText}>
+                สาขา {displayValue(pet?.branch)}
               </Text>
             </View>
           </View>
@@ -223,16 +243,20 @@ const PetDetails = ({
           })}
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    height: "100%",
-    paddingHorizontal: 30,
+    flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+
+  containerContent: {
+    paddingHorizontal: 30,
+    paddingBottom: 35,
   },
 
   // Back Button

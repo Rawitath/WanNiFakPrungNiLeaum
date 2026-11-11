@@ -15,6 +15,23 @@ export default function MyBookingUser({
   const [filter, setFilter] = useState("ทั้งหมด");
   const [showFilter, setShowFilter] = useState(false);
 
+  const statusOptions = [
+    "ทั้งหมด",
+    "รอยืนยันคิว",
+    "รอรับเข้า",
+    "In Care",
+    "รอรับกลับ",
+    "รับกลับแล้ว",
+    "ถูกปฏิเสธ",
+  ];
+
+  const displayValue = (value) => {
+    if (value === null || value === undefined || String(value).trim() === "") {
+      return "ไม่ได้ระบุ";
+    }
+    return String(value);
+  };
+
   const filteredBookings = useMemo(
     () =>
       filter === "ทั้งหมด"
@@ -24,9 +41,9 @@ export default function MyBookingUser({
   );
 
   const getStatusColor = (status) => {
-    if (status === "จองสำเร็จ") return "#279b45";
-    if (status === "กำลังดำเนินการ") return "#f39c12";
-    if (status === "จองไม่สำเร็จ") return "#e53935";
+    if (status === "In Care" || status === "รับกลับแล้ว") return "#279b45";
+    if (status === "รอรับเข้า" || status === "รอรับกลับ" || status === "รอยืนยันคิว") return "#f39c12";
+    if (status === "ถูกปฏิเสธ") return "#e53935";
     return "#333333";
   };
 
@@ -56,7 +73,7 @@ export default function MyBookingUser({
           </TouchableOpacity>
           {showFilter && (
             <View style={styles.filterDropdown}>
-              {["ทั้งหมด", "จองสำเร็จ", "กำลังดำเนินการ", "จองไม่สำเร็จ"].map(
+              {statusOptions.map(
                 (status) => (
                   <TouchableOpacity
                     key={status}
@@ -91,12 +108,12 @@ export default function MyBookingUser({
         <View style={styles.bookingList}>
           {filteredBookings.length ? (
             filteredBookings.map((booking) => (
-              <View key={booking.id} style={styles.bookingCard}>
+              <View key={displayValue(booking.id)} style={styles.bookingCard}>
                 <View style={styles.cardBar} />
                 <View style={styles.cardContent}>
                   <View style={styles.cardHeader}>
                     <Text style={styles.bookingId}>
-                      รหัสนัดหมาย {booking.id}
+                      รหัสนัดหมาย {displayValue(booking.id)}
                     </Text>
                     <Text
                       style={[
@@ -104,29 +121,38 @@ export default function MyBookingUser({
                         { color: getStatusColor(booking.status) },
                       ]}
                     >
-                      {booking.status}
+                      {displayValue(booking.status)}
                     </Text>
                   </View>
-                  <Text style={styles.branchText}>สาขา {booking.branch}</Text>
+                  <Text style={styles.branchText}>สาขา {displayValue(booking.branch)}</Text>
                   <View style={styles.infoContainer}>
                     <View style={styles.infoColumn}>
                       <Text style={styles.infoLabel}>ข้อมูลผู้จอง</Text>
-                      <Text style={styles.infoValue}>{booking.name}</Text>
-                      <Text style={styles.infoValue}>{booking.phone}</Text>
+                      <Text style={styles.infoValue}>{displayValue(booking.name)}</Text>
+                      <Text style={styles.infoValue}>{displayValue(booking.phone)}</Text>
                     </View>
                     <View style={styles.infoColumn}>
                       <Text style={styles.infoLabel}>ข้อมูลสัตว์เลี้ยง</Text>
-                      <Text style={styles.infoValue}>{booking.pet}</Text>
-                      <Text style={styles.infoValue}>{booking.breed}</Text>
-                      <Text style={styles.infoValue}>{booking.age}</Text>
+                      <Text style={styles.infoValue}>{displayValue(booking.pet)}</Text>
+                      <Text style={styles.infoValue}>ประเภท: {displayValue(booking.petType)}</Text>
+                      <Text style={styles.infoValue}>สายพันธุ์: {displayValue(booking.breed)}</Text>
+                      <Text style={styles.infoValue}>เพศ: {displayValue(booking.gender)}</Text>
+                      <Text style={styles.infoValue}>วันเกิด: {displayValue(booking.birth || booking.age)}</Text>
+                      <Text style={styles.infoValue}>น้ำหนัก: {booking.weight ? `${booking.weight} กก.` : "ไม่ได้ระบุ"}</Text>
+                      <Text style={styles.infoValue}>สุขภาพ: {displayValue(booking.health)}</Text>
+                      <Text style={styles.infoValue}>คำแนะนำ: {displayValue(booking.careNotes)}</Text>
                     </View>
                     <View style={styles.dateColumn}>
                       <Text style={styles.infoLabel}>
                         วันที่เริ่ม-สิ้นสุดบริการ
                       </Text>
                       <Text style={styles.infoValue}>
-                        {booking.startDate} - {booking.endDate}
+                        {displayValue(booking.startDate)} - {displayValue(booking.endDate)}
                       </Text>
+                      <Text style={styles.infoValue}>เวลากดจอง: {displayValue(booking.bookingTime || booking.time)}</Text>
+                      <Text style={styles.infoValue}>เวลาเช็กอิน: {displayValue(booking.checkInTime)}</Text>
+                      <Text style={styles.infoValue}>เวลาเช็กเอาต์: {displayValue(booking.checkOutTime)}</Text>
+                      <Text style={styles.infoValue}>อีเมล: {displayValue(booking.email)}</Text>
                     </View>
                   </View>
                 </View>

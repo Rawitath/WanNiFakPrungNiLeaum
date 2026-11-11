@@ -42,6 +42,8 @@ const normalizePetStatus = (status) => {
   const legacyStatuses = {
     "อยู่ระหว่างดูแล": "In Care",
     "พร้อมรับกลับ": "รอรับกลับ",
+    "พร้อมรับกลับบ้าน": "รอรับกลับ",
+    "รับกลับบ้านแล้ว": "รับกลับแล้ว",
     "ปฏิเสธแล้ว": "ถูกปฏิเสธ",
   };
 
@@ -75,15 +77,12 @@ const INITIAL_DATA = [
       careNotes: "ชอบเดินเล่น ต้องการพื้นที่ออกกำลังกาย",
     },
     booking: {
-      id: "#O001",
+      id: "#B001",
       branch: "ลาดกระบัง",
       startDate: "10/03/2569",
       endDate: "13/03/2569",
-      time: "10:00",
-      status: "In Care",
-      checkIn: "10/03/2569",
-      checkOut: "13/03/2569",
       bookingTime: "10:00",
+      status: "In Care",
     },
   },
 
@@ -105,15 +104,12 @@ const INITIAL_DATA = [
       careNotes: "ให้อาหารสูตรสำหรับแมวแพ้ง่าย",
     },
     booking: {
-      id: "#O002",
+      id: "#B002",
       branch: "ลาดกระบัง",
-      startDate: "11/03/2569",
-      endDate: "14/03/2569",
-      time: "13:00",
-      status: "รอรับกลับ",
-      checkIn: "11/03/2569",
-      checkOut: "14/03/2569",
+      startDate: "10/03/2569",
+      endDate: "13/03/2569",
       bookingTime: "10:00",
+      status: "In Care",
     },
   },
 
@@ -135,15 +131,12 @@ const INITIAL_DATA = [
       careNotes: "ไม่ค่อยคุ้นเคยกับสัตว์เลี้ยงตัวอื่น",
     },
     booking: {
-      id: "#O003",
-      branch: "บางนา",
-      startDate: "12/03/2569",
-      endDate: "15/03/2569",
-      time: "14:30",
-      status: "ถูกปฏิเสธ",
-      checkIn: "12/03/2569",
-      checkOut: "15/03/2569",
+      id: "#B003",
+      branch: "ลาดกระบัง",
+      startDate: "10/03/2569",
+      endDate: "13/03/2569",
       bookingTime: "10:00",
+      status: "รอรับกลับ",
     },
   },
 
@@ -165,15 +158,12 @@ const INITIAL_DATA = [
       careNotes: "ห้ามให้ยาหากไม่ได้รับคำแนะนำจากเจ้าของ",
     },
     booking: {
-      id: "#O004",
-      branch: "ลาดกระบัง",
-      startDate: "13/03/2569",
-      endDate: "16/03/2569",
-      time: "16:00",
-      status: "รอรับเข้า",
-      checkIn: "13/03/2569",
-      checkOut: "16/03/2569",
+      id: "#B004",
+      branch: "สาขาร่มเกล้า",
+      startDate: "10/03/2569",
+      endDate: "13/03/2569",
       bookingTime: "10:00",
+      status: "ถูกปฏิเสธ",
     },
   },
 
@@ -195,15 +185,12 @@ const INITIAL_DATA = [
       careNotes: "ต้องการพาเดินเล่นวันละ 2 ครั้ง",
     },
     booking: {
-      id: "#O005",
-      branch: "บางนา",
-      startDate: "14/03/2569",
-      endDate: "18/03/2569",
-      time: "17:00",
-      status: "In Care",
-      checkIn: "14/03/2569",
-      checkOut: "18/03/2569",
+      id: "#B005",
+      branch: "สาขาร่มเกล้า",
+      startDate: "10/03/2569",
+      endDate: "13/03/2569",
       bookingTime: "10:00",
+      status: "รอยืนยันคิว",
     },
   },
 ];
@@ -215,64 +202,61 @@ const INITIAL_DATA = [
 
 const cleanSavedData = (item) => {
   const cleanItem = { ...item };
-
   delete cleanItem.staffPet;
   delete cleanItem.activity;
 
   const oldPet = cleanItem.pet || {};
   const oldBooking = cleanItem.booking || {};
+  const oldQueue = cleanItem.queue || {};
 
-  // ย้ายรายละเอียดสัตว์เลี้ยงที่เคยอยู่ใน booking มาไว้ใน pet
-  const cleanPetData = {
+  const petBirth =
+    oldPet.birth || oldPet.age || oldBooking.birth || oldBooking.age || "";
+
+  const cleanPet = {
     ...oldPet,
-    petType: oldPet.petType || oldBooking.petType || "",
+    id: oldPet.id || `P${String(Date.now()).slice(-6)}`,
+    name: oldPet.name || "",
+    petType: oldPet.petType || oldPet.type || oldBooking.petType || oldBooking.type || "",
     breed: oldPet.breed || oldBooking.breed || "",
     gender: oldPet.gender || oldBooking.gender || "",
-    age: oldPet.age || oldBooking.age || "",
+    birth: petBirth,
+    age: petBirth,
     weight: oldPet.weight || oldBooking.weight || "",
-    health: oldPet.health || oldBooking.health || "",
+    health: oldPet.health || oldPet.limitation || oldBooking.health || "",
     careNotes: oldPet.careNotes || oldBooking.careNotes || "",
+    image: oldPet.image || require("./1assets/piclogo.png"),
   };
 
-  // สถานะเก็บไว้ที่ booking.status
-  const cleanBooking = { ...oldBooking };
+  const cleanBooking = {
+    ...oldBooking,
+    status: normalizePetStatus(oldBooking.status || oldPet.status),
+    startDate: oldBooking.startDate || oldBooking.checkIn || "",
+    endDate: oldBooking.endDate || oldBooking.checkOut || "",
+    time: oldBooking.time || oldBooking.bookingTime || "--:--",
+    bookingTime: oldBooking.bookingTime || oldBooking.time || "--:--",
+  };
 
-  cleanBooking.status = normalizePetStatus(
-    oldBooking.status || oldPet.status
-  );
-
-  // ลบรายละเอียดสัตว์เลี้ยงที่ซ้ำออกจาก booking
   delete cleanBooking.petType;
+  delete cleanBooking.type;
   delete cleanBooking.breed;
   delete cleanBooking.gender;
   delete cleanBooking.age;
+  delete cleanBooking.birth;
   delete cleanBooking.weight;
   delete cleanBooking.health;
   delete cleanBooking.careNotes;
 
-  // ลบ status เก่าที่เคยอยู่ใน pet
-  delete cleanPetData.status;
-  delete cleanPetData.detailStatus;
+  delete cleanPet.status;
+  delete cleanPet.detailStatus;
+  delete cleanPet.type;
+  delete cleanPet.limitation;
 
-  cleanItem.pet = {
-    ...cleanPetData,
-    id: cleanPetData.id || `P${String(Date.now()).slice(-6)}`,
-    image: cleanPetData.image || require("./1assets/piclogo.png"),
-    name: cleanPetData.name || "",
-    petType: cleanPetData.petType || "",
-    breed: cleanPetData.breed || "",
-    gender: cleanPetData.gender || "",
-    age: cleanPetData.age || "",
-    weight: cleanPetData.weight || "",
-    health: cleanPetData.health || "",
-    careNotes: cleanPetData.careNotes || "",
-  };
-
-  cleanItem.booking = {
-    ...cleanBooking,
-    startDate: cleanBooking.startDate || cleanBooking.checkIn || "",
-    endDate: cleanBooking.endDate || cleanBooking.checkOut || "",
-    time: cleanBooking.time || cleanBooking.checkInTime || "--:--",
+  cleanItem.pet = cleanPet;
+  cleanItem.booking = cleanBooking;
+  cleanItem.queue = {
+    ...oldQueue,
+    id: oldQueue.id || `Q${String(Date.now()).slice(-6)}`,
+    time: oldQueue.time || cleanBooking.time || "--:--",
   };
 
   return cleanItem;
@@ -303,36 +287,59 @@ export default function App() {
   const [activityList, setActivityList] = useState([]);
 
   // USER PET DATA
-  // ส่ง status ให้หน้าแสดงสัตว์เลี้ยง แต่ข้อมูลจริงอยู่ใน booking.status
+  // ส่งข้อมูลสัตว์เลี้ยงพร้อมข้อมูลการจองให้หน้า PetDetails
   const pets = dataSets.map((item) => ({
     ...item.pet,
-    status: item.booking.status,
-    owner: item.owner,
+    id: item.pet.id || item.booking.id,
+    image: item.pet.image || require("./1assets/piclogo.png"),
+    status: normalizePetStatus(item.booking.status),
+    checkIn: item.booking.checkIn || item.booking.startDate || "",
+    checkOut: item.booking.checkOut || item.booking.endDate || "",
+    startDate: item.booking.startDate || item.booking.checkIn || "",
+    endDate: item.booking.endDate || item.booking.checkOut || "",
+    branch: item.booking.branch || "",
+    bookingId: item.booking.id || "",
+    bookingTime: item.booking.bookingTime || item.booking.time || "",
+    owner: item.owner || {},
   }));
 
   // BOOKING DATA
+  // รวมข้อมูลจาก owner, pet และ booking เพื่อให้หน้า MyBookingUser แสดงครบ
   const bookings = dataSets.map((item) => ({
     ...item.booking,
-    pet: item.pet.name,
-    name: item.owner.name,
-    phone: item.owner.phone,
+    id: item.booking.id || item.owner?.id || item.pet.id,
+    pet: item.pet.name || "",
+    petType: item.pet.petType || item.pet.type || "",
+    breed: item.pet.breed || "",
+    gender: item.pet.gender || "",
+    age: item.pet.birth || item.pet.age || "",
+    birth: item.pet.birth || item.pet.age || "",
+    weight: item.pet.weight || "",
+    health: item.pet.health || "",
+    careNotes: item.pet.careNotes || "",
+    name: item.owner?.name || "",
+    phone: item.owner?.phone || "",
+    email: item.owner?.email || "",
+    status: normalizePetStatus(item.booking.status),
   }));
 
   // STAFF PET DATA
   const staffPets = dataSets.map((item) => ({
-    id: item.pet.id,
-    name: item.pet.name,
-    image: item.pet.image,
-    owner: item.owner.name,
-    status: item.booking.status,
+    id: item.pet.id || item.booking.id,
+    name: item.pet.name || "",
+    image: item.pet.image || require("./1assets/piclogo.png"),
+    owner: item.owner?.name || "",
+    status: normalizePetStatus(item.booking.status),
   }));
 
   // BOOKING QUEUE DATA
   const bookingQueue = dataSets.map((item) => ({
+    id: item.queue?.id || item.booking.id,
     bookingId: item.booking.id,
-    time: item.queue.time,
-    name: item.pet.name,
-    detail: `${item.owner.name} - ${item.booking.startDate} ถึง ${item.booking.endDate}`,
+    petId: item.pet.id || item.booking.id,
+    time: item.queue?.time || item.booking.time || "--:--",
+    name: item.pet.name || "",
+    detail: `${item.owner?.name || ""} - ${item.booking.startDate || item.booking.checkIn || ""} ถึง ${item.booking.endDate || item.booking.checkOut || ""}`,
   }));
 
   // ACCOUNT STATE
@@ -661,6 +668,7 @@ export default function App() {
         petType: bookingData.petType || "",
         breed: bookingData.breed || "",
         gender: bookingData.gender || "",
+        birth: bookingData.age || "",
         age: bookingData.age || "",
         weight: bookingData.weight || "",
         health: bookingData.health || "",
@@ -674,6 +682,7 @@ export default function App() {
         startDate: bookingData.checkIn || "",
         endDate: bookingData.checkOut || "",
         time: bookingTime,
+        bookingTime,
         status: "รอรับเข้า",
         checkIn: bookingData.checkIn || "",
         checkOut: bookingData.checkOut || "",
@@ -683,7 +692,7 @@ export default function App() {
 
       queue: {
         id: `Q${String(timestamp).slice(-6)}`,
-        time: bookingData.checkInTime || "--:--",
+        time: bookingTime,
       },
     };
 
