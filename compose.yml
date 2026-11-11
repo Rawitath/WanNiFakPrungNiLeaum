@@ -9,8 +9,8 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - EXPO_PUBLIC_API_URL=http://backend:3000
-      - API_URL=http://backend:3000
+      - EXPO_PUBLIC_API_URL=http://localhost:3000
+      - API_URL=http://localhost:3000
     networks:
       - stayforget-network
 
@@ -32,8 +32,8 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - CHOKIDAR_INTERVAL=1000
       - FAST_REFRESH=true
-      - EXPO_PUBLIC_API_URL=http://backend:3000
-      - API_URL=http://backend:3000
+      - EXPO_PUBLIC_API_URL=http://localhost:3000
+      - API_URL=http://localhost:3000
     ports:
       - "8081:8081"
     networks:
@@ -64,6 +64,8 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       ADMIN_PHONE: ${ADMIN_PHONE}
+    ports:
+      - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -91,6 +93,8 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       PASSWORD_ENDEC_SALT: ${PASSWORD_ENDEC_SALT}
       NODE_ENV: test
+    ports:
+      - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
