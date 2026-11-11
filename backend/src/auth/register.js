@@ -20,19 +20,25 @@ function checkMissingFields(obj) {
 }
 
 const registerCustomer = async (req, res, next) => {
+    let client;
     try {
         const checkValid = checkMissingFields(req.body);
         if(!checkValid.isValid){
             return res.status(400).json({ message: `Missing field: ${checkValid.missingFields}` })
         }
+
         const { username, password, email, phone } = req.body;
 
-        const userExist = await db.query(
+        client = await db.connect();
+        await client.query("BEGIN");
+
+        const userExist = await client.query(
             "SELECT username, email FROM users WHERE username = $1 OR email = $2",
             [username, email]
         );
 
         if (userExist.rows.length > 0) {
+            await client.query("ROLLBACK"); // ปิด transaction ก่อน return เสมอ
             const existing = userExist.rows[0];
             if (existing.username === username) {
                 return res.status(409).json({ message: "Username already exists" });
@@ -42,22 +48,26 @@ const registerCustomer = async (req, res, next) => {
             }
         }
 
-        const hashedPassword = await makePassword(password, username);
+        const hashedPassword = await makePassword(password);
         const userid = uuidv4();
 
-        await db.query(
+        await client.query(
             "INSERT INTO users (userid, username, password, email, phone, role) VALUES ($1, $2, $3, $4, $5, $6)",
             [userid, username, hashedPassword, email, phone, "customer"]
         );
         const customerid = uuidv4();
-        await db.query(
+        await client.query(
             "INSERT INTO customers (customer_id, userid) VALUES ($1, $2)",
             [customerid, userid]
         );
 
+        await client.query("COMMIT");
         return res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
+        if (client) await client.query("ROLLBACK");
         next(error);
+    } finally {
+        if (client) client.release();
     }
 };
 
