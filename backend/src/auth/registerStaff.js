@@ -54,7 +54,7 @@ const registerStaff = async (req, res, next) => {
       }
     }
 
-    const hashedPassword = await makePassword(password, username);
+    const hashedPassword = await makePassword(password);
     const userid = uuidv4();
 
     await client.query(

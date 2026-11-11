@@ -1,7 +1,7 @@
-#!/bin/sh
+﻿#!/bin/sh
 set -e
 
-# เพิ่ม .catch เพื่อลบ unhandled rejection และแสดง log ชัดเจน
+# à¹€à¸žà¸´à¹ˆà¸¡ .catch à¹€à¸žà¸·à¹ˆà¸­à¸¥à¸š unhandled rejection à¹à¸¥à¸°à¹à¸ªà¸”à¸‡ log à¸Šà¸±à¸”à¹€à¸ˆà¸™
 node -e '
   import("/app/initadmin.js")
     .then(m => {
@@ -14,11 +14,11 @@ node -e '
     })
     .then(() => {
         console.log("InitAdmin completed successfully.");
-        process.exit(0); // สำคัญมาก! บังคับจบ process เมื่อสำเร็จ
+        process.exit(0); // à¸ªà¸³à¸„à¸±à¸à¸¡à¸²à¸! à¸šà¸±à¸‡à¸„à¸±à¸šà¸ˆà¸š process à¹€à¸¡à¸·à¹ˆà¸­à¸ªà¸³à¹€à¸£à¹‡à¸ˆ
     })
     .catch(err => { 
         console.error("InitAdmin Error:", err); 
-        process.exit(0); // จบ process ด้วย 0 เพื่อให้ container รันต่อได้แม้เจอ error
+        process.exit(0); // à¸ˆà¸š process à¸”à¹‰à¸§à¸¢ 0 à¹€à¸žà¸·à¹ˆà¸­à¹ƒà¸«à¹‰ container à¸£à¸±à¸™à¸•à¹ˆà¸­à¹„à¸”à¹‰à¹à¸¡à¹‰à¹€à¸ˆà¸­ error
     })
 '
 

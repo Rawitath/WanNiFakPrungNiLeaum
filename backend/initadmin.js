@@ -19,7 +19,7 @@ export async function initadmin(username="admin", email="admin@test.com", passwo
             return; // มีข้อมูลแล้ว ออกได้เลย
         }
 
-        const hashedPassword = await makePassword(password, username);
+        const hashedPassword = await makePassword(password); // ใช้ PASSWORD_ENDEC_SALT จาก env เหมือนกับทุกที่ในระบบ
         const userid = uuidv4();
         const managerid = uuidv4();
 
