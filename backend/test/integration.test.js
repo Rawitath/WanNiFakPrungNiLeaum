@@ -262,19 +262,28 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
 
   afterAll(async () => {
     try {
-      // Clean up test data
-      await pool.query("DELETE FROM pets WHERE customer_email LIKE '%@test.com'");
-      await pool.query("DELETE FROM reservations WHERE customer_email LIKE '%@test.com'");
-      await pool.query("DELETE FROM customers WHERE userid IN ($1)", [CUSTOMER_USER_ID]);
-      await pool.query("DELETE FROM staffs WHERE userid IN ($1)", [STAFF_USER_ID]);
-      await pool.query("DELETE FROM managers WHERE userid IN ($1)", [MANAGER_USER_ID]);
+      // 1. สั่งปิด Server ก่อนเป็นอันดับแรก เพื่อหยุดรับ/ตัด Request ที่ค้างอยู่ (แก้ TCPSERVERWRAP)
+      if (server) {
+        await new Promise((resolve, reject) => {
+          server.close((err) => {
+            if (err) return reject(err);
+            resolve();
+          });
+        });
+      }
+
+      // 2. ลบข้อมูลโดยใช้ประโยชน์จาก ON DELETE CASCADE
+      // แค่ลบ users กับ branches ข้อมูลใน pets, reservations ฯลฯ จะโดนลบตามอัตโนมัติ
       await pool.query("DELETE FROM users WHERE email LIKE '%@test.com'");
       await pool.query("DELETE FROM branches WHERE branch_id IN ($1, $2)", [TEST_BRANCH_ID, TEST_BRANCH_ID_2]);
+      
     } catch (err) {
       console.warn("Cleanup warning:", err.message);
     } finally {
-      if (pool) await pool.end();
-      if (server) server.close();
+      // 3. ปิด Database Pool เป็นลำดับสุดท้าย
+      if (pool) {
+        await pool.end();
+      }
     }
   }, 60000);
 
