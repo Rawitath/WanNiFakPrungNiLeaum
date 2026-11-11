@@ -10,5 +10,6 @@ FROM base AS run
 WORKDIR /app
 COPY . .
 RUN npm prune --omit=dev
+RUN chmod +x /app/entrypoint.sh
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["/app/entrypoint.sh"]
