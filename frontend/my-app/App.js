@@ -275,19 +275,6 @@ const cleanSavedData = (item) => {
     time: cleanBooking.time || cleanBooking.checkInTime || "--:--",
   };
 
-  // Queue เก็บเฉพาะข้อมูลคิว
-  if (cleanItem.queue) {
-    cleanItem.queue = { ...cleanItem.queue };
-    delete cleanItem.queue.status;
-    delete cleanItem.queue.color;
-    delete cleanItem.queue.textColor;
-  } else {
-    cleanItem.queue = {
-      id: `Q${String(Date.now()).slice(-6)}`,
-      time: cleanItem.booking.time || "--:--",
-    };
-  }
-
   return cleanItem;
 };
 
@@ -342,9 +329,7 @@ export default function App() {
 
   // BOOKING QUEUE DATA
   const bookingQueue = dataSets.map((item) => ({
-    id: item.queue.id,
     bookingId: item.booking.id,
-    petId: item.pet.id,
     time: item.queue.time,
     name: item.pet.name,
     detail: `${item.owner.name} - ${item.booking.startDate} ถึง ${item.booking.endDate}`,
