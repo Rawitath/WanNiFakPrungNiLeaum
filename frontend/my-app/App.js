@@ -251,18 +251,51 @@ export default function App() {
 
   const pets = userDatasets.map((item) => ({
     ...item.pet,
+
     id: getPetId(item),
+
+    // ข้อมูลสัตว์เลี้ยงจริง
+    name: item.pet.name || "",
+    petType: item.pet.petType || "",
+    breed: item.pet.breed || "",
+    birth: item.pet.birth || item.pet.age || "",
+    age: item.pet.age || "",
+    gender: item.pet.gender || "",
+    weight: item.pet.weight || "",
+    health: item.pet.health || "",
+    careNotes: item.pet.careNotes || "",
+
+    // รูปภาพ
     image: item.pet.image || require("./1assets/piclogo.png"),
+
+    // สถานะจริงจากการจอง
     status: normalizePetStatus(item.booking.status),
+
+    // ข้อมูลการเข้าพัก
     checkIn: item.booking.checkIn || item.booking.startDate || "",
     checkOut: item.booking.checkOut || item.booking.endDate || "",
     startDate: item.booking.startDate || item.booking.checkIn || "",
     endDate: item.booking.endDate || item.booking.checkOut || "",
+
+    // ข้อมูลการจอง
     branch: item.booking.branch || "",
     bookingId: item.booking.id || "",
     bookingTime: item.booking.bookingTime || item.booking.time || "",
+
+    // ข้อมูลเจ้าของ
     owner: item.owner || {},
+    ownerName: item.owner?.name || "",
+    ownerPhone: item.owner?.phone || "",
+    ownerEmail: item.owner?.email || "",
   }));
+
+  // ค้นหาข้อมูลสัตว์เลี้ยงล่าสุด เพื่อให้หน้า PetDetails
+  // แสดงสถานะที่อัปเดตจาก App.js เสมอ
+  const activeSelectedPet = selectedPet
+    ? pets.find(
+        (pet) => String(pet.id) === String(selectedPet.id)
+      ) || selectedPet
+    : null;
 
   // =====================================================
   // BOOKING DATA
@@ -1510,24 +1543,40 @@ export default function App() {
           />
 
           <View style={styles.pageContent}>
-            {showBooking ? (
-              <BookingUser
-                onBack={() => setShowBooking(false)}
-                onSubmit={handleBookingSubmit}
-              />
-            ) : showMyBooking ? (
-              <MyBookingUser
-                visible={showMyBooking}
-                bookings={bookings}
-                onBack={() => setShowMyBooking(false)}
-                onCancelBooking={handleCancelBooking}
-              />
-            ) : (
-              <HomePageUser
-                pets={pets}
-                onBooking={() => setShowBooking(true)}
-              />
-            )}
+          {showPetDetails ? (
+            <PetDetails
+              pet={activeSelectedPet}
+              petImage={activeSelectedPet?.image}
+              initialStatus={activeSelectedPet?.status}
+              onBack={() => {
+                setShowPetDetails(false);
+                setSelectedPet(null);
+              }}
+            />
+          ) : showBooking ? (
+            <BookingUser
+              onBack={() => setShowBooking(false)}
+              onSubmit={handleBookingSubmit}
+            />
+          ) : showMyBooking ? (
+            <MyBookingUser
+              visible={showMyBooking}
+              bookings={bookings}
+              onBack={() => setShowMyBooking(false)}
+              onCancelBooking={handleCancelBooking}
+            />
+          ) : (
+            <HomePageUser
+              pets={pets}
+              onBooking={() => setShowBooking(true)}
+              onPetPress={(pet) => {
+                setSelectedPet(pet);
+                setShowPetDetails(true);
+                setShowBooking(false);
+                setShowMyBooking(false);
+              }}
+            />
+          )}
           </View>
         </View>
       )}
