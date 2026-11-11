@@ -177,7 +177,17 @@ export default function MyBookingUser({
                         {displayValue(booking.startDate || booking.checkIn)} - {displayValue(booking.endDate || booking.checkOut)}
                       </Text>
                       <Text style={styles.infoValue}>
-                        เวลากดจอง: {displayValue(booking.bookingTime || booking.time)}
+                        เวลากดจอง: {
+                          displayValue(
+                            booking.bookingTime ||
+                            booking.bookingTimestamp ||
+                            booking.booking_time ||
+                            booking.timestamp ||
+                            booking.createdAt ||
+                            booking.created_at ||
+                            booking.time
+                          )
+                        }
                       </Text>
 
                       {getDisplayStatus(booking.status) !== "ถูกปฏิเสธ" && (

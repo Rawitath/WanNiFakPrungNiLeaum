@@ -76,10 +76,44 @@ const getPetId = (item) =>
   item?.pet?.name ||
   "";
 
+const getBookingTimestamp = (booking) => {
+  return (
+    booking?.bookingTime ||
+    booking?.booking_time ||
+    booking?.bookingTimestamp ||
+    booking?.booking_timestamp ||
+    booking?.createdAt ||
+    booking?.created_at ||
+    booking?.requestedAt ||
+    booking?.requested_at ||
+    booking?.timestamp ||
+    booking?.submittedAt ||
+    booking?.submitted_at ||
+    null
+  );
+};
+
 const formatBookingTime = (value) => {
   if (!value) return "ไม่ได้ระบุ";
 
-  const date = new Date(value);
+  let dateValue = value;
+
+  // รองรับ Unix timestamp ทั้งวินาทีและมิลลิวินาที
+  if (typeof dateValue === "number") {
+    if (dateValue < 100000000000) {
+      dateValue *= 1000;
+    }
+  } else if (
+    typeof dateValue === "string" &&
+    /^\d+$/.test(dateValue.trim())
+  ) {
+    dateValue = Number(dateValue);
+    if (dateValue < 100000000000) {
+      dateValue *= 1000;
+    }
+  }
+
+  const date = new Date(dateValue);
 
   if (Number.isNaN(date.getTime())) {
     return String(value);
@@ -364,32 +398,38 @@ export default function App() {
             booking: {
               id: String(r.reservationId || r.id || idx),
               branch: r.branch || r.branchName || r.branch_name || "",
+
               startDate: r.checkIn
                 ? new Date(r.checkIn).toLocaleDateString("th-TH")
                 : "",
+
               endDate: r.checkOut
                 ? new Date(r.checkOut).toLocaleDateString("th-TH")
                 : "",
+
               checkIn: r.checkIn
                 ? new Date(r.checkIn).toLocaleDateString("th-TH")
                 : "",
+
               checkOut: r.checkOut
                 ? new Date(r.checkOut).toLocaleDateString("th-TH")
                 : "",
+
+              // เก็บเวลาที่กดจองจริง
+              bookingTimestamp: getBookingTimestamp(r),
+
               bookingTime: formatBookingTime(
-                r.bookingTime ||
-                r.booking_time ||
-                r.createdAt ||
-                r.created_at ||
-                r.requestedAt ||
-                r.timestamp
+                getBookingTimestamp(r)
               ),
+
               checkInTime: r.checkIn
                 ? formatClockTime(r.checkIn)
                 : "",
+
               checkOutTime: r.checkOut
                 ? formatClockTime(r.checkOut)
                 : "",
+
               status: bookingStatus,
             },
 
@@ -842,6 +882,7 @@ export default function App() {
       return;
     }
 
+    // บันทึกเวลาจริง ณ ตอนที่กดปุ่มจองคิว
     const bookingTimestamp = new Date().toISOString();
 
     const toIsoDateTime = (dateStr, timeStr) => {
@@ -867,10 +908,8 @@ export default function App() {
 
     const reservationPayload = {
       customerName: formData.ownerName || activeUser?.name || "ลูกค้า",
-      customerPhone:
-        formData.phone || activeUser?.phone || "0812345678",
-      customerEmail:
-        formData.email || activeUser?.email || "customer@example.com",
+      customerPhone: formData.phone || activeUser?.phone || "0812345678",
+      customerEmail: formData.email || activeUser?.email || "customer@example.com",
 
       petName: formData.petName || "สัตว์เลี้ยง",
       petType: formData.petType || "สุนัข",
@@ -881,14 +920,18 @@ export default function App() {
       petCondition: formData.health || "ไม่มี",
       petNote: formData.careNotes || "ไม่มี",
 
+      // เวลาที่กดจองคิว
+      timestamp: bookingTimestamp,
       bookingTime: bookingTimestamp,
       createdAt: bookingTimestamp,
 
+      // วันและเวลาที่ฝากสัตว์เลี้ยง
       checkIn: toIsoDateTime(
         formData.checkIn,
         formData.checkInTime
       ),
 
+      // วันและเวลาที่รับสัตว์เลี้ยงกลับ
       checkOut: toIsoDateTime(
         formData.checkOut,
         formData.checkOutTime
@@ -915,6 +958,7 @@ export default function App() {
       setShowMyBooking(true);
 
       showMessage("ส่งคำขอจองสำเร็จ สถานะรอการยืนยันคิว");
+
     } catch (err) {
       console.warn("apiCreateReservation error:", err);
 
