@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Linking } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { useFonts } from "expo-font";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
   apiLogin,
@@ -9,15 +8,17 @@ import {
   apiForgetPassword,
   apiGetProfile,
   apiGetCustomerReservations,
+  apiGetCustomerPets,
   apiCreateReservation,
+  apiCancelReservation,
   apiGetStaffPets,
-  apiUpdateStaffPetStatus,
   apiRecordStaffPetEntry,
   apiGetStaffReservations,
   apiConfirmStaffReservation,
   apiGetManagerStatus,
   parseJwt,
   clearAuthToken,
+  apiManagerRegisterStaff,
 } from "./api";
 
 import LogoutNavbar from "./2components/logoutnavbar";
@@ -92,14 +93,9 @@ export default function App() {
   const userDatasets =
     activeUser && activeUser.role === "user"
       ? dataSets.filter((item) => {
-          const uName = (activeUser.username || "").toLowerCase();
-          const uEmail = (activeUser.email || "").toLowerCase();
-          const itemUName = (item.owner?.username || "").toLowerCase();
-          const itemEmail = (item.owner?.email || "").toLowerCase();
-          return (
-            (itemUName && itemUName === uName) ||
-            (itemEmail && itemEmail === uEmail)
-          );
+          const uEmail = (activeUser.email || "").trim().toLowerCase();
+          const itemEmail = (item.owner?.email || "").trim().toLowerCase();
+          return Boolean(uEmail && itemEmail && itemEmail === uEmail);
         })
       : dataSets;
 
@@ -168,9 +164,35 @@ export default function App() {
 
   const loadCustomerData = async () => {
     try {
-      const resRes = await apiGetCustomerReservations();
+      const [resRes, petsRes] = await Promise.all([
+        apiGetCustomerReservations(),
+        apiGetCustomerPets(),
+      ]);
       if (resRes.ok && Array.isArray(resRes.data)) {
-        const backendDataSets = resRes.data.map((r, idx) => ({
+        const backendPets = petsRes.ok && Array.isArray(petsRes.data) ? petsRes.data : [];
+        // Backend เวอร์ชันนี้ส่งรายการจองรวมมาให้ จึงกรองด้วยอีเมลของบัญชีที่ Login อยู่
+        const ownReservations = resRes.data.filter((r) =>
+          String(r.customerEmail || "").trim().toLowerCase() ===
+          String(activeUser?.email || "").trim().toLowerCase()
+        );
+        const backendDataSets = ownReservations.map((r, idx) => {
+          const matchedPet = backendPets.find((p) =>
+            String(p.customerEmail || "").trim().toLowerCase() === String(r.customerEmail || "").trim().toLowerCase() &&
+            String(p.petName || "").trim().toLowerCase() === String(r.petName || "").trim().toLowerCase()
+          );
+          const plannedIn = r.checkIn ? new Date(r.checkIn).getTime() : 0;
+          const actualIn = matchedPet?.checkIn ? new Date(matchedPet.checkIn).getTime() : 0;
+          const plannedOut = r.checkOut ? new Date(r.checkOut).getTime() : 0;
+          const actualOut = matchedPet?.checkOut ? new Date(matchedPet.checkOut).getTime() : 0;
+          const checkedIn = actualIn && (!plannedIn || Math.abs(actualIn - plannedIn) > 60000);
+          const checkedOut = actualOut && (!plannedOut || Math.abs(actualOut - plannedOut) > 60000);
+          const bookingStatus = matchedPet
+            ? (checkedOut ? "รับกลับแล้ว" : checkedIn ? "In Care" : "รอรับเข้า")
+            : (r.status === "accepted" || r.status === "confirmed" ? "รอรับเข้า"
+              : r.status === "in_care" ? "In Care"
+              : r.status === "rejected" || r.status === "cancelled" ? "ถูกปฏิเสธ"
+              : r.status === "completed" ? "รับกลับแล้ว" : "รอยืนยันคิว");
+          return {
           owner: {
             id: r.customerName || `O${idx}`,
             username: activeUser?.username || "",
@@ -179,7 +201,7 @@ export default function App() {
             email: r.customerEmail || "",
           },
           pet: {
-            id: String(r.reservationId || r.id || idx),
+            id: String(matchedPet?.petId || matchedPet?.id || r.reservationId || r.id || idx),
             name: r.petName || "สัตว์เลี้ยง",
             petType: r.petType || "สุนัข",
             breed: r.petBreed || "",
@@ -198,19 +220,11 @@ export default function App() {
             checkIn: r.checkIn ? new Date(r.checkIn).toLocaleDateString("th-TH") : "",
             checkOut: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
             bookingTime: "10:00",
-            status:
-              r.status === "accepted" || r.status === "confirmed"
-                ? "รอรับเข้า"
-                : r.status === "in_care"
-                ? "In Care"
-                : r.status === "rejected" || r.status === "cancelled"
-                ? "ถูกปฏิเสธ"
-                : r.status === "completed"
-                ? "รับกลับแล้ว"
-                : "รอยืนยันคิว",
+            status: bookingStatus,
           },
           queue: { id: `Q${idx}`, time: "10:00" },
-        }));
+        };
+        });
         setDataSets(backendDataSets);
       }
     } catch (err) {
@@ -220,9 +234,19 @@ export default function App() {
 
   const loadStaffData = async () => {
     try {
-      const resRes = await apiGetStaffReservations();
+      const [resRes, petsRes] = await Promise.all([
+        apiGetStaffReservations(),
+        apiGetStaffPets(),
+      ]);
       if (resRes.ok && Array.isArray(resRes.data)) {
+        const backendPets = petsRes.ok && Array.isArray(petsRes.data) ? petsRes.data : [];
         const backendStaffSets = resRes.data.map((r, idx) => {
+          // เมื่อพนักงานยืนยันคิว Backend จะสร้าง record ในตาราง pets
+          // จับคู่ด้วยอีเมลและชื่อสัตว์เพื่อใช้ petId จริงสำหรับบันทึกเข้า-ออก
+          const matchedPet = backendPets.find((p) =>
+            String(p.customerEmail || "").trim().toLowerCase() === String(r.customerEmail || "").trim().toLowerCase() &&
+            String(p.petName || "").trim().toLowerCase() === String(r.petName || "").trim().toLowerCase()
+          );
           const statusMap = {
             pending: "รอยืนยันคิว",
             confirmed: "รอรับเข้า",
@@ -232,7 +256,16 @@ export default function App() {
             cancelled: "ถูกปฏิเสธ",
             completed: "รับกลับแล้ว",
           };
-          const currentStatus = statusMap[r.status] || "รอยืนยันคิว";
+          let currentStatus = statusMap[r.status] || "รอยืนยันคิว";
+          if (matchedPet) {
+            const plannedIn = r.checkIn ? new Date(r.checkIn).getTime() : 0;
+            const actualIn = matchedPet.checkIn ? new Date(matchedPet.checkIn).getTime() : 0;
+            const plannedOut = r.checkOut ? new Date(r.checkOut).getTime() : 0;
+            const actualOut = matchedPet.checkOut ? new Date(matchedPet.checkOut).getTime() : 0;
+            const checkedIn = actualIn && (!plannedIn || Math.abs(actualIn - plannedIn) > 60000);
+            const checkedOut = actualOut && (!plannedOut || Math.abs(actualOut - plannedOut) > 60000);
+            currentStatus = checkedOut ? "รับกลับแล้ว" : checkedIn ? "In Care" : "รอรับเข้า";
+          }
 
           return {
             owner: {
@@ -242,7 +275,7 @@ export default function App() {
               email: r.customerEmail || "",
             },
             pet: {
-              id: String(r.reservationId || r.id || idx),
+              id: String(matchedPet?.petId || matchedPet?.id || r.reservationId || r.id || idx),
               name: r.petName || "สัตว์เลี้ยง",
               petType: r.petType || "สุนัข",
               breed: r.petBreed || "",
@@ -329,58 +362,34 @@ export default function App() {
 
     try {
       const res = await apiCreateReservation(reservationPayload);
-      if (res.ok) {
-        await loadCustomerData();
-        setShowBooking(false);
-        setShowMyBooking(true);
-        setPopupType("loginFailed");
-        setPopupMessage("การจองสำเร็จ! สถานะเป็น 'รอยืนยันคิว'");
-        setPopupVisible(true);
+      if (!res.ok) {
+        showMessage(res.data?.message || res.data?.error || "บันทึกการจองไม่สำเร็จ");
         return;
       }
+      await loadCustomerData();
+      setShowBooking(false);
+      setShowMyBooking(true);
+      showMessage("ส่งคำขอจองสำเร็จ สถานะรอการยืนยันคิว");
     } catch (err) {
       console.warn("apiCreateReservation error:", err);
+      showMessage("เชื่อมต่อ Backend ไม่สำเร็จ จึงยังไม่ได้บันทึกการจอง");
     }
+  };
 
-    // In-memory Fallback
-    const newBookingId = `#B${String(Date.now()).slice(-4)}`;
-    const newEntry = {
-      owner: {
-        id: activeUser?.username || `#O${Date.now()}`,
-        username: activeUser?.username || "",
-        name: formData.ownerName || activeUser?.name || "ลูกค้า",
-        phone: formData.phone || activeUser?.phone || "",
-        email: formData.email || activeUser?.email || "",
-      },
-      pet: {
-        id: `P${Date.now()}`,
-        name: formData.petName,
-        petType: formData.petType,
-        breed: formData.breed,
-        gender: formData.gender,
-        birth: formData.age,
-        weight: formData.weight,
-        health: formData.health,
-        careNotes: formData.careNotes,
-        image: require("./1assets/piclogo.png"),
-      },
-      booking: {
-        id: newBookingId,
-        branch: formData.branch,
-        startDate: formData.checkIn,
-        endDate: formData.checkOut,
-        bookingTime: formData.checkInTime || "10:00",
-        status: "รอยืนยันคิว",
-      },
-      queue: { id: `Q${Date.now()}`, time: formData.checkInTime || "10:00" },
-    };
 
-    setDataSets((prev) => [newEntry, ...prev]);
-    setShowBooking(false);
-    setShowMyBooking(true);
-    setPopupType("loginFailed");
-    setPopupMessage("การจองสำเร็จ! สถานะเป็น 'รอยืนยันคิว'");
-    setPopupVisible(true);
+  const handleCancelBooking = async (bookingId) => {
+    try {
+      const result = await apiCancelReservation(bookingId);
+      if (!result.ok) {
+        showMessage(result.data?.message || result.data?.error || "ยกเลิกการจองไม่สำเร็จ");
+        return;
+      }
+      await loadCustomerData();
+      showMessage("ส่งคำขอยกเลิกการจองแล้ว");
+    } catch (error) {
+      console.warn("handleCancelBooking error:", error);
+      showMessage("เชื่อมต่อ Backend ไม่สำเร็จ");
+    }
   };
 
   // =====================================================
@@ -389,9 +398,19 @@ export default function App() {
   const handleQueueDecision = async (queueItem, accepted) => {
     const targetId = queueItem.bookingId || queueItem.id;
     try {
-      await apiConfirmStaffReservation(targetId, accepted);
+      const result = await apiConfirmStaffReservation(targetId, accepted);
+      if (!result.ok) {
+        setPopupType("loginFailed");
+        setPopupMessage(result.data?.message || result.data?.error || "ไม่สามารถบันทึกผลการยืนยันคิวได้");
+        setPopupVisible(true);
+        return;
+      }
     } catch (err) {
       console.warn("apiConfirmStaffReservation error:", err);
+      setPopupType("loginFailed");
+      setPopupMessage("เชื่อมต่อ Backend ไม่สำเร็จ ไม่ได้เปลี่ยนสถานะคิว");
+      setPopupVisible(true);
+      return;
     }
 
     if (accepted) {
@@ -427,23 +446,35 @@ export default function App() {
       );
       setActivityList((prev) => prev.filter((a) => a.bookingId !== targetId));
     }
+    // โหลดข้อมูลใหม่เพื่อรับ petId ที่ Backend สร้างหลังยืนยันคิว
+    if (accepted) await loadStaffData();
   };
 
   // =====================================================
   // STAFF ACTIVITY (กดปุ่ม รับเข้าพัก / รับกลับ)
   // =====================================================
   const handleActivity = async (item, action) => {
-    const targetId = item.bookingId || item.petId || item.id;
+    const targetId = item.petId || item.id || item.bookingId;
     const entryType = action === "รับเข้าพัก" ? "check-in" : "check-out";
     
     try {
-      await apiRecordStaffPetEntry({
+      const result = await apiRecordStaffPetEntry({
         id: targetId,
         type: entryType,
         timestamp: new Date().toISOString(),
       });
+      if (!result.ok) {
+        setPopupType("loginFailed");
+        setPopupMessage(result.data?.message || result.data?.error || "บันทึกเวลาเข้า-ออกไม่สำเร็จ");
+        setPopupVisible(true);
+        return;
+      }
     } catch (err) {
       console.warn("apiRecordStaffPetEntry error:", err);
+      setPopupType("loginFailed");
+      setPopupMessage("เชื่อมต่อ Backend ไม่สำเร็จ");
+      setPopupVisible(true);
+      return;
     }
 
     if (action === "รับเข้าพัก") {
@@ -485,12 +516,8 @@ export default function App() {
   // DROPDOWN STATUS CHANGE
   // =====================================================
   const handlePetStatusChange = async (petId, newStatus) => {
-    try {
-      await apiUpdateStaffPetStatus({ id: petId, status: newStatus });
-    } catch (err) {
-      console.warn("apiUpdateStaffPetStatus error:", err);
-    }
-
+    // Backend endpoint /staff/pets/status รับเฉพาะสถานะสุขภาพ (สบายดี/ไม่สบาย)
+    // สถานะงานฝาก 4 ขั้นตอนจึงอัปเดตเฉพาะ UI จนกว่า Backend จะมี endpoint รองรับ
     setDataSets((prev) =>
       prev.map((item) =>
         getPetId(item) === petId || item.booking.id === petId
@@ -500,35 +527,108 @@ export default function App() {
     );
   };
 
+  const showMessage = (message) => {
+    setPopupType("loginFailed");
+    setPopupMessage(message);
+    setPopupVisible(true);
+  };
+
   const handleLogin = async (username, password) => {
+    if (!username?.trim() || !password) {
+      showMessage("กรุณากรอกชื่อบัญชีและรหัสผ่าน");
+      return;
+    }
     try {
       const res = await apiLogin({ username: username.trim(), password });
-      if (res.ok && res.data && res.data.accessToken) {
-        const payload = parseJwt(res.data.accessToken);
-        const role = payload?.role === "manager" ? "admin" : payload?.role || "user";
-
-        let profile = { name: username, email: "", phone: "" };
-        const profRes = await apiGetProfile();
-        if (profRes.ok && profRes.data) {
-          profile = {
-            name: profRes.data.username || username,
-            email: profRes.data.email || "",
-            phone: profRes.data.phone || "",
-          };
-        }
-
-        const userObj = { username: username.trim(), role, ...profile };
-        setActiveUser(userObj);
-        setCurrentPage(role);
-
-        if (role === "user") loadCustomerData();
-        else if (role === "staff") loadStaffData();
+      if (!res.ok || !res.data?.accessToken) {
+        showMessage(res.data?.message || res.data?.error || "ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
         return;
+      }
+
+      const payload = parseJwt(res.data.accessToken);
+      const backendRole = String(payload?.role || "customer").toLowerCase();
+      const role = backendRole === "customer" ? "user" :
+        backendRole === "manager" ? "admin" : backendRole;
+
+      const profRes = await apiGetProfile();
+      const profile = profRes.ok ? profRes.data : {};
+      const userObj = {
+        userid: payload?.userid || "",
+        username: profile.username || username.trim(),
+        name: profile.username || username.trim(),
+        email: profile.email || "",
+        phone: profile.phone || "",
+        role,
+      };
+
+      setActiveUser(userObj);
+      setShowRegister(false);
+      setShowForgotPassword(false);
+      setShowBooking(false);
+      setShowMyBooking(false);
+      setShowProfile(false);
+      setCurrentPage(role);
+      setDataSets([]);
+
+      if (role === "user") await loadCustomerData();
+      else if (role === "staff") await loadStaffData();
+      else if (role === "admin") {
+        const overview = await apiGetManagerStatus();
+        if (overview.ok) setAdminOverview(overview.data);
       }
     } catch (err) {
       console.warn("handleLogin error:", err);
+      showMessage("ไม่สามารถเข้าสู่ระบบได้ กรุณาตรวจสอบการเชื่อมต่อ Backend");
     }
   };
+
+  const handleRegister = async (username, email, phone, password, confirmPassword) => {
+    if (!username?.trim() || !email?.trim() || !phone?.trim() || !password) {
+      showMessage("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      return;
+    }
+    if (password !== confirmPassword) {
+      showMessage("รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน");
+      return;
+    }
+    const result = await apiRegister({ username: username.trim(), email: email.trim(), phone: phone.trim(), password });
+    if (!result.ok) {
+      showMessage(result.data?.message || result.data?.error || "สมัครสมาชิกไม่สำเร็จ");
+      return;
+    }
+    setShowRegister(false);
+    setCurrentPage("login");
+    showMessage("สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ");
+  };
+
+  const handleForgotPassword = async (email) => {
+    const result = await apiForgetPassword({ username: email.trim() });
+    if (!result.ok) {
+      showMessage(result.data?.message || result.data?.error || "ส่งคำขอไม่สำเร็จ");
+      return;
+    }
+    setShowForgotPassword(false);
+    setCurrentPage("login");
+    showMessage("หากอีเมลนี้มีบัญชีอยู่ ระบบจะส่งลิงก์รีเซ็ตรหัสผ่านไปให้");
+  };
+
+  const handleCreateStaff = async (staffData) => {
+    const result = await apiManagerRegisterStaff(staffData);
+    if (!result.ok) throw new Error(result.data?.message || result.data?.error || "สร้างบัญชีพนักงานไม่สำเร็จ");
+    return true;
+  };
+
+  const handleLogout = async () => {
+    await clearAuthToken();
+    setActiveUser(null);
+    setDataSets([]);
+    setActivityList([]);
+    setShowBooking(false);
+    setShowMyBooking(false);
+    setShowProfile(false);
+    setCurrentPage("guest");
+  };
+
 
   return (
     <View style={styles.container}>
@@ -539,10 +639,27 @@ export default function App() {
         </View>
       )}
 
-      {currentPage === "login" && (
+      {currentPage === "login" && !showRegister && !showForgotPassword && (
         <Login
           onBack={() => setCurrentPage("guest")}
           onLogin={handleLogin}
+          onRegister={() => setShowRegister(true)}
+          onForgotPassword={() => setShowForgotPassword(true)}
+        />
+      )}
+
+      {currentPage === "login" && showRegister && (
+        <Register
+          onBack={() => setShowRegister(false)}
+          onRegister={handleRegister}
+          onLogin={() => { setShowRegister(false); setCurrentPage("login"); }}
+        />
+      )}
+
+      {currentPage === "login" && showForgotPassword && (
+        <ForgotPassword
+          onBack={() => setShowForgotPassword(false)}
+          onSubmit={handleForgotPassword}
         />
       )}
 
@@ -554,10 +671,7 @@ export default function App() {
               setShowMyBooking(true);
               setShowBooking(false);
             }}
-            onLogout={() => {
-              setActiveUser(null);
-              setCurrentPage("guest");
-            }}
+            onLogout={handleLogout}
           />
           <View style={styles.pageContent}>
             {showBooking ? (
@@ -570,6 +684,7 @@ export default function App() {
                 visible={showMyBooking}
                 bookings={bookings}
                 onBack={() => setShowMyBooking(false)}
+                onCancelBooking={handleCancelBooking}
               />
             ) : (
               <HomePageUser
@@ -585,10 +700,7 @@ export default function App() {
         <View style={styles.userContainer}>
           <NavbarSA
             onProfile={() => setShowProfile(true)}
-            onLogout={() => {
-              setActiveUser(null);
-              setCurrentPage("guest");
-            }}
+            onLogout={handleLogout}
           />
           <View style={styles.pageContent}>
             <HomePageStaff
@@ -605,6 +717,26 @@ export default function App() {
           </View>
         </View>
       )}
+
+      {currentPage === "admin" && (
+        <View style={styles.userContainer}>
+          <NavbarSA onProfile={() => setShowProfile(true)} onLogout={handleLogout} />
+          <View style={styles.pageContent}>
+            <HomepageAdmin
+              overviewData={adminOverview}
+              onCreateStaff={handleCreateStaff}
+            />
+          </View>
+        </View>
+      )}
+
+      <UserProfile
+        visible={showProfile}
+        onClose={() => setShowProfile(false)}
+        name={activeUser?.name || ""}
+        phone={activeUser?.phone || ""}
+        email={activeUser?.email || ""}
+      />
 
       <Popup
         visible={popupVisible}

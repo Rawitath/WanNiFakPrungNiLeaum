@@ -1,150 +1,131 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// คำนวณ Host dynamic สำหรับสภาพแวดล้อม Browser / Mobile
-const getDynamicBaseUrl = () => {
-  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
-  if (process.env.API_URL) return process.env.API_URL;
-  
-  // ถ้าเปิดจาก Browser Client ข้างนอก Docker network ให้ดึง hostname ปัจจุบัน
-  if (typeof window !== "undefined" && window.location && window.location.hostname) {
-    const hostname = window.location.hostname;
-    if (hostname !== "backend") {
-      return `http://${hostname}:3000`;
-    }
+// ตั้งค่าได้ผ่าน EXPO_PUBLIC_API_URL ในไฟล์ .env
+// Android Emulator: http://10.0.2.2:3000
+// iOS Simulator: http://localhost:3000
+// โทรศัพท์จริง: http://<LAN-IP-ของคอมพิวเตอร์>:3000
+const ENV_API_URL =
+  (typeof process !== "undefined" && process.env &&
+    (process.env.EXPO_PUBLIC_API_URL || process.env.API_URL)) || "";
+
+function getBaseUrl() {
+  if (ENV_API_URL) return ENV_API_URL.replace(/\/$/, "");
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    return `http://${window.location.hostname}:3000`;
   }
   return "http://localhost:3000";
-};
+}
 
-const BASE_URL_PRIMARY = getDynamicBaseUrl();
-
-let currentToken = null;
+export const API_BASE_URL = getBaseUrl();
 const TOKEN_KEY = "stayforget_access_token";
+let memoryToken = null;
 
-// Helper: ถอดรหัส JWT Payload เพื่อดึง role, userid
+function decodeBase64Url(value) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  if (typeof atob === "function") return atob(padded);
+  // React Native/Hermes ที่ไม่มี atob
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+  let output = "";
+  let buffer = 0;
+  let bits = 0;
+  for (const char of padded.replace(/=/g, "")) {
+    const index = chars.indexOf(char);
+    if (index < 0) continue;
+    buffer = (buffer << 6) | index;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      output += String.fromCharCode((buffer >> bits) & 255);
+    }
+  }
+  return output;
+}
+
 export function parseJwt(token) {
   try {
     if (!token) return null;
-    const base64Url = token.split(".")[1];
-    if (!base64Url) return null;
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    return JSON.parse(jsonPayload);
-  } catch (err) {
-    try {
-      const base64Url = token.split(".")[1];
-      const json = typeof atob === "function" ? atob(base64Url) : Buffer.from(base64Url, "base64").toString("utf-8");
-      return JSON.parse(json);
-    } catch (e) {
-      console.warn("parseJwt error:", e);
-      return null;
-    }
+    const part = token.split(".")[1];
+    if (!part) return null;
+    const binary = decodeBase64Url(part);
+    const percentEncoded = Array.from(binary)
+      .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`)
+      .join("");
+    return JSON.parse(decodeURIComponent(percentEncoded));
+  } catch (error) {
+    console.warn("parseJwt error:", error);
+    return null;
   }
 }
 
 export async function setAuthToken(token) {
-  currentToken = token;
+  memoryToken = token || null;
   try {
-    if (token) {
-      await AsyncStorage.setItem(TOKEN_KEY, token);
-    } else {
-      await AsyncStorage.removeItem(TOKEN_KEY);
-    }
-  } catch (e) {
-    console.warn("Storage setAuthToken error:", e);
+    if (token) await AsyncStorage.setItem(TOKEN_KEY, token);
+    else await AsyncStorage.removeItem(TOKEN_KEY);
+  } catch (error) {
+    console.warn("setAuthToken storage error:", error);
   }
 }
 
 export async function getAuthToken() {
-  if (currentToken) return currentToken;
+  if (memoryToken) return memoryToken;
   try {
-    const saved = await AsyncStorage.getItem(TOKEN_KEY);
-    if (saved) {
-      currentToken = saved;
-      return saved;
-    }
-  } catch (e) {
-    console.warn("Storage getAuthToken error:", e);
+    memoryToken = await AsyncStorage.getItem(TOKEN_KEY);
+    return memoryToken;
+  } catch (error) {
+    console.warn("getAuthToken storage error:", error);
+    return null;
   }
-  return null;
 }
 
 export async function clearAuthToken() {
-  currentToken = null;
+  memoryToken = null;
   try {
     await AsyncStorage.removeItem(TOKEN_KEY);
-  } catch (e) {
-    console.warn("Storage clearAuthToken error:", e);
+  } catch (error) {
+    console.warn("clearAuthToken storage error:", error);
   }
 }
 
-// ฟังก์ชันแกนกลางสำหรับการเรียก API พร้อมแนบ Bearer token และ auto-fallback
 export async function apiRequest(endpoint, options = {}) {
   const token = await getAuthToken();
   const headers = {
-    "Content-Type": "application/json",
     Accept: "application/json",
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {}),
   };
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-  if (token && !headers.Authorization) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  const primaryUrl = `${BASE_URL_PRIMARY}${cleanEndpoint}`;
-
+  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   try {
-    const res = await fetch(primaryUrl, {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers,
     });
-    const text = await res.text();
-    let data;
-    try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = { raw: text };
-    }
-    return { ok: res.ok, status: res.status, data };
-  } catch (networkError) {
-    // ถ้า primaryUrl ล้มเหลวและเป็นชื่อ backend:3000 ให้ลอง Fallback ไป localhost:3000
-    if (BASE_URL_PRIMARY.includes("backend:3000")) {
-      const fallbackUrl = `http://localhost:3000${cleanEndpoint}`;
+    const raw = await response.text();
+    let data = {};
+    if (raw) {
       try {
-        const res = await fetch(fallbackUrl, {
-          ...options,
-          headers,
-        });
-        const text = await res.text();
-        let data;
-        try {
-          data = text ? JSON.parse(text) : {};
-        } catch {
-          data = { raw: text };
-        }
-        return { ok: res.ok, status: res.status, data };
-      } catch (err2) {
-        console.warn("API fallback error:", err2);
+        data = JSON.parse(raw);
+      } catch {
+        data = { message: raw };
       }
     }
+    if (response.status === 401 && !path.startsWith("/api/login") && !path.startsWith("/api/register")) {
+      // ไม่ลบ token อัตโนมัติระหว่าง request เพื่อให้หน้า UI จัดการ logout เองได้
+    }
+    return { ok: response.ok, status: response.status, data };
+  } catch (error) {
     return {
       ok: false,
       status: 0,
-      data: { error: networkError.message || "Network error" },
+      data: { error: error?.message || "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้", message: "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้" },
     };
   }
 }
 
-// =====================================================
-// AUTH ENDPOINTS
-// =====================================================
-
-/** POST /api/register */
+// AUTH: backend รับ username/password และตอบ { accessToken }
 export async function apiRegister({ username, password, email, phone }) {
   return apiRequest("/api/register", {
     method: "POST",
@@ -152,19 +133,15 @@ export async function apiRegister({ username, password, email, phone }) {
   });
 }
 
-/** POST /api/login */
 export async function apiLogin({ username, password }) {
-  const res = await apiRequest("/api/login", {
+  const result = await apiRequest("/api/login", {
     method: "POST",
     body: JSON.stringify({ username, password }),
   });
-  if (res.ok && res.data && res.data.accessToken) {
-    await setAuthToken(res.data.accessToken);
-  }
-  return res;
+  if (result.ok && result.data?.accessToken) await setAuthToken(result.data.accessToken);
+  return result;
 }
 
-/** POST /api/forget */
 export async function apiForgetPassword({ username }) {
   return apiRequest("/api/forget", {
     method: "POST",
@@ -172,14 +149,10 @@ export async function apiForgetPassword({ username }) {
   });
 }
 
-/** GET /api/forget/reset */
 export async function apiCheckResetToken(resetToken) {
-  return apiRequest(`/api/forget/reset?resetToken=${encodeURIComponent(resetToken)}`, {
-    method: "GET",
-  });
+  return apiRequest(`/api/forget/reset?resetToken=${encodeURIComponent(resetToken)}`, { method: "GET" });
 }
 
-/** POST /api/forget/reset */
 export async function apiResetPassword({ resetToken, password }) {
   return apiRequest("/api/forget/reset", {
     method: "POST",
@@ -187,34 +160,25 @@ export async function apiResetPassword({ resetToken, password }) {
   });
 }
 
-/** POST /api/manager/register (Admin/Manager create staff) */
 export async function apiManagerRegisterStaff({ username, password, email, phone, branch_id }) {
   return apiRequest("/api/manager/register", {
     method: "POST",
-    body: JSON.stringify({ username, password, email, phone, branch_id }),
+    body: JSON.stringify({ username, password, email, phone, ...(branch_id ? { branch_id } : {}) }),
   });
 }
 
-/** PUT /api/manager/staff/:userid */
 export async function apiManagerUpdateStaff(userid, updateData) {
-  return apiRequest(`/api/manager/staff/${userid}`, {
+  return apiRequest(`/api/manager/staff/${encodeURIComponent(userid)}`, {
     method: "PUT",
     body: JSON.stringify(updateData),
   });
 }
 
-// =====================================================
-// PROFILE ENDPOINTS
-// =====================================================
-
-/** GET /api/profile */
+// PROFILE
 export async function apiGetProfile() {
-  return apiRequest("/api/profile", {
-    method: "GET",
-  });
+  return apiRequest("/api/profile", { method: "GET" });
 }
 
-/** POST /api/profile */
 export async function apiUpdateProfile({ username, phone, email }) {
   return apiRequest("/api/profile", {
     method: "POST",
@@ -222,27 +186,19 @@ export async function apiUpdateProfile({ username, phone, email }) {
   });
 }
 
-// =====================================================
-// CUSTOMER RESERVATION & PETS
-// =====================================================
-
-/** GET /api/customer/reservation */
+// CUSTOMER
 export async function apiGetCustomerReservations(id = null) {
   const query = id ? `?id=${encodeURIComponent(id)}` : "";
-  return apiRequest(`/api/customer/reservation${query}`, {
-    method: "GET",
-  });
+  return apiRequest(`/api/customer/reservation${query}`, { method: "GET" });
 }
 
-/** POST /api/customer/reservation */
-export async function apiCreateReservation(reservationData) {
+export async function apiCreateReservation(data) {
   return apiRequest("/api/customer/reservation", {
     method: "POST",
-    body: JSON.stringify(reservationData),
+    body: JSON.stringify(data),
   });
 }
 
-/** POST /api/customer/reservation/cancel */
 export async function apiCancelReservation(id) {
   return apiRequest("/api/customer/reservation/cancel", {
     method: "POST",
@@ -250,61 +206,41 @@ export async function apiCancelReservation(id) {
   });
 }
 
-/** GET /api/customer/detail */
 export async function apiGetCustomerDetail() {
-  return apiRequest("/api/customer/detail", {
-    method: "GET",
-  });
+  return apiRequest("/api/customer/detail", { method: "GET" });
 }
 
-/** GET /api/customer/pets */
 export async function apiGetCustomerPets(petId = null) {
   const query = petId ? `?petId=${encodeURIComponent(petId)}` : "";
-  return apiRequest(`/api/customer/pets${query}`, {
-    method: "GET",
-  });
+  return apiRequest(`/api/customer/pets${query}`, { method: "GET" });
 }
 
-// =====================================================
-// STAFF PETS & RESERVATIONS
-// =====================================================
-
-/** GET /api/staff/pets */
+// STAFF
 export async function apiGetStaffPets(petId = null) {
   const query = petId ? `?petId=${encodeURIComponent(petId)}` : "";
-  return apiRequest(`/api/staff/pets${query}`, {
-    method: "GET",
-  });
+  return apiRequest(`/api/staff/pets${query}`, { method: "GET" });
 }
 
-/** POST /api/staff/pets/status */
-export async function apiUpdateStaffPetStatus({ id, status }) {
+// Backend /staff/pets/status only accepts pet health values: สบายดี / ไม่สบาย.
+// Do not use this endpoint for reservation lifecycle statuses.
+export async function apiUpdateStaffPetHealth({ id, status }) {
   return apiRequest("/api/staff/pets/status", {
     method: "POST",
     body: JSON.stringify({ id: String(id), status }),
   });
 }
 
-/** POST /api/staff/pets/entry */
 export async function apiRecordStaffPetEntry({ id, type, timestamp }) {
   return apiRequest("/api/staff/pets/entry", {
     method: "POST",
-    body: JSON.stringify({
-      id: String(id),
-      type,
-      timestamp: timestamp || new Date().toISOString(),
-    }),
+    body: JSON.stringify({ id: String(id), type, timestamp: timestamp || new Date().toISOString() }),
   });
 }
 
-/** GET /api/staff/pets/detail */
 export async function apiGetStaffPetsDetail() {
-  return apiRequest("/api/staff/pets/detail", {
-    method: "GET",
-  });
+  return apiRequest("/api/staff/pets/detail", { method: "GET" });
 }
 
-/** POST /api/staff/pets/detail */
 export async function apiUpsertStaffPetDetail({ animal, detail }) {
   return apiRequest("/api/staff/pets/detail", {
     method: "POST",
@@ -312,15 +248,11 @@ export async function apiUpsertStaffPetDetail({ animal, detail }) {
   });
 }
 
-/** GET /api/staff/reservation */
 export async function apiGetStaffReservations(id = null) {
   const query = id ? `?id=${encodeURIComponent(id)}` : "";
-  return apiRequest(`/api/staff/reservation${query}`, {
-    method: "GET",
-  });
+  return apiRequest(`/api/staff/reservation${query}`, { method: "GET" });
 }
 
-/** PUT /api/staff/reservation */
 export async function apiUpdateStaffReservation(data) {
   return apiRequest("/api/staff/reservation", {
     method: "PUT",
@@ -328,35 +260,22 @@ export async function apiUpdateStaffReservation(data) {
   });
 }
 
-/** PUT /api/staff/reservation/:reservationId/confirm */
 export async function apiConfirmStaffReservation(reservationId, accept) {
-  return apiRequest(`/api/staff/reservation/${reservationId}/confirm`, {
+  return apiRequest(`/api/staff/reservation/${encodeURIComponent(reservationId)}/confirm`, {
     method: "PUT",
     body: JSON.stringify({ id: String(reservationId), accept: Boolean(accept) }),
   });
 }
 
-/** GET /api/staff/reservation/:reservationId/callcustomer */
 export async function apiGetStaffReservationCallCustomer(reservationId) {
-  return apiRequest(`/api/staff/reservation/${reservationId}/callcustomer`, {
-    method: "GET",
-  });
+  return apiRequest(`/api/staff/reservation/${encodeURIComponent(reservationId)}/callcustomer`, { method: "GET" });
 }
 
-/** GET /api/staff/callcustomer */
 export async function apiGetStaffCallCustomerList() {
-  return apiRequest("/api/staff/callcustomer", {
-    method: "GET",
-  });
+  return apiRequest("/api/staff/callcustomer", { method: "GET" });
 }
 
-// =====================================================
-// MANAGER / ADMIN STATUS
-// =====================================================
-
-/** GET /api/manager/status */
+// ADMIN / MANAGER
 export async function apiGetManagerStatus() {
-  return apiRequest("/api/manager/status", {
-    method: "GET",
-  });
+  return apiRequest("/api/manager/status", { method: "GET" });
 }
