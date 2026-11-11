@@ -1,0 +1,359 @@
+import React, { useState, useEffect } from "react";
+import {
+    View,
+    Text,
+    Image,
+    TouchableOpacity,
+    StyleSheet,
+    ScrollView,
+} from "react-native";
+
+// =====================================================
+// PET STATUS STYLE
+// รับสถานะกลางจาก App.js มากำหนดสีและสไตล์
+// =====================================================
+const getPetStatusStyle = (status) => {
+    switch (status) {
+        case "รอยืนยันคิว":
+            return {
+                backgroundColor: "#FEF3C7", // สีส้ม/เหลืองอ่อน
+                color: "#D97706",
+            };
+        case "รอรับเข้า":
+            return {
+                backgroundColor: "#E0F2FE", // สีฟ้าอ่อน
+                color: "#0284C7",
+            };
+        case "In Care":
+            return {
+                backgroundColor: "#DDF1E5", // สีเขียวสดใส
+                color: "#4B9D73",
+            };
+        case "รอรับกลับ":
+            return {
+                backgroundColor: "#FEF08A", // สีเหลืองพร้อมรับกลับ
+                color: "#CA8A04",
+            };
+        case "รับกลับแล้ว":
+            return {
+                backgroundColor: "#E5E7EB", // สีเทา
+                color: "#4B5563",
+            };
+        case "ถูกปฏิเสธ":
+            return {
+                backgroundColor: "#FCE0E0", // สีแดงอ่อน
+                color: "#D9534F",
+            };
+        default:
+            return {
+                backgroundColor: "#E5E7EB",
+                color: "#64748B",
+            };
+    }
+};
+
+export default function HomePageUser({
+    onBooking,
+    onPetPress,
+    pets = [],
+}) {
+    const [currentPetPage, setCurrentPetPage] = useState(0);
+    const PETS_PER_PAGE = 4;
+
+    const totalPetPages = Math.ceil(pets.length / PETS_PER_PAGE);
+
+    useEffect(() => {
+        if (currentPetPage >= totalPetPages && totalPetPages > 0) {
+            setCurrentPetPage(Math.max(0, totalPetPages - 1));
+        }
+    }, [pets.length, currentPetPage, totalPetPages]);
+
+    const previousPetPage = () => {
+        setCurrentPetPage((prev) => Math.max(0, prev - 1));
+    };
+
+    const nextPetPage = () => {
+        setCurrentPetPage((prev) => Math.min(totalPetPages - 1, prev + 1));
+    };
+
+    const displayedPets = pets.slice(
+        currentPetPage * PETS_PER_PAGE,
+        currentPetPage * PETS_PER_PAGE + PETS_PER_PAGE
+    );
+
+    return (
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+            {/* Top Section */}
+            <View style={styles.topSection}>
+                <View style={styles.pawTopLeft}>
+                    <svg width="50" height="50" viewBox="-10 -10 120 120" fill="#2f5f80">
+                        <ellipse cx="50" cy="65" rx="35" ry="30" />
+                        <ellipse cx="10" cy="25" rx="15" ry="15" />
+                        <ellipse cx="50" cy="10" rx="15" ry="15" />
+                        <ellipse cx="95" cy="22" rx="15" ry="15" />
+                    </svg>
+                </View>
+
+                <View style={styles.pawTopRight}>
+                    <svg width="50" height="50" viewBox="-10 -10 120 120" fill="#2f5f80">
+                        <ellipse cx="50" cy="65" rx="35" ry="30" />
+                        <ellipse cx="10" cy="25" rx="15" ry="15" />
+                        <ellipse cx="50" cy="10" rx="15" ry="15" />
+                        <ellipse cx="95" cy="22" rx="15" ry="15" />
+                    </svg>
+                </View>
+
+                <View style={styles.pawTopRight1}>
+                    <svg width="50" height="50" viewBox="-10 -10 120 120" fill="#2f5f80">
+                        <ellipse cx="50" cy="65" rx="35" ry="30" />
+                        <ellipse cx="10" cy="25" rx="15" ry="15" />
+                        <ellipse cx="50" cy="10" rx="15" ry="15" />
+                        <ellipse cx="95" cy="22" rx="15" ry="15" />
+                    </svg>
+                </View>
+
+                <View style={styles.brandSection}>
+                    <Image
+                        source={require("../1assets/piclogo.png")}
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
+                    <View style={styles.textContainer}>
+                        <Text style={styles.brandText}>
+                            StayToday{"\n"}ForgotTomorrow
+                        </Text>
+                        <Text style={styles.welcomeText}>
+                            วันนี้ฝากพรุ่งนี้ลืม เว็บไซต์ของเรา เป็นเว็บไซต์รับฝากสัตว์เลี้ยงที่เกิดจากความเข้าใจว่าเวลาต้องเดินทางหรือไม่อยู่บ้าน{"\n"}
+                            สิ่งที่ทำให้กังวลที่สุดคือใครจะดูแลน้อง เราจึงออกแบบที่พักที่ให้ทั้งความสบายและความอุ่นใจ ทั้งห้องพักสะอาด{"\n"}
+                            การดูแลโดยผู้ที่มีประสบการณ์และระบบจองออนไลน์ที่ช่วยให้คุณติดตามสถานะของสัตว์เลี้ยงได้ทุกวัน
+                        </Text>
+                    </View>
+                </View>
+            </View>
+
+            {/* Bottom Section */}
+            <View style={styles.bottomSection}>
+                <View style={styles.pawTopLeft2}>
+                    <svg width="50" height="50" viewBox="-10 -10 120 120" fill="#fcb03c">
+                        <ellipse cx="50" cy="65" rx="35" ry="30" />
+                        <ellipse cx="10" cy="25" rx="15" ry="15" />
+                        <ellipse cx="50" cy="10" rx="15" ry="15" />
+                        <ellipse cx="95" cy="22" rx="15" ry="15" />
+                    </svg>
+                </View>
+
+                <View style={styles.pawTopRight2}>
+                    <svg width="50" height="50" viewBox="-10 -10 120 120" fill="#fcb03c">
+                        <ellipse cx="50" cy="65" rx="35" ry="30" />
+                        <ellipse cx="10" cy="25" rx="15" ry="15" />
+                        <ellipse cx="50" cy="10" rx="15" ry="15" />
+                        <ellipse cx="95" cy="22" rx="15" ry="15" />
+                    </svg>
+                </View>
+
+                <View style={styles.pawTopRight3}>
+                    <svg width="50" height="50" viewBox="-10 -10 120 120" fill="#fcb03c">
+                        <ellipse cx="50" cy="65" rx="35" ry="30" />
+                        <ellipse cx="10" cy="25" rx="15" ry="15" />
+                        <ellipse cx="50" cy="10" rx="15" ry="15" />
+                        <ellipse cx="95" cy="22" rx="15" ry="15" />
+                    </svg>
+                </View>
+
+                <View style={styles.centerContent}>
+                    <Text style={styles.startTitle}>
+                        พร้อมจัดการสัตว์เลี้ยงของคุณแล้วหรือยัง?
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.startButton}
+                        onPress={onBooking}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.startButtonText}>เริ่มใช้งาน</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* User Top Section */}
+            <View style={styles.userTopSection}>
+                <Image
+                    source={require("../1assets/titlelogo.png")}
+                    style={styles.titleLogo}
+                    resizeMode="contain"
+                />
+            </View>
+
+            {/* Pet Stay Section */}
+            <View style={styles.petStaySection}>
+                <View style={styles.curveContainer}>
+                    <svg width="100%" height="100" viewBox="0 -25 1000 150" preserveAspectRatio="none">
+                        <path d="M 0 75 H 680 C 740 75 730 -15 800 -15 C 870 -15 860 75 920 75 H 1000 V 110 H 0 Z" fill="#103357" />
+                        <path d="M 0 75 H 680 C 740 75 730 -15 800 -15 C 870 -15 860 75 920 75 H 1000" stroke="#071D35" strokeWidth="20" fill="none" />
+                        <path d="M 0 85 H 680 C 740 85 740 -5 800 -5 C 860 -5 860 85 920 85 H 1000" stroke="#4D86A8" strokeWidth="15" fill="none" />
+                    </svg>
+                    <Image
+                        source={require("../1assets/piclogo.png")}
+                        style={styles.curveLogo}
+                        resizeMode="contain"
+                    />
+                </View>
+
+                <View style={styles.contentSection}>
+                    <View style={styles.pawTopRight5}>
+                        <svg width="50" height="50" viewBox="-10 -10 120 120" fill="#3a5f81">
+                            <ellipse cx="50" cy="65" rx="35" ry="30" />
+                            <ellipse cx="10" cy="25" rx="15" ry="15" />
+                            <ellipse cx="50" cy="10" rx="15" ry="15" />
+                            <ellipse cx="95" cy="22" rx="15" ry="15" />
+                        </svg>
+                    </View>
+
+                    <Text style={styles.sectionTitle}>สัตว์ที่กำลังเข้าพัก</Text>
+
+                    <View style={styles.descriptionRow}>
+                        <Text style={styles.description}>
+                            ติดตามข้อมูลและสถานะของสัตว์เลี้ยงที่อยู่ในการดูแลทั้งหมดของเรา
+                        </Text>
+                    </View>
+
+                    {/* Pet List Cards */}
+                    <View style={styles.petSection}>
+                        {displayedPets.length === 0 ? (
+                            <Text style={styles.emptyPetText}>ยังไม่มีข้อมูลสัตว์เลี้ยง</Text>
+                        ) : (
+                            displayedPets.map((pet) => {
+                                const statusStyle = getPetStatusStyle(pet.status);
+
+                                return (
+                                    <TouchableOpacity
+                                        key={pet.id}
+                                        style={styles.petCard}
+                                        activeOpacity={0.8}
+                                        onPress={() => onPetPress && onPetPress(pet)}
+                                    >
+                                        <Image
+                                            source={pet.image || require("../1assets/piclogo.png")}
+                                            style={styles.petImage}
+                                            resizeMode="cover"
+                                        />
+                                        <Text style={styles.petName}>{pet.name}</Text>
+
+                                        <View
+                                            style={[
+                                                styles.statusBox,
+                                                { backgroundColor: statusStyle.backgroundColor },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.statusText,
+                                                    { color: statusStyle.color },
+                                                ]}
+                                            >
+                                                {pet.status || "ไม่ระบุสถานะ"}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })
+                        )}
+                    </View>
+
+                    {/* Pagination */}
+                    {pets.length > PETS_PER_PAGE && (
+                        <View style={styles.petPagination}>
+                            <TouchableOpacity
+                                onPress={previousPetPage}
+                                disabled={currentPetPage === 0}
+                                activeOpacity={0.7}
+                                style={[
+                                    styles.arrowButton,
+                                    currentPetPage === 0 && styles.arrowButtonDisabled,
+                                ]}
+                            >
+                                <Text style={styles.arrowText}>‹</Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.pageText}>
+                                {currentPetPage + 1} / {totalPetPages}
+                            </Text>
+
+                            <TouchableOpacity
+                                onPress={nextPetPage}
+                                disabled={currentPetPage >= totalPetPages - 1}
+                                activeOpacity={0.7}
+                                style={[
+                                    styles.arrowButton,
+                                    currentPetPage >= totalPetPages - 1 && styles.arrowButtonDisabled,
+                                ]}
+                            >
+                                <Text style={styles.arrowText}>›</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
+
+                <View style={styles.pawTopRight6}>
+                    <svg width="50" height="50" viewBox="-10 -10 120 120" fill="#3a5f81">
+                        <ellipse cx="50" cy="65" rx="35" ry="30" />
+                        <ellipse cx="10" cy="25" rx="15" ry="15" />
+                        <ellipse cx="50" cy="10" rx="15" ry="15" />
+                        <ellipse cx="95" cy="22" rx="15" ry="15" />
+                    </svg>
+                </View>
+
+                <View style={styles.footer}>
+                    <Text style={styles.footerText}>
+                        © 2026 StayTodayForgotTomorrow. All rights reserved.
+                    </Text>
+                </View>
+            </View>
+        </ScrollView>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: "#FFF0C9" },
+    topSection: { paddingTop: 30, minHeight: "25%", backgroundColor: "#103357" },
+    pawTopLeft: { position: "absolute", top: 100, left: 50, transform: [{ rotate: "50deg" }] },
+    pawTopRight: { position: "absolute", top: 130, right: 600, transform: [{ rotate: "50deg" }] },
+    pawTopRight1: { position: "absolute", top: 240, right: 130, transform: [{ rotate: "-10deg" }] },
+    brandSection: { flexDirection: "row", alignItems: "center", justifyContent: "flex-start", paddingHorizontal: 200, gap: 20 },
+    textContainer: { flexDirection: "column", alignItems: "flex-start" },
+    brandText: { fontSize: 40, fontWeight: "bold", color: "#ffb012", textShadowColor: "#153453", textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 5 },
+    welcomeText: { fontSize: 16, color: "#FFFFFF", marginTop: 10, fontFamily: "Itim" },
+    logoImage: { width: 300, height: 350, marginLeft: -50 },
+    bottomSection: { paddingTop: 15, minHeight: 350, backgroundColor: "#FFF0C9", position: "relative" },
+    pawTopLeft2: { position: "absolute", top: 270, left: 150, transform: [{ rotate: "300deg" }] },
+    pawTopRight2: { position: "absolute", top: 240, right: 130, transform: [{ rotate: "70deg" }] },
+    pawTopRight3: { position: "absolute", top: 40, right: 430, transform: [{ rotate: "10deg" }] },
+    pawTopRight6: { position: "absolute", top: 50, right: 460, transform: [{ rotate: "-20deg" }] },
+    pawTopRight5: { position: "absolute", top: 170, left: 60, transform: [{ rotate: "30deg" }] },
+    centerContent: { minHeight: 350, justifyContent: "center", alignItems: "center", gap: 25 },
+    startTitle: { fontSize: 25, color: "#333333", fontFamily: "Itim" },
+    startButton: { backgroundColor: "#F28C28", paddingVertical: 14, paddingHorizontal: 65, borderRadius: 5, alignItems: "center", justifyContent: "center" },
+    startButtonText: { color: "#fefefe", fontSize: 18, fontFamily: "Itim" },
+    footer: { position: "absolute", bottom: 12, right: 18 },
+    footerText: { color: "#8b8a8a", fontSize: 12 },
+    userTopSection: { minHeight: 250, backgroundColor: "#FFF0C9", justifyContent: "center", alignItems: "flex-start", paddingHorizontal: 50, paddingVertical: 20 },
+    titleLogo: { width: 600, height: 400, marginLeft: 50 },
+    petStaySection: { minHeight: 300, backgroundColor: "#103357", position: "relative", paddingBottom: 70 },
+    curveContainer: { position: "relative", width: "100%", height: 90, marginTop: -70 },
+    curveLogo: { position: "absolute", width: 400, height: 500, top: -300, left: "65%" },
+    contentSection: { paddingHorizontal: 55, paddingTop: 30, marginLeft: 20 },
+    sectionTitle: { fontSize: 30, color: "#f4f2ee", fontFamily: "Itim" },
+    descriptionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 5, gap: 18 },
+    description: { fontSize: 18, color: "#FFFFFF", fontFamily: "Itim", flex: 1 },
+    petSection: { flexDirection: "row", flexWrap: "nowrap", justifyContent: "center", alignItems: "flex-start", gap: 35, marginTop: 25 },
+    petCard: { alignItems: "center", width: 140 },
+    emptyPetText: { color: "#FFFFFF", fontSize: 18, fontFamily: "Itim", marginVertical: 30 },
+    petImage: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: "#FFB012" },
+    petName: { fontSize: 20, color: "#FFFFFF", fontFamily: "Itim", marginTop: 10 },
+    statusBox: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, marginTop: 8 },
+    statusText: { fontSize: 18, fontFamily: "Itim" },
+    petPagination: { marginTop: 40, flexDirection: "row", alignSelf: "center", gap: 12 },
+    arrowButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F28C28", alignItems: "center", justifyContent: "center" },
+    arrowButtonDisabled: { opacity: 0.35 },
+    arrowText: { color: "#FFFFFF", fontSize: 30, lineHeight: 34, fontWeight: "bold" },
+    pageText: { paddingTop: 8, color: "#FFFFFF", fontSize: 16, fontFamily: "Itim" },
+});

@@ -26,3 +26,15 @@ docker compose --profile prod up -d --build
 ``` bash
 docker compose --profile prod down
 ```
+
+### ต้องการเปิดWeb
+
+###ครั้งแรก
+1. cd my-app
+2. npx expo install react-dom react-native-web
+3. npm install
+4. npm start
+
+###ครั้งต่อไป
+1. cd my-app
+2. npm start
