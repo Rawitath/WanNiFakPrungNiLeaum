@@ -284,8 +284,12 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
       console.warn("Cleanup warning:", err.message);
     } finally {
       // 3. ปิด Database Pool เป็นลำดับสุดท้าย
+      // ใช้ race กับ timeout เพื่อป้องกัน pool.end() แขวนค้างกรณีมี connection รั่ว
       if (pool) {
-        await pool.end();
+        await Promise.race([
+          pool.end(),
+          new Promise(resolve => setTimeout(resolve, 10000))
+        ]);
       }
     }
   }, 120000);

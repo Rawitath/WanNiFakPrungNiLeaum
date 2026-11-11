@@ -20,16 +20,17 @@ function checkMissingFields(obj) {
 }
 
 const registerCustomer = async (req, res, next) => {
+    let client;
     try {
         const checkValid = checkMissingFields(req.body);
         if(!checkValid.isValid){
             return res.status(400).json({ message: `Missing field: ${checkValid.missingFields}` })
         }
 
-        const client = await db.connect();
-        await client.query("BEGIN");
-
         const { username, password, email, phone } = req.body;
+
+        client = await db.connect();
+        await client.query("BEGIN");
 
         const userExist = await client.query(
             "SELECT username, email FROM users WHERE username = $1 OR email = $2",
@@ -37,6 +38,7 @@ const registerCustomer = async (req, res, next) => {
         );
 
         if (userExist.rows.length > 0) {
+            await client.query("ROLLBACK"); // ปิด transaction ก่อน return เสมอ
             const existing = userExist.rows[0];
             if (existing.username === username) {
                 return res.status(409).json({ message: "Username already exists" });
@@ -62,11 +64,10 @@ const registerCustomer = async (req, res, next) => {
         await client.query("COMMIT");
         return res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
-        await client.query("ROLLBACK");
+        if (client) await client.query("ROLLBACK");
         next(error);
-    }
-    finally{
-        client.release();
+    } finally {
+        if (client) client.release();
     }
 };
 

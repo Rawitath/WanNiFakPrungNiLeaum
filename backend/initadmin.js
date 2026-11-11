@@ -4,9 +4,9 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function initadmin(username="admin", email="admin@test.com", password="admin1234", phone="0899999999") {
     // ดึง client ออกมาจาก pool เพื่อใช้ทำ Transaction
-    const client = await db.connect(); 
-    
+    let client;
     try {
+        client = await db.connect();
         await client.query("BEGIN"); // เริ่ม Transaction
 
         const userExist = await client.query(
@@ -36,9 +36,9 @@ export async function initadmin(username="admin", email="admin@test.com", passwo
         await client.query("COMMIT"); // ยืนยันการบันทึกข้อมูลทั้ง 2 ตาราง
         return;
     } catch (error) {
-        await client.query("ROLLBACK"); // หากพังกลางทาง ให้ย้อนกลับข้อมูลทั้งหมด
+        if (client) await client.query("ROLLBACK"); // หากพังกลางทาง ให้ย้อนกลับข้อมูลทั้งหมด
         throw new Error(error);
     } finally {
-        client.release(); // คืน connection กลับเข้า pool
+        if (client) client.release(); // คืน connection กลับเข้า pool
     }
 };
