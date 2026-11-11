@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getBranchValue } from "./2components/branchConfig";
 
 import {
   apiLogin,
@@ -203,7 +204,7 @@ export default function App() {
     image: item.pet.image || require("./1assets/piclogo.png"),
     owner: item.owner?.name || "",
     status: normalizePetStatus(item.booking.status),
-    branch: item.booking.branch || "สาขาลาดกระบัง",
+    branch: item.booking.branch || "",
     petId: getPetId(item),
     petName: item.pet.name,
     customerName: item.owner?.name,
@@ -224,7 +225,7 @@ export default function App() {
     petId: getPetId(item),
     time: item.queue?.time || item.booking.bookingTime || "10:00",
     name: item.pet.name || "",
-    branch: item.booking.branch || "สาขาลาดกระบัง",
+    branch: item.booking.branch || "",
     status: normalizePetStatus(item.booking.status),
     detail: `${item.owner?.name || ""} - ${item.booking.startDate || ""} ถึง ${item.booking.endDate || ""}`,
     customerName: item.owner?.name,
@@ -362,7 +363,7 @@ export default function App() {
 
             booking: {
               id: String(r.reservationId || r.id || idx),
-              branch: r.branch || "สาขาลาดกระบัง",
+              branch: r.branch || r.branchName || r.branch_name || "",
               startDate: r.checkIn
                 ? new Date(r.checkIn).toLocaleDateString("th-TH")
                 : "",
@@ -512,7 +513,7 @@ export default function App() {
 
             booking: {
               id: String(r.reservationId || r.id || idx),
-              branch: r.branch || "สาขาลาดกระบัง",
+              branch: r.branch || r.branchName || r.branch_name || "",
               startDate: r.checkIn
                 ? new Date(r.checkIn).toLocaleDateString("th-TH")
                 : "",
@@ -834,6 +835,13 @@ export default function App() {
   // =====================================================
 
   const handleBookingSubmit = async (formData) => {
+    const selectedBranch = getBranchValue(formData?.branch);
+
+    if (!selectedBranch) {
+      showMessage("กรุณาเลือกสาขาก่อนยืนยันการจอง");
+      return;
+    }
+
     const bookingTimestamp = new Date().toISOString();
 
     const toIsoDateTime = (dateStr, timeStr) => {
@@ -886,7 +894,7 @@ export default function App() {
         formData.checkOutTime
       ),
 
-      branch: formData.branch || "สาขาลาดกระบัง",
+      branch: selectedBranch,
     };
 
     try {

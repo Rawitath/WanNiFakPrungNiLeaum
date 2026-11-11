@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   View,
@@ -12,11 +11,13 @@ import {
 export default function UserProfile({
   visible = false,
   onClose,
-  title = "ขุนศรีหมีตัวใหญ่",
   name = "",
   phone = "",
   email = "",
 }) {
+  // ใช้ชื่อ User เป็น Title
+  const title = name?.trim() || "ขุนศรีหมีตัวใหญ่";
+
   const barcodeLines = Array.from({ length: 32 }, (_, index) => ({
     height: index % 4 === 0 ? 3 : 2,
   }));
@@ -33,13 +34,11 @@ export default function UserProfile({
         style={styles.overlay}
         onPress={onClose}
       >
-
         {/* กล่อง Popup กดแล้วไม่ปิด */}
         <Pressable
           style={styles.popup}
           onPress={(event) => event.stopPropagation()}
         >
-
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -62,7 +61,6 @@ export default function UserProfile({
 
           {/* Content */}
           <View style={styles.content}>
-
             {/* Pet Image */}
             <View style={styles.imageSection}>
               <Image
@@ -74,14 +72,13 @@ export default function UserProfile({
 
             {/* Profile Information */}
             <View style={styles.infoSection}>
-
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>
                   ชื่อ
                 </Text>
 
                 <Text style={styles.infoValue}>
-                  {name}
+                  {name || "-"}
                 </Text>
               </View>
 
@@ -91,7 +88,7 @@ export default function UserProfile({
                 </Text>
 
                 <Text style={styles.infoValue}>
-                  {phone}
+                  {phone || "-"}
                 </Text>
               </View>
 
@@ -101,10 +98,9 @@ export default function UserProfile({
                 </Text>
 
                 <Text style={styles.infoValue}>
-                  {email}
+                  {email || "-"}
                 </Text>
               </View>
-
             </View>
 
             {/* Barcode */}
@@ -121,9 +117,7 @@ export default function UserProfile({
                 />
               ))}
             </View>
-
           </View>
-
         </Pressable>
       </Pressable>
     </Modal>
@@ -233,6 +227,7 @@ const styles = StyleSheet.create({
   },
 
   infoValue: {
+    flex: 1,
     color: "#E5E9EF",
     fontSize: 16,
     fontWeight: "bold",
