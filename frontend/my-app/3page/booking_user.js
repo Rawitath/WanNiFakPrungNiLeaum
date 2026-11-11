@@ -279,11 +279,11 @@ export default function BookingUser({ onBack, onSubmit }) {
                     onChangeText={(v) => updateForm("gender", v)}
                     placeholder="กรอกเพศ"
                   />
-                  <Field
-                    label="วันเกิด/อายุ"
+                  <DateField
+                    label="วันเกิด"
                     value={form.age}
-                    onChangeText={(v) => updateForm("age", v)}
-                    placeholder="วัน/เดือน/ปี"
+                    type="checkIn"
+                    placeholder="วันเกิด"
                   />
                   <Field
                     label="น้ำหนัก"
@@ -317,21 +317,11 @@ export default function BookingUser({ onBack, onSubmit }) {
                     type="checkIn"
                     placeholder="เลือกวันที่ฝาก"
                   />
-                  <TimeField
-                    label="เวลาฝาก"
-                    value={form.checkInTime}
-                    type="checkInTime"
-                  />
                   <DateField
                     label="วันที่เข้ารับกลับ"
                     value={form.checkOut}
                     type="checkOut"
                     placeholder="เลือกวันที่รับกลับ"
-                  />
-                  <TimeField
-                    label="เวลารับกลับ"
-                    value={form.checkOutTime}
-                    type="checkOutTime"
                   />
 
                   <Text style={styles.branchTitle}>เลือกสาขา</Text>
