@@ -1475,7 +1475,7 @@ export default function App() {
           onBack={() => setCurrentPage("guest")}
           onLogin={handleLogin}
           onRegister={() => setShowRegister(true)}
-          onForgotPassword={() => setShowForgotPassword(true)}
+          // onForgotPassword={() => setShowForgotPassword(true)}
           onGoogleLogin={handleGoogleLogin}
         />
       )}

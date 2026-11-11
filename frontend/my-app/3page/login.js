@@ -13,7 +13,7 @@ import {
 export default function Login({
     onBack,
     onLogin,
-    onForgotPassword,
+    // onForgotPassword,
     onGoogleLogin,
     onRegister,
 }) {
@@ -131,11 +131,11 @@ export default function Login({
                 />
 
                 {/* ลืมรหัสผ่าน */}
-                <TouchableOpacity onPress={onForgotPassword}>
+                {/* <TouchableOpacity onPress={onForgotPassword}>
                     <Text style={styles.forgotPassword}>
                         ลืมรหัสผ่าน?
                     </Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
 
                 {/* ปุ่มเข้าสู่ระบบ */}
@@ -326,16 +326,17 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFFFFF",
     },
 
-    forgotPassword: {
-        alignSelf: "flex-end",
-        marginTop: -10,
-        marginBottom: 25,
-        marginRight: 120,
-        color: "#f9aa16",
-        fontSize: 14,
-    },
+    // forgotPassword: {
+    //     alignSelf: "flex-end",
+    //     marginTop: -10,
+    //     marginBottom: 25,
+    //     marginRight: 120,
+    //     color: "#f9aa16",
+    //     fontSize: 14,
+    // },
 
     loginButton: {
+        marginTop: 50,
         height: 50,
         backgroundColor: "#ebb31a",
         width: "65%",
