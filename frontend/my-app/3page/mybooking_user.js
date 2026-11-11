@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from "react";
 import {
   View,
@@ -36,6 +37,12 @@ export default function MyBookingUser({
       return "ไม่ได้ระบุ";
     }
     return String(value);
+  };
+
+  const displayBranch = (value) => {
+    const branchName = displayValue(value);
+    if (branchName === "ไม่ได้ระบุ") return branchName;
+    return branchName.startsWith("สาขา") ? branchName : `สาขา${branchName}`;
   };
 
   const filteredBookings = useMemo(
@@ -80,6 +87,7 @@ export default function MyBookingUser({
               {filter === "ทั้งหมด" ? "สถานะ" : filter} ▼
             </Text>
           </TouchableOpacity>
+
           {showFilter && (
             <View style={styles.filterDropdown}>
               {statusOptions.map((status) => (
@@ -118,11 +126,13 @@ export default function MyBookingUser({
             filteredBookings.map((booking, idx) => (
               <View key={booking.id || idx} style={styles.bookingCard}>
                 <View style={styles.cardBar} />
+
                 <View style={styles.cardContent}>
                   <View style={styles.cardHeader}>
                     <Text style={styles.bookingId}>
                       รหัสนัดหมาย {displayValue(booking.id)}
                     </Text>
+
                     <Text
                       style={[
                         styles.bookingStatus,
@@ -132,9 +142,11 @@ export default function MyBookingUser({
                       {displayValue(getDisplayStatus(booking.status))}
                     </Text>
                   </View>
+
                   <Text style={styles.branchText}>
-                    สาขา {displayValue(booking.branch)}
+                    {displayBranch(booking.branch)}
                   </Text>
+
                   <View style={styles.infoContainer}>
                     <View style={styles.infoColumn}>
                       <Text style={styles.infoLabel}>ข้อมูลผู้จอง</Text>
@@ -142,6 +154,7 @@ export default function MyBookingUser({
                       <Text style={styles.infoValue}>{displayValue(booking.phone)}</Text>
                       <Text style={styles.infoValue}>{displayValue(booking.email)}</Text>
                     </View>
+
                     <View style={styles.infoColumn}>
                       <Text style={styles.infoLabel}>ข้อมูลสัตว์เลี้ยง</Text>
                       <Text style={styles.infoValue}>{displayValue(booking.pet)}</Text>
@@ -155,6 +168,7 @@ export default function MyBookingUser({
                       <Text style={styles.infoValue}>สุขภาพ: {displayValue(booking.health)}</Text>
                       <Text style={styles.infoValue}>คำแนะนำ: {displayValue(booking.careNotes)}</Text>
                     </View>
+
                     <View style={styles.dateColumn}>
                       <Text style={styles.infoLabel}>
                         วันที่เริ่ม-สิ้นสุดบริการ
@@ -165,12 +179,7 @@ export default function MyBookingUser({
                       <Text style={styles.infoValue}>
                         เวลากดจอง: {displayValue(booking.bookingTime || booking.time)}
                       </Text>
-                      <Text style={styles.infoValue}>
-                        เวลาเช็กอิน: {displayValue(booking.checkInTime)}
-                      </Text>
-                      <Text style={styles.infoValue}>
-                        เวลาเช็กเอาต์: {displayValue(booking.checkOutTime)}
-                      </Text>
+
                       {getDisplayStatus(booking.status) !== "ถูกปฏิเสธ" && (
                         <TouchableOpacity
                           style={styles.cancelButton}
@@ -194,10 +203,10 @@ export default function MyBookingUser({
 }
 
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: "#FFFFFF",
   },
   header: {
     height: 135,
@@ -213,8 +222,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
-  backButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "bold" },
-  headerTitle: { color: "#FFFFFF", fontSize: 25, fontWeight: "bold" },
+  backButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  headerTitle: {
+    color: "#FFFFFF",
+    fontSize: 25,
+    fontWeight: "bold",
+  },
   filterArea: {
     paddingHorizontal: 30,
     paddingTop: 25,
@@ -223,7 +240,11 @@ const styles = StyleSheet.create({
     zIndex: 100,
     elevation: 100,
   },
-  filterWrapper: { alignItems: "flex-end", position: "relative", zIndex: 100 },
+  filterWrapper: {
+    alignItems: "flex-end",
+    position: "relative",
+    zIndex: 100,
+  },
   filterButton: {
     borderWidth: 1,
     borderColor: "#647b8e",
@@ -232,7 +253,11 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     minWidth: 90,
   },
-  filterText: { fontSize: 12, color: "#15344d", textAlign: "center" },
+  filterText: {
+    fontSize: 12,
+    color: "#15344d",
+    textAlign: "center",
+  },
   filterDropdown: {
     position: "absolute",
     top: 38,
@@ -252,15 +277,27 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: "#DDDDDD",
   },
-  filterOptionText: { fontSize: 12, color: "#333333" },
-  selectedFilterText: { color: "#246AA5", fontWeight: "bold" },
-  content: { flex: 1, backgroundColor: "#FFFFFF" },
+  filterOptionText: {
+    fontSize: 12,
+    color: "#333333",
+  },
+  selectedFilterText: {
+    color: "#246AA5",
+    fontWeight: "bold",
+  },
+  content: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   contentContainer: {
     paddingHorizontal: 30,
     paddingTop: 10,
     paddingBottom: 40,
   },
-  bookingList: { gap: 22, paddingHorizontal: 5 },
+  bookingList: {
+    gap: 22,
+    paddingHorizontal: 5,
+  },
   bookingCard: {
     flexDirection: "row",
     minHeight: 120,
@@ -273,8 +310,16 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     overflow: "hidden",
   },
-  cardBar: { width: 37, backgroundColor: "#216ca7", borderRadius: 8 },
-  cardContent: { flex: 1, paddingHorizontal: 15, paddingVertical: 15 },
+  cardBar: {
+    width: 37,
+    backgroundColor: "#216ca7",
+    borderRadius: 8,
+  },
+  cardContent: {
+    flex: 1,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+  },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -282,23 +327,41 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     gap: 5,
   },
-  bookingId: { color: "#ff7100", fontSize: 15, fontWeight: "600" },
-  bookingStatus: { fontSize: 11 },
-  branchText: { fontSize: 11, color: "#111111", marginBottom: 7 },
+  bookingId: {
+    color: "#ff7100",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  bookingStatus: {
+    fontSize: 11,
+  },
+  branchText: {
+    fontSize: 11,
+    color: "#111111",
+    marginBottom: 7,
+  },
   infoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 8,
   },
-  infoColumn: { flex: 1 },
-  dateColumn: { flex: 1.5 },
+  infoColumn: {
+    flex: 1,
+  },
+  dateColumn: {
+    flex: 1.5,
+  },
   infoLabel: {
     color: "#216ca7",
     fontSize: 10,
     fontWeight: "600",
     marginBottom: 4,
   },
-  infoValue: { color: "#111111", fontSize: 10, marginBottom: 3 },
+  infoValue: {
+    color: "#111111",
+    fontSize: 10,
+    marginBottom: 3,
+  },
   emptyText: {
     textAlign: "center",
     color: "#888888",

@@ -1,4 +1,6 @@
+
 import React, { useState } from "react";
+import { BRANCHES } from "../2components/branchConfig";
 import {
   View,
   Text,
@@ -62,7 +64,7 @@ const Field = ({
 export default function BookingUser({ onBack, onSubmit }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBranches, setShowBranches] = useState(false);
-  const [branch, setBranch] = useState("สาขาลาดกระบัง");
+  const [branch, setBranch] = useState("");
 
   const [form, setForm] = useState({
     ownerName: "",
@@ -87,12 +89,7 @@ export default function BookingUser({ onBack, onSubmit }) {
   const [selectedHour, setSelectedHour] = useState("10");
   const [selectedMinute, setSelectedMinute] = useState("00");
 
-  const branches = [
-    "สาขาลาดกระบัง",
-    "สาขาร่มเกล้า",
-    "สาขาปราจีนบุรี",
-    "สาขาหาดใหญ่",
-  ];
+  const selectedBranch = BRANCHES.find((item) => item.value === branch);
 
   const updateForm = (key, value) => {
     setForm((prev) => ({
@@ -104,26 +101,20 @@ export default function BookingUser({ onBack, onSubmit }) {
   // เปิดปฏิทิน
   const openDatePicker = (type) => {
     setPickerType(type);
-
     const currentDate = parseDate(form[type]) || new Date();
-
     setCalendarMonth(
       new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     );
-
     setPickerVisible(true);
   };
 
   // เปิดตัวเลือกเวลา
   const openTimePicker = (type) => {
     setPickerType(type);
-
     const currentTime = form[type] || "10:00";
     const [hour, minute] = currentTime.split(":");
-
     setSelectedHour(hour || "10");
     setSelectedMinute(minute || "00");
-
     setPickerVisible(true);
   };
 
@@ -139,7 +130,6 @@ export default function BookingUser({ onBack, onSubmit }) {
     if (pickerType === "age") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
       if (selectedDate > today) {
         Alert.alert(
           "แจ้งเตือน",
@@ -174,7 +164,6 @@ export default function BookingUser({ onBack, onSubmit }) {
         const currentMonth = new Date();
         currentMonth.setDate(1);
         currentMonth.setHours(0, 0, 0, 0);
-
         if (nextMonth > currentMonth) {
           return prev;
         }
@@ -216,7 +205,6 @@ export default function BookingUser({ onBack, onSubmit }) {
   ];
 
   const weekDays = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
-
   const isBirthdayPicker = pickerType === "age";
 
   const today = new Date();
@@ -236,7 +224,7 @@ export default function BookingUser({ onBack, onSubmit }) {
     ) {
       Alert.alert(
         "แจ้งเตือน",
-        "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน"
+        "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วนและเลือกสาขา"
       );
       return;
     }
@@ -257,6 +245,7 @@ export default function BookingUser({ onBack, onSubmit }) {
       return;
     }
 
+    // branch เป็นชื่อสาขาจริงที่ Backend ใช้ค้นหา branch_id
     const bookingData = {
       ...form,
       branch,
@@ -264,7 +253,6 @@ export default function BookingUser({ onBack, onSubmit }) {
 
     if (onSubmit && !isSubmitting) {
       setIsSubmitting(true);
-
       Promise.resolve(onSubmit(bookingData))
         .finally(() => setIsSubmitting(false));
     }
@@ -274,7 +262,6 @@ export default function BookingUser({ onBack, onSubmit }) {
   const DateField = ({ label, value, type, placeholder }) => (
     <View style={styles.fieldContainer}>
       <Text style={styles.fieldLabel}>{label}</Text>
-
       <TouchableOpacity
         style={styles.pickerButton}
         onPress={() => openDatePicker(type)}
@@ -288,7 +275,6 @@ export default function BookingUser({ onBack, onSubmit }) {
         >
           {value || placeholder || "เลือกวันที่"}
         </Text>
-
         <Text style={styles.pickerIcon}>▦</Text>
       </TouchableOpacity>
     </View>
@@ -416,7 +402,7 @@ export default function BookingUser({ onBack, onSubmit }) {
 
                   <TouchableOpacity
                     style={styles.branchButton}
-                    onPress={() => setShowBranches(!showBranches)}
+                    onPress={() => setShowBranches(true)}
                     activeOpacity={0.8}
                   >
                     <Text
@@ -425,30 +411,10 @@ export default function BookingUser({ onBack, onSubmit }) {
                         !branch && styles.branchPlaceholder,
                       ]}
                     >
-                      {branch || "เลือกสาขา"}
+                      {selectedBranch?.label || "เลือกสาขา"}
                     </Text>
-
                     <Text style={styles.arrow}>▼</Text>
                   </TouchableOpacity>
-
-                  {showBranches && (
-                    <View style={styles.dropdown}>
-                      {branches.map((item) => (
-                        <TouchableOpacity
-                          key={item}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setBranch(item);
-                            setShowBranches(false);
-                          }}
-                        >
-                          <Text style={styles.dropdownText}>
-                            {item}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
 
                   <TouchableOpacity
                     style={styles.confirmButton}
@@ -532,13 +498,8 @@ export default function BookingUser({ onBack, onSubmit }) {
                 {/* วันในสัปดาห์ */}
                 <View style={styles.calendarGrid}>
                   {weekDays.map((day) => (
-                    <View
-                      key={day}
-                      style={styles.calendarCell}
-                    >
-                      <Text style={styles.weekDayText}>
-                        {day}
-                      </Text>
+                    <View key={day} style={styles.calendarCell}>
+                      <Text style={styles.weekDayText}>{day}</Text>
                     </View>
                   ))}
                 </View>
@@ -559,10 +520,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                     { length: daysInMonth },
                     (_, index) => {
                       const day = index + 1;
-
-                      const selectedDate = parseDate(
-                        form[pickerType]
-                      );
+                      const selectedDate = parseDate(form[pickerType]);
 
                       const isSelected =
                         selectedDate &&
@@ -579,18 +537,15 @@ export default function BookingUser({ onBack, onSubmit }) {
                       );
 
                       const isFutureBirthday =
-                        isBirthdayPicker &&
-                        dateToCheck > today;
+                        isBirthdayPicker && dateToCheck > today;
 
                       return (
                         <TouchableOpacity
                           key={day}
                           style={[
                             styles.calendarCell,
-                            isSelected &&
-                              styles.selectedCalendarCell,
-                            isFutureBirthday &&
-                              styles.disabledCalendarCell,
+                            isSelected && styles.selectedCalendarCell,
+                            isFutureBirthday && styles.disabledCalendarCell,
                           ]}
                           onPress={() => handleSelectDate(day)}
                           disabled={isFutureBirthday}
@@ -599,10 +554,8 @@ export default function BookingUser({ onBack, onSubmit }) {
                           <Text
                             style={[
                               styles.calendarDayText,
-                              isSelected &&
-                                styles.selectedCalendarText,
-                              isFutureBirthday &&
-                                styles.disabledCalendarText,
+                              isSelected && styles.selectedCalendarText,
+                              isFutureBirthday && styles.disabledCalendarText,
                             ]}
                           >
                             {day}
@@ -617,9 +570,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                   style={styles.cancelButton}
                   onPress={() => setPickerVisible(false)}
                 >
-                  <Text style={styles.cancelButtonText}>
-                    ยกเลิก
-                  </Text>
+                  <Text style={styles.cancelButtonText}>ยกเลิก</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -638,9 +589,7 @@ export default function BookingUser({ onBack, onSubmit }) {
 
                 <View style={styles.timeColumns}>
                   <View style={styles.timeColumn}>
-                    <Text style={styles.timeColumnTitle}>
-                      ชั่วโมง
-                    </Text>
+                    <Text style={styles.timeColumnTitle}>ชั่วโมง</Text>
 
                     <ScrollView
                       style={styles.timeScroll}
@@ -650,8 +599,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                       <View style={styles.timeGrid}>
                         {Array.from(
                           { length: 24 },
-                          (_, index) =>
-                            String(index).padStart(2, "0")
+                          (_, index) => String(index).padStart(2, "0")
                         ).map((hour) => (
                           <TouchableOpacity
                             key={hour}
@@ -660,9 +608,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                               selectedHour === hour &&
                                 styles.selectedTimeOption,
                             ]}
-                            onPress={() =>
-                              setSelectedHour(hour)
-                            }
+                            onPress={() => setSelectedHour(hour)}
                           >
                             <Text
                               style={[
@@ -680,9 +626,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                   </View>
 
                   <View style={styles.timeColumn}>
-                    <Text style={styles.timeColumnTitle}>
-                      นาที
-                    </Text>
+                    <Text style={styles.timeColumnTitle}>นาที</Text>
 
                     <ScrollView
                       style={styles.timeScroll}
@@ -692,8 +636,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                       <View style={styles.timeGrid}>
                         {Array.from(
                           { length: 60 },
-                          (_, index) =>
-                            String(index).padStart(2, "0")
+                          (_, index) => String(index).padStart(2, "0")
                         )
                           .filter((m) => Number(m) % 5 === 0)
                           .map((minute) => (
@@ -704,9 +647,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                                 selectedMinute === minute &&
                                   styles.selectedTimeOption,
                               ]}
-                              onPress={() =>
-                                setSelectedMinute(minute)
-                              }
+                              onPress={() => setSelectedMinute(minute)}
                             >
                               <Text
                                 style={[
@@ -729,22 +670,69 @@ export default function BookingUser({ onBack, onSubmit }) {
                     style={styles.cancelButton}
                     onPress={() => setPickerVisible(false)}
                   >
-                    <Text style={styles.cancelButtonText}>
-                      ยกเลิก
-                    </Text>
+                    <Text style={styles.cancelButtonText}>ยกเลิก</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={styles.timeConfirmButton}
                     onPress={handleConfirmTime}
                   >
-                    <Text style={styles.timeConfirmText}>
-                      เลือกเวลานี้
-                    </Text>
+                    <Text style={styles.timeConfirmText}>เลือกเวลานี้</Text>
                   </TouchableOpacity>
                 </View>
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* BRANCH PICKER MODAL */}
+      <Modal
+        visible={showBranches}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowBranches(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.branchModal}>
+            <Text style={styles.modalTitle}>เลือกสาขาที่ต้องการจอง</Text>
+
+            {BRANCHES.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={[
+                  styles.branchModalOption,
+                  branch === item.value && styles.branchModalOptionSelected,
+                ]}
+                onPress={() => {
+                  setBranch(item.value);
+                  setShowBranches(false);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.branchModalOptionText,
+                    branch === item.value &&
+                      styles.branchModalOptionTextSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+
+                {branch === item.value ? (
+                  <Text style={styles.branchModalCheck}>✓</Text>
+                ) : null}
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={styles.branchModalCancel}
+              onPress={() => setShowBranches(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.cancelButtonText}>ยกเลิก</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -899,6 +887,49 @@ const styles = StyleSheet.create({
   arrow: {
     color: "#FFFFFF",
     fontSize: 12,
+  },
+  branchModal: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 20,
+    elevation: 10,
+  },
+  branchModalOption: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E8EDF1",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  branchModalOptionSelected: {
+    backgroundColor: "#EAF1F6",
+    borderRadius: 7,
+  },
+  branchModalOptionText: {
+    color: "#314B62",
+    fontSize: 13,
+  },
+  branchModalOptionTextSelected: {
+    color: "#246AA5",
+    fontWeight: "bold",
+  },
+  branchModalCheck: {
+    color: "#246AA5",
+    fontSize: 17,
+    fontWeight: "bold",
+  },
+  branchModalCancel: {
+    alignSelf: "flex-end",
+    marginTop: 15,
+    backgroundColor: "#E8EDF1",
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
   },
   dropdown: {
     backgroundColor: "#FFFFFF",

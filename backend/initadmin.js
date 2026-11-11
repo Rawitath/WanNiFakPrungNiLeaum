@@ -33,6 +33,26 @@ export async function initadmin(username="admin", email="admin@test.com", passwo
             [managerid, userid]
         );
 
+        await client.query(
+            "INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2)",
+            [uuidv4(), "ลาดกระบัง"]
+        );
+
+        await client.query(
+            "INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2)",
+            [uuidv4(), "ร่มเกล้า"]
+        );
+
+        await client.query(
+            "INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2)",
+            [uuidv4(), "ปราจีนบุรี"]
+        );
+
+        await client.query(
+            "INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2)",
+            [uuidv4(), "หาดใหญ่"]
+        );
+
         await client.query("COMMIT"); // ยืนยันการบันทึกข้อมูลทั้ง 2 ตาราง
         return;
     } catch (error) {
