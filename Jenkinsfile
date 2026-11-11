@@ -391,11 +391,11 @@ pipeline {
                                     # 4. ยิง curl ทดสอบทีละตัว
                                     echo "=== Checking Frontend ==="
                                     docker run --rm --network host curlimages/curl:latest \
-                                        curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://frontend:8081/
+                                        curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://localhost:8081/
 
                                     echo "=== Checking Backend ==="
                                     docker run --rm --network host curlimages/curl:latest \
-                                        curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://backend:3000/api/docs
+                                        curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000/api/docs
                                 """,
                                 useCredentials: true
                             )
