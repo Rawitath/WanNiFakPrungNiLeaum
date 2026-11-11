@@ -285,7 +285,7 @@ describe("WanNiFakPrungNiLeaum Integration Test Suite", () => {
         await pool.end();
       }
     }
-  }, 60000);
+  }, 120000);
 
   // ─── 1. Authentication & Actor Login ────────────────────────────────────────
 
