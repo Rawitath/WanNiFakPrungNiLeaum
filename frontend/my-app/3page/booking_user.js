@@ -60,6 +60,7 @@ const Field = ({
 );
 
 export default function BookingUser({ onBack, onSubmit }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBranches, setShowBranches] = useState(false);
   const [branch, setBranch] = useState("สาขาลาดกระบัง");
 
@@ -77,8 +78,7 @@ export default function BookingUser({ onBack, onSubmit }) {
     careNotes: "",
     checkIn: "",
     checkOut: "",
-    checkInTime: "10:00",
-    checkOutTime: "10:00",
+    bookingTime: "",
   });
 
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -190,8 +190,9 @@ export default function BookingUser({ onBack, onSubmit }) {
       branch,
     };
 
-    if (onSubmit) {
-      onSubmit(bookingData);
+    if (onSubmit && !isSubmitting) {
+      setIsSubmitting(true);
+      Promise.resolve(onSubmit(bookingData)).finally(() => setIsSubmitting(false));
     }
   };
 
@@ -207,22 +208,6 @@ export default function BookingUser({ onBack, onSubmit }) {
           {value || placeholder || "เลือกวันที่"}
         </Text>
         <Text style={styles.pickerIcon}>▦</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const TimeField = ({ label, value, type }) => (
-    <View style={styles.fieldContainer}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TouchableOpacity
-        style={styles.pickerButton}
-        onPress={() => openTimePicker(type)}
-        activeOpacity={0.8}
-      >
-        <Text style={[styles.pickerButtonText, !value && styles.placeholderText]}>
-          {value || "เลือกเวลา"}
-        </Text>
-        <Text style={styles.pickerIcon}>◷</Text>
       </TouchableOpacity>
     </View>
   );
@@ -279,11 +264,11 @@ export default function BookingUser({ onBack, onSubmit }) {
                     onChangeText={(v) => updateForm("gender", v)}
                     placeholder="กรอกเพศ"
                   />
-                  <Field
-                    label="วันเกิด/อายุ"
+                  <DateField
+                    label="วันเกิด"
                     value={form.age}
-                    onChangeText={(v) => updateForm("age", v)}
-                    placeholder="วัน/เดือน/ปี"
+                    type="Birth"
+                    placeholder="วันเกิด"
                   />
                   <Field
                     label="น้ำหนัก"
@@ -317,21 +302,11 @@ export default function BookingUser({ onBack, onSubmit }) {
                     type="checkIn"
                     placeholder="เลือกวันที่ฝาก"
                   />
-                  <TimeField
-                    label="เวลาฝาก"
-                    value={form.checkInTime}
-                    type="checkInTime"
-                  />
                   <DateField
                     label="วันที่เข้ารับกลับ"
                     value={form.checkOut}
                     type="checkOut"
                     placeholder="เลือกวันที่รับกลับ"
-                  />
-                  <TimeField
-                    label="เวลารับกลับ"
-                    value={form.checkOutTime}
-                    type="checkOutTime"
                   />
 
                   <Text style={styles.branchTitle}>เลือกสาขา</Text>
@@ -366,9 +341,10 @@ export default function BookingUser({ onBack, onSubmit }) {
                   <TouchableOpacity
                     style={styles.confirmButton}
                     onPress={handleSubmit}
+                    disabled={isSubmitting}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.confirmText}>ยืนยันการจอง</Text>
+                    <Text style={styles.confirmText}>{isSubmitting ? "กำลังบันทึก..." : "ยืนยันการจอง"}</Text>
                   </TouchableOpacity>
                 </View>
               </View>

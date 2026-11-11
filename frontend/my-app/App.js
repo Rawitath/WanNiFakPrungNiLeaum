@@ -66,6 +66,23 @@ const normalizePetStatus = (status) => {
 const getPetId = (item) =>
   item?.pet?.id || item?.booking?.id || item?.owner?.id || item?.pet?.name || "";
 
+const formatBookingTime = (value) => {
+  if (!value) return "ไม่ได้ระบุ";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("th-TH", {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+};
+
+const formatClockTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
+};
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState("guest");
   const [showRegister, setShowRegister] = useState(false);
@@ -162,19 +179,29 @@ export default function App() {
     customerEmail: item.owner?.email,
   }));
 
-  const loadCustomerData = async () => {
+  const loadCustomerData = async (userOverride = null) => {
+    const customer = userOverride || activeUser;
     try {
       const [resRes, petsRes] = await Promise.all([
         apiGetCustomerReservations(),
         apiGetCustomerPets(),
       ]);
-      if (resRes.ok && Array.isArray(resRes.data)) {
-        const backendPets = petsRes.ok && Array.isArray(petsRes.data) ? petsRes.data : [];
-        // Backend เวอร์ชันนี้ส่งรายการจองรวมมาให้ จึงกรองด้วยอีเมลของบัญชีที่ Login อยู่
-        const ownReservations = resRes.data.filter((r) =>
-          String(r.customerEmail || "").trim().toLowerCase() ===
-          String(activeUser?.email || "").trim().toLowerCase()
-        );
+      const reservationRows = Array.isArray(resRes.data)
+        ? resRes.data
+        : (resRes.data?.reservations || resRes.data?.data || resRes.data?.items || []);
+      const petRows = Array.isArray(petsRes.data)
+        ? petsRes.data
+        : (petsRes.data?.pets || petsRes.data?.data || []);
+      if (resRes.ok && Array.isArray(reservationRows)) {
+        const backendPets = petsRes.ok && Array.isArray(petRows) ? petRows : [];
+        // API ใช้ token ระบุบัญชีอยู่แล้ว หาก Backend ส่งรายการรวมมา
+        // ให้กรองด้วยอีเมลของบัญชีที่กำลัง Login โดยตรง
+        const accountEmail = String(customer?.email || "").trim().toLowerCase();
+        const ownReservations = accountEmail
+          ? reservationRows.filter((r) =>
+              String(r.customerEmail || r.email || "").trim().toLowerCase() === accountEmail
+            )
+          : reservationRows;
         const backendDataSets = ownReservations.map((r, idx) => {
           const matchedPet = backendPets.find((p) =>
             String(p.customerEmail || "").trim().toLowerCase() === String(r.customerEmail || "").trim().toLowerCase() &&
@@ -195,8 +222,8 @@ export default function App() {
           return {
           owner: {
             id: r.customerName || `O${idx}`,
-            username: activeUser?.username || "",
-            name: r.customerName || activeUser?.name || "ลูกค้า",
+            username: customer?.username || "",
+            name: r.customerName || customer?.name || "ลูกค้า",
             phone: r.customerPhone || "",
             email: r.customerEmail || "",
           },
@@ -219,10 +246,19 @@ export default function App() {
             endDate: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
             checkIn: r.checkIn ? new Date(r.checkIn).toLocaleDateString("th-TH") : "",
             checkOut: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
-            bookingTime: "10:00",
+            bookingTime: formatBookingTime(
+              r.bookingTime || r.booking_time || r.createdAt || r.created_at || r.requestedAt || r.timestamp
+            ),
+            checkInTime: r.checkIn ? formatClockTime(r.checkIn) : "",
+            checkOutTime: r.checkOut ? formatClockTime(r.checkOut) : "",
             status: bookingStatus,
           },
-          queue: { id: `Q${idx}`, time: "10:00" },
+          queue: {
+            id: `Q${idx}`,
+            time: formatBookingTime(
+              r.bookingTime || r.booking_time || r.createdAt || r.created_at || r.requestedAt || r.timestamp
+            ),
+          },
         };
         });
         setDataSets(backendDataSets);
@@ -293,10 +329,17 @@ export default function App() {
               endDate: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
               checkIn: r.checkIn ? new Date(r.checkIn).toLocaleDateString("th-TH") : "",
               checkOut: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
-              bookingTime: "10:00",
+              bookingTime: formatBookingTime(
+                r.bookingTime || r.booking_time || r.createdAt || r.created_at || r.requestedAt || r.timestamp
+              ),
               status: currentStatus,
             },
-            queue: { id: `Q${idx}`, time: "10:00" },
+            queue: {
+              id: `Q${idx}`,
+              time: formatBookingTime(
+                r.bookingTime || r.booking_time || r.createdAt || r.created_at || r.requestedAt || r.timestamp
+              ),
+            },
           };
         });
 
@@ -326,6 +369,8 @@ export default function App() {
   // ADD BOOKING
   // =====================================================
   const handleBookingSubmit = async (formData) => {
+    // เวลาจองคือเวลาที่ผู้ใช้กดปุ่มยืนยันจริง ไม่ใช่เวลาเช็กอิน/เช็กเอาต์
+    const bookingTimestamp = new Date().toISOString();
     const toIsoDateTime = (dateStr, timeStr) => {
       if (!dateStr) return new Date().toISOString();
       const parts = dateStr.split("/");
@@ -355,6 +400,8 @@ export default function App() {
       petBirth: formData.age || "2022-01-01",
       petCondition: formData.health || "ไม่มี",
       petNote: formData.careNotes || "ไม่มี",
+      bookingTime: bookingTimestamp,
+      createdAt: bookingTimestamp,
       checkIn: toIsoDateTime(formData.checkIn, formData.checkInTime),
       checkOut: toIsoDateTime(formData.checkOut, formData.checkOutTime),
       branch: formData.branch || "สาขาลาดกระบัง",
@@ -556,8 +603,8 @@ export default function App() {
         userid: payload?.userid || "",
         username: profile.username || username.trim(),
         name: profile.username || username.trim(),
-        email: profile.email || "",
-        phone: profile.phone || "",
+        email: profile.email || payload?.email || "",
+        phone: profile.phone || payload?.phone || "",
         role,
       };
 
@@ -570,7 +617,7 @@ export default function App() {
       setCurrentPage(role);
       setDataSets([]);
 
-      if (role === "user") await loadCustomerData();
+      if (role === "user") await loadCustomerData(userObj);
       else if (role === "staff") await loadStaffData();
       else if (role === "admin") {
         const overview = await apiGetManagerStatus();
