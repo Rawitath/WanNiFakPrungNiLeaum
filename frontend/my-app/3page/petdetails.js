@@ -12,14 +12,15 @@ const PetDetails = ({
   onBack,
   pet,
   petImage,
-  initialStatus = "In Care",
+  initialStatus,
   onStatusChange,
 }) => {
-  const [status, setStatus] = useState(initialStatus);
+  const currentInitialStatus = pet?.status || initialStatus || "รอยืนยันคิว";
+  const [status, setStatus] = useState(currentInitialStatus);
 
   useEffect(() => {
-    setStatus(initialStatus || "รอรับเข้า");
-  }, [initialStatus, pet?.id]);
+    setStatus(pet?.status || initialStatus || "รอยืนยันคิว");
+  }, [initialStatus, pet?.id, pet?.status]);
 
   const statusOptions = [
     "รอรับเข้า",
@@ -28,8 +29,14 @@ const PetDetails = ({
     "รับกลับแล้ว",
   ];
 
-  // ตรวจสอบว่าต้องแสดง Stepper ขั้นตอนหรือไม่
-  const shouldShowStatusStepper = statusOptions.includes(status);
+  // ถ้าสถานะของสัตว์เป็น รอยืนยันคิว หรือ ถูกปฏิเสธ ในส่วน Progress Stepper จะว่างไม่มีความคืบหน้าใดๆ ทั้งนั้น
+  const isPendingOrRejected =
+    status === "รอยืนยันคิว" ||
+    status === "ถูกปฏิเสธ" ||
+    status === "pending" ||
+    status === "rejected";
+
+  const shouldShowStatusStepper = !isPendingOrRejected && statusOptions.includes(status);
 
   const displayValue = (value) => {
     if (value === null || value === undefined || String(value).trim() === "") {
@@ -38,7 +45,7 @@ const PetDetails = ({
     return String(value);
   };
 
-  const activeStatusIndex = statusOptions.indexOf(status);
+  const activeStatusIndex = isPendingOrRejected ? -1 : statusOptions.indexOf(status);
 
   const handleStatusChange = (value) => {
     setStatus(value);
@@ -182,8 +189,18 @@ const PetDetails = ({
           สถานะปัจจุบัน: {displayValue(status)}
         </Text>
 
-        {/* Progress Stepper */}
-        {shouldShowStatusStepper ? (
+        {/* Progress Stepper - ถ้าสถานะเป็น รอยืนยันคิว หรือ ถูกปฏิเสธ ในส่วน Progress Stepper จะว่างไม่มีความคืบหน้าใดๆ ทั้งนั้น */}
+        {isPendingOrRejected ? (
+          <View style={styles.emptyStatusStepper}>
+            <View style={styles.emptyStepperTrack}>
+              <Text style={styles.emptyStepperText}>
+                {status === "ถูกปฏิเสธ"
+                  ? "คำขอการจองถูกปฏิเสธ — ไม่มีความคืบหน้า"
+                  : "รอยืนยันคิวจากเจ้าหน้าที่ — ยังไม่มีความคืบหน้า"}
+              </Text>
+            </View>
+          </View>
+        ) : shouldShowStatusStepper ? (
           <View style={styles.statusStepper}>
             <View style={styles.statusProgressLine} />
 
@@ -509,6 +526,28 @@ const styles = StyleSheet.create({
   statusStepLabelCompleted: {
     color: "#246AA5",
     fontWeight: "600",
+  },
+  emptyStatusStepper: {
+    width: "100%",
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyStepperTrack: {
+    backgroundColor: "#F8FAFC",
+    paddingHorizontal: 25,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderStyle: "dashed",
+    alignItems: "center",
+    minWidth: 260,
+  },
+  emptyStepperText: {
+    fontSize: 13,
+    color: "#64748B",
+    fontWeight: "500",
   },
 });
 

@@ -1,10 +1,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Base URL จาก .env หรือ compose.yml environments ผ่าน process.env
-const BASE_URL_PRIMARY =
-  process.env.EXPO_PUBLIC_API_URL ||
-  process.env.API_URL ||
-  "http://backend:3000";
+// คำนวณ Host dynamic สำหรับสภาพแวดล้อม Browser / Mobile
+const getDynamicBaseUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+  if (process.env.API_URL) return process.env.API_URL;
+  
+  // ถ้าเปิดจาก Browser Client ข้างนอก Docker network ให้ดึง hostname ปัจจุบัน
+  if (typeof window !== "undefined" && window.location && window.location.hostname) {
+    const hostname = window.location.hostname;
+    if (hostname !== "backend") {
+      return `http://${hostname}:3000`;
+    }
+  }
+  return "http://localhost:3000";
+};
+
+const BASE_URL_PRIMARY = getDynamicBaseUrl();
 
 let currentToken = null;
 const TOKEN_KEY = "stayforget_access_token";
@@ -25,7 +36,6 @@ export function parseJwt(token) {
     return JSON.parse(jsonPayload);
   } catch (err) {
     try {
-      // Fallback สำหรับ environments ที่ atob อาจไม่มี
       const base64Url = token.split(".")[1];
       const json = typeof atob === "function" ? atob(base64Url) : Buffer.from(base64Url, "base64").toString("utf-8");
       return JSON.parse(json);
@@ -72,7 +82,7 @@ export async function clearAuthToken() {
   }
 }
 
-// ฟังก์ชันแกนกลางสำหรับการเรียก API พร้อมแนบ Bearer token และ auto-retry fallback
+// ฟังก์ชันแกนกลางสำหรับการเรียก API พร้อมแนบ Bearer token และ auto-fallback
 export async function apiRequest(endpoint, options = {}) {
   const token = await getAuthToken();
   const headers = {
@@ -85,20 +95,8 @@ export async function apiRequest(endpoint, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  // เตรียม URL
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  let primaryUrl = `${BASE_URL_PRIMARY}${cleanEndpoint}`;
-
-  // หาก BASE_URL_PRIMARY เป็น http://backend:3000 แต่เปิดจาก Web Browser นอก docker network
-  // ให้เตรียม fallback ไปยัง localhost:3000
-  let fallbackUrl = null;
-  if (
-    typeof window !== "undefined" &&
-    window.location &&
-    BASE_URL_PRIMARY.includes("backend:3000")
-  ) {
-    fallbackUrl = `http://localhost:3000${cleanEndpoint}`;
-  }
+  const primaryUrl = `${BASE_URL_PRIMARY}${cleanEndpoint}`;
 
   try {
     const res = await fetch(primaryUrl, {
@@ -114,8 +112,9 @@ export async function apiRequest(endpoint, options = {}) {
     }
     return { ok: res.ok, status: res.status, data };
   } catch (networkError) {
-    // ถ้าเรียก primaryUrl ไม่สำเร็จและมี fallbackUrl ให้ลอง fallback
-    if (fallbackUrl) {
+    // ถ้า primaryUrl ล้มเหลวและเป็นชื่อ backend:3000 ให้ลอง Fallback ไป localhost:3000
+    if (BASE_URL_PRIMARY.includes("backend:3000")) {
+      const fallbackUrl = `http://localhost:3000${cleanEndpoint}`;
       try {
         const res = await fetch(fallbackUrl, {
           ...options,
@@ -142,7 +141,7 @@ export async function apiRequest(endpoint, options = {}) {
 }
 
 // =====================================================
-// AUTH ENDPOINTS (ตรงตาม Swagger ใน backend/src)
+// AUTH ENDPOINTS
 // =====================================================
 
 /** POST /api/register */
@@ -278,7 +277,7 @@ export async function apiGetStaffPets(petId = null) {
   });
 }
 
-/** POST /api/staff/pets/status (or /api/staff/status) */
+/** POST /api/staff/pets/status */
 export async function apiUpdateStaffPetStatus({ id, status }) {
   return apiRequest("/api/staff/pets/status", {
     method: "POST",
@@ -352,7 +351,7 @@ export async function apiGetStaffCallCustomerList() {
 }
 
 // =====================================================
-// MANAGER / ADMIN STATUS & STATS
+// MANAGER / ADMIN STATUS
 // =====================================================
 
 /** GET /api/manager/status */
