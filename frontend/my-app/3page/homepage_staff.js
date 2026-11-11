@@ -4,6 +4,7 @@ import StaffSidePanel from "../2components/booking_SidePanel.js";
 import UserSidePanel from "../2components/information_SidePanel.js";
 
 export default function HomePageStaff({
+  staffName = "พนักงาน",
   bookingQueue = [],
   activityList = [],
   petList = [],
@@ -24,7 +25,18 @@ export default function HomePageStaff({
   const [showStatusDropdownId, setShowStatusDropdownId] = useState(null);
 
   const branches = ["สาขาลาดกระบัง", "สาขาร่มเกล้า", "สาขาปราจีนบุรี", "สาขาหาดใหญ่"];
-  const statusOptions = ["In Care", "พร้อมรับกลับ"];
+  const statusOptions = ["In Care", "รอรับกลับ", "สบายดี", "ไม่สบาย"];
+
+  const normalizeBranch = (b) => String(b || "").replace("สาขา", "").trim().toLowerCase();
+
+  const isMatchingBranch = (itemBranch) => {
+    if (!itemBranch) return true;
+    return normalizeBranch(itemBranch) === normalizeBranch(selectedBranch);
+  };
+
+  const filteredPetList = petList.filter((p) => isMatchingBranch(p.branch));
+  const filteredBookingQueue = bookingQueue.filter((b) => isMatchingBranch(b.branch));
+  const filteredActivityList = activityList.filter((a) => isMatchingBranch(a.branch));
 
   const handleSelectStatus = (pet, newStatus) => {
     onUpdatePetStatus && onUpdatePetStatus(pet.id, newStatus);
@@ -47,7 +59,7 @@ export default function HomePageStaff({
       <View style={styles.topSection}>
         <View style={styles.welcomeSection}>
           <View style={styles.welcomeRow}>
-            <Text style={styles.welcomeText}>สวัสดี, พี่มิลค์</Text>
+            <Text style={styles.welcomeText}>สวัสดี, {staffName}</Text>
             <View style={styles.branchContainer}>
               <TouchableOpacity style={styles.branchButton} onPress={() => setShowBranches((v) => !v)}>
                 <Text style={styles.branchText}>{selectedBranch}</Text>
@@ -66,8 +78,18 @@ export default function HomePageStaff({
           </View>
         </View>
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}><Text style={styles.statNumber}>{petList.filter((p) => p.status === "In Care").length}</Text><Text style={styles.statLabel}>กำลังเข้าพัก</Text></View>
-          <View style={styles.statCard}><Text style={styles.statNumber}>{petList.filter((p) => p.status === "พร้อมรับกลับ").length}</Text><Text style={styles.statLabel}>รอรับคืน</Text></View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {filteredPetList.filter((p) => p.status === "In Care" || p.status === "สบายดี").length}
+            </Text>
+            <Text style={styles.statLabel}>กำลังเข้าพัก</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {filteredPetList.filter((p) => p.status === "พร้อมรับกลับ" || p.status === "รอรับกลับ").length}
+            </Text>
+            <Text style={styles.statLabel}>รอรับคืน</Text>
+          </View>
         </View>
       </View>
 
@@ -76,10 +98,10 @@ export default function HomePageStaff({
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>จัดการคิวฝาก</Text>
-              <Text style={styles.cardSubtitle}>คิวทั้งหมด {bookingQueue.length}</Text>
+              <Text style={styles.cardSubtitle}>คิวทั้งหมด {filteredBookingQueue.length}</Text>
             </View>
             <ScrollView style={styles.cardInnerScroll} nestedScrollEnabled>
-              {bookingQueue.map((item) => (
+              {filteredBookingQueue.map((item) => (
                 <View key={item.id} style={styles.queueRow}>
                   <Text style={styles.queueTime}>{item.time}</Text>
                   <View style={styles.queueInfo}>
@@ -89,7 +111,7 @@ export default function HomePageStaff({
                   <View style={[styles.statusBadge, { backgroundColor: item.color || "#FCE9CC" }]}>
                     <Text style={[styles.statusText, { color: item.textColor || "#D99035" }]}>{item.status}</Text>
                   </View>
-                  {item.status === "รอรับเข้า" ? (
+                  {item.status === "รอรับเข้า" || item.status === "รอยืนยันคิว" || item.status === "pending" ? (
                     <>
                       <TouchableOpacity style={styles.detailButton} onPress={() => onConfirmQueue ? onConfirmQueue(item) : onViewBooking && onViewBooking(item)}>
                         <Text style={styles.detailButtonText}>ยืนยัน</Text>
@@ -99,20 +121,20 @@ export default function HomePageStaff({
                       </TouchableOpacity>
                     </>
                   ) : (
-                    <TouchableOpacity style={styles.detailButton} onPress={() => onViewBooking && onViewBooking(item)}>
+                    <TouchableOpacity style={styles.detailButton} onPress={() => onViewBooking ? onViewBooking(item) : handleViewPet(item)}>
                       <Text style={styles.detailButtonText}>รายละเอียด</Text>
                     </TouchableOpacity>
                   )}
                 </View>
               ))}
-              {!bookingQueue.length && <Text style={styles.emptyText}>ไม่มีคิวฝาก</Text>}
+              {!filteredBookingQueue.length && <Text style={styles.emptyText}>ไม่มีคิวฝากในสาขานี้</Text>}
             </ScrollView>
           </View>
 
           <View style={styles.card}>
             <View style={styles.cardHeader}><Text style={styles.cardTitle}>บันทึกเข้า-ออกรับคืน</Text></View>
             <ScrollView style={styles.cardInnerScroll} nestedScrollEnabled>
-              {activityList.map((item) => (
+              {filteredActivityList.map((item) => (
                 <View key={item.id} style={styles.activityRow}>
                   <View style={styles.petAvatar} />
                   <View style={styles.activityInfo}>
@@ -127,13 +149,13 @@ export default function HomePageStaff({
                   </TouchableOpacity>
                 </View>
               ))}
-              {!activityList.length && <Text style={styles.emptyText}>ยังไม่มีประวัติกิจกรรม</Text>}
+              {!filteredActivityList.length && <Text style={styles.emptyText}>ยังไม่มีประวัติกิจกรรมในสาขานี้</Text>}
             </ScrollView>
           </View>
         </View>
 
         <View style={styles.petTableCard}>
-          <View style={styles.tableHeader}><Text style={styles.cardTitle}>สัตว์ที่รับฝาก</Text></View>
+          <View style={styles.tableHeader}><Text style={styles.cardTitle}>สัตว์ที่รับฝาก ({selectedBranch})</Text></View>
           <View style={styles.tableRow}>
             <Text style={[styles.tableHeading, styles.petNameCol]}>สัตว์เลี้ยง</Text>
             <Text style={[styles.tableHeading, styles.ownerCol]}>เจ้าของ</Text>
@@ -141,18 +163,18 @@ export default function HomePageStaff({
             <Text style={[styles.tableHeading, styles.actionCol]}>จัดการ</Text>
           </View>
           <ScrollView style={styles.petTableScroll} nestedScrollEnabled>
-            {petList.map((pet) => {
-              const inCare = pet.status === "In Care";
+            {filteredPetList.map((pet) => {
+              const inCare = pet.status === "In Care" || pet.status === "สบายดี";
               return (
                 <View key={pet.id} style={[styles.tableRow, { zIndex: showStatusDropdownId === pet.id ? 100 : 1 }]}>
                   <Text style={[styles.tableText, styles.petNameCol]}>{pet.name}</Text>
                   <Text style={[styles.tableText, styles.ownerCol]}>{pet.owner}</Text>
                   <View style={[styles.statusCol, { zIndex: showStatusDropdownId === pet.id ? 101 : 1 }]}>
                     <TouchableOpacity
-                      style={[styles.tableStatus, { backgroundColor: inCare ? "#FCE9CC" : "#DDF1E5" }]}
+                      style={[styles.tableStatus, { backgroundColor: inCare ? "#DDF1E5" : "#FCE9CC" }]}
                       onPress={() => setShowStatusDropdownId(showStatusDropdownId === pet.id ? null : pet.id)}
                     >
-                      <Text style={[styles.tableStatusText, { color: inCare ? "#D99035" : "#4B9D73" }]}>{pet.status} ▼</Text>
+                      <Text style={[styles.tableStatusText, { color: inCare ? "#4B9D73" : "#D99035" }]}>{pet.status} ▼</Text>
                     </TouchableOpacity>
                     {showStatusDropdownId === pet.id && (
                       <View style={styles.statusDropdown}>
@@ -171,6 +193,7 @@ export default function HomePageStaff({
                 </View>
               );
             })}
+            {!filteredPetList.length && <Text style={styles.emptyText}>ไม่มีสัตว์เลี้ยงในสาขานี้</Text>}
           </ScrollView>
           <StaffSidePanel visible={showPanel} pet={selectedPet} onClose={() => setShowPanel(false)} />
           <UserSidePanel visible={showInformationPanel} information={selectedInformation} onClose={() => setShowInformationPanel(false)} />

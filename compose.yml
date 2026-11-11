@@ -8,6 +8,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
+    environment:
+      - EXPO_PUBLIC_API_URL=http://backend:3000
+      - API_URL=http://backend:3000
     networks:
       - stayforget-network
 
@@ -29,6 +32,8 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - CHOKIDAR_INTERVAL=1000
       - FAST_REFRESH=true
+      - EXPO_PUBLIC_API_URL=http://backend:3000
+      - API_URL=http://backend:3000
     ports:
       - "8081:8081"
     networks:

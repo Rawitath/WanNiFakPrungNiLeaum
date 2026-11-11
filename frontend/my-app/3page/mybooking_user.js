@@ -11,6 +11,7 @@ export default function MyBookingUser({
   visible = false,
   onBack,
   bookings = [],
+  onCancelBooking,
 }) {
   const [filter, setFilter] = useState("ทั้งหมด");
   const [showFilter, setShowFilter] = useState(false);
@@ -170,6 +171,14 @@ export default function MyBookingUser({
                       <Text style={styles.infoValue}>
                         เวลาเช็กเอาต์: {displayValue(booking.checkOutTime)}
                       </Text>
+                      {getDisplayStatus(booking.status) !== "ถูกปฏิเสธ" && (
+                        <TouchableOpacity
+                          style={styles.cancelButton}
+                          onPress={() => onCancelBooking && onCancelBooking(booking.id)}
+                        >
+                          <Text style={styles.cancelButtonText}>ยกเลิกการจอง</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -295,5 +304,20 @@ const styles = StyleSheet.create({
     color: "#888888",
     marginTop: 50,
     fontSize: 14,
+  },
+  cancelButton: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    backgroundColor: "#FCE0E0",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#E53935",
+  },
+  cancelButtonText: {
+    color: "#E53935",
+    fontSize: 10,
+    fontWeight: "bold",
   },
 });

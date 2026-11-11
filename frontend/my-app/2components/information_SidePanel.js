@@ -14,7 +14,7 @@ import {
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const PANEL_WIDTH = SCREEN_WIDTH / 3;
 
-export default function UserSidePanel({ visible, onClose, pet }) {
+export default function UserSidePanel({ visible, onClose, pet, information }) {
     const slideAnim = useRef(
         new Animated.Value(PANEL_WIDTH)
     ).current;
@@ -47,18 +47,23 @@ export default function UserSidePanel({ visible, onClose, pet }) {
         onClose();
     };
 
+    const target = information || pet;
     const booking = {
-        bookingId: "0001",
+        bookingId: target?.bookingId || target?.id || "0001",
 
         customer: [
-            { label: "ชื่อ", value: "คุณสมหญิง" },
-            { label: "เบอร์", value: "08X-XXX-XXXX" },
-            { label: "อีเมล", value: "example@email.com" },
+            { label: "ชื่อ", value: target?.customerName || target?.owner?.name || (typeof target?.owner === "string" ? target.owner : "คุณลูกค้า") },
+            { label: "เบอร์", value: target?.customerPhone || target?.owner?.phone || target?.phone || "08X-XXX-XXXX" },
+            { label: "อีเมล", value: target?.customerEmail || target?.owner?.email || target?.email || "example@email.com" },
         ],
 
         pets: [
-            { petId: "P001", petName: "Mochi", type: "Dog", breed: "Golden" },
-            { petId: "P002", petName: "Momo", type: "Cat", breed: "Persian" },
+            {
+                petId: target?.petId || target?.id || "P001",
+                petName: target?.petName || target?.name || "สัตว์เลี้ยง",
+                type: target?.petType || target?.type || "สุนัข",
+                breed: target?.petBreed || target?.breed || "-",
+            },
         ],
     };
 

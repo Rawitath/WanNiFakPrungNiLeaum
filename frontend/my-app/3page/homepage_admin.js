@@ -117,6 +117,7 @@ function StatusBar({ item }) {
 export default function HomepageAdmin({
   onBack,
   onCreateStaff,
+  overviewData = null,
 }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -130,6 +131,7 @@ export default function HomepageAdmin({
   const [staffForm, setStaffForm] = useState({
     username: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
   });
@@ -147,6 +149,54 @@ export default function HomepageAdmin({
       ? branches
       : branches.filter((b) => b.name === selectedBranch);
 
+  const displayedAnimalSummary = React.useMemo(() => {
+    if (overviewData && overviewData.byType && Object.keys(overviewData.byType).length > 0) {
+      const typeTranslations = {
+        dog: "สุนัข",
+        cat: "แมว",
+        bird: "นก",
+        rabbit: "กระต่าย",
+        cow: "วัว",
+        mouse: "หนู",
+        other: "อื่นๆ",
+        "สุนัข": "สุนัข",
+        "แมว": "แมว",
+        "นก": "นก",
+        "กระต่าย": "กระต่าย",
+      };
+      return Object.entries(overviewData.byType).map(([type, count]) => ({
+        name: typeTranslations[type.toLowerCase()] || type,
+        count: Number(count),
+      }));
+    }
+    return animalSummary;
+  }, [overviewData]);
+
+  const displayedStatusData = React.useMemo(() => {
+    if (overviewData && Array.isArray(overviewData.pets) && overviewData.pets.length > 0) {
+      const total = overviewData.pets.length;
+      const inCare = overviewData.pets.filter(
+        (p) => p.status === "In Care" || p.status === "สบายดี"
+      ).length;
+      const ready = overviewData.pets.filter(
+        (p) => p.status === "พร้อมรับกลับ" || p.status === "รอรับกลับ"
+      ).length;
+      const pending = overviewData.pets.filter(
+        (p) => p.status === "รอรับเข้า" || p.status === "รอยืนยันคิว" || p.status === "pending"
+      ).length;
+      const returned = overviewData.pets.filter(
+        (p) => p.status === "รับกลับแล้ว"
+      ).length;
+      return [
+        { label: "กำลังเข้าพัก", count: inCare, percent: total > 0 ? Math.round((inCare / total) * 100) : 0 },
+        { label: "พร้อมรับกลับ", count: ready, percent: total > 0 ? Math.round((ready / total) * 100) : 0 },
+        { label: "อยู่ระหว่างตรวจสุขภาพ", count: pending, percent: total > 0 ? Math.round((pending / total) * 100) : 0 },
+        { label: "ออกจากสาขาแล้ว", count: returned, percent: total > 0 ? Math.round((returned / total) * 100) : 0 },
+      ];
+    }
+    return statusData;
+  }, [overviewData]);
+
   // ==============================
   // OPEN CREATE STAFF
   // ==============================
@@ -154,6 +204,7 @@ export default function HomepageAdmin({
     setStaffForm({
       username: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
     });
@@ -172,6 +223,7 @@ export default function HomepageAdmin({
     setStaffForm({
       username: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
     });
@@ -197,6 +249,7 @@ export default function HomepageAdmin({
     const {
       username,
       email,
+      phone,
       password,
       confirmPassword,
     } = staffForm;
@@ -204,6 +257,7 @@ export default function HomepageAdmin({
     if (
       !username.trim() ||
       !email.trim() ||
+      !phone.trim() ||
       !password ||
       !confirmPassword
     ) {
@@ -252,6 +306,7 @@ export default function HomepageAdmin({
       const result = await onCreateStaff({
         username: username.trim(),
         email: email.trim(),
+        phone: phone.trim(),
         password,
         role: "staff",
       });
@@ -427,7 +482,7 @@ export default function HomepageAdmin({
                   </View>
 
                   <View style={styles.animalSummaryList}>
-                    {animalSummary.map((animal, index) => (
+                    {displayedAnimalSummary.map((animal, index) => (
                       <Text
                         key={index}
                         style={styles.summaryAnimalText}
@@ -448,7 +503,7 @@ export default function HomepageAdmin({
                 <View style={styles.yellowLine} />
 
                 <View style={styles.statusList}>
-                  {statusData.map((item, index) => (
+                  {displayedStatusData.map((item, index) => (
                     <StatusBar key={index} item={item} />
                   ))}
                 </View>
@@ -541,9 +596,9 @@ export default function HomepageAdmin({
                 style={styles.modalInput}
                 placeholder="กรอกเบอร์โทร"
                 placeholderTextColor="#A0A0A0"
-                value={staffForm.email}
+                value={staffForm.phone}
                 onChangeText={(value) =>
-                  updateStaffForm("email", value)
+                  updateStaffForm("phone", value)
                 }
                 keyboardType="phone-pad"
                 autoCapitalize="none"
