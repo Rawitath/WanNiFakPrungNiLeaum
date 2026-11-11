@@ -276,7 +276,7 @@ pipeline {
                                     executeStepWithCheck(
                                         name: 'backend - test',
                                         title: 'Backend Test',
-                                        command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod run --rm --build backend-test",
+                                        command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} run --rm --build backend-test",
                                         useCredentials: true
                                     )
                                 }
@@ -288,7 +288,7 @@ pipeline {
                                     executeStepWithCheck(
                                         name: 'backend - build',
                                         title: 'Backend Build',
-                                        command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build backend",
+                                        command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} build backend",
                                         useCredentials: true
                                     )
                                 }
@@ -311,7 +311,7 @@ pipeline {
                             executeStepWithCheck(
                                 name: 'frontend - build',
                                 title: 'Frontend Build',
-                                command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod build frontend",
+                                command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} build frontend",
                                 useCredentials: false
                             )
                         }
@@ -334,7 +334,7 @@ pipeline {
                                 name: 'backend - run',
                                 title: 'Backend Run & Healthcheck',
                                 command: """
-                                    docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d backend
+                                    docker compose -p ${env.COMPOSE_PROJECT_NAME} up -d backend
                                     docker run --rm \\
                                         --network host \\
                                         curlimages/curl:latest \\
@@ -358,7 +358,7 @@ pipeline {
                                 name: 'frontend - run',
                                 title: 'Frontend Run & Healthcheck',
                                 command: """
-                                    docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d frontend
+                                    docker compose -p ${env.COMPOSE_PROJECT_NAME} up -d frontend
                                         docker run --rm \\
                                             --network host \\
                                             curlimages/curl:latest \\
@@ -385,7 +385,7 @@ pipeline {
                                 name: 'all - run',
                                 title: 'Full Stack Run & Healthcheck',
                                 command: """
-                                    docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod up -d
+                                    docker compose -p ${env.COMPOSE_PROJECT_NAME} up -d
                                     sleep 10
 
                                     # 4. ยิง curl ทดสอบทีละตัว
@@ -411,7 +411,7 @@ pipeline {
                 executeStepWithCheck(
                     name: 'cleanup',
                     title: 'Docker Cleanup',
-                    command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} --profile prod down -v --remove-orphans && rm -f ${WORKSPACE}/check_*.log",
+                    command: "docker compose -p ${env.COMPOSE_PROJECT_NAME} down -v --remove-orphans && rm -f ${WORKSPACE}/check_*.log",
                     useCredentials: true,
                     failOnError: false
                 )
