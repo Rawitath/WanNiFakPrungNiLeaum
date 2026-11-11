@@ -1,45 +1,40 @@
-
 import React, { useState } from "react";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import StaffSidePanel from "../2components/booking_SidePanel.js";
 import UserSidePanel from "../2components/information_SidePanel.js";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-} from "react-native";
 
 export default function HomePageStaff({
+  bookingQueue = [],
+  activityList = [],
+  petList = [],
   onViewBooking,
   onViewPet,
   onCheckIn,
   onCheckOut,
   onUpdatePetStatus,
+  onConfirmQueue,
+  onRejectQueue,
 }) {
   const [selectedBranch, setSelectedBranch] = useState("สาขาลาดกระบัง");
   const [showBranches, setShowBranches] = useState(false);
-
-  // Panel รายละเอียดการจอง
   const [showPanel, setShowPanel] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
-
-  // Panel ข้อมูลเพิ่มเติม
   const [showInformationPanel, setShowInformationPanel] = useState(false);
   const [selectedInformation, setSelectedInformation] = useState(null);
-
-  // Dropdown สถานะสัตว์เลี้ยง
   const [showStatusDropdownId, setShowStatusDropdownId] = useState(null);
 
+  const branches = ["สาขาลาดกระบัง", "สาขาร่มเกล้า", "สาขาปราจีนบุรี", "สาขาหาดใหญ่"];
   const statusOptions = ["In Care", "พร้อมรับกลับ"];
+
+  const handleSelectStatus = (pet, newStatus) => {
+    onUpdatePetStatus && onUpdatePetStatus(pet.id, newStatus);
+    setShowStatusDropdownId(null);
+  };
 
   const handleViewPet = (pet) => {
     setSelectedPet(pet);
     setShowPanel(true);
-
-    if (onViewPet) {
-      onViewPet(pet);
-    }
+    onViewPet && onViewPet(pet);
   };
 
   const handleViewInformation = (information) => {
@@ -47,264 +42,22 @@ export default function HomePageStaff({
     setShowInformationPanel(true);
   };
 
-  const branches = [
-    "สาขาลาดกระบัง",
-    "สาขาร่มเกล้า",
-    "สาขาปราจีนบุรี",
-    "สาขาหาดใหญ่",
-  ];
-
-  // ข้อมูลคิวฝากสัตว์เลี้ยง
-  const bookingQueue = [
-    {
-      id: 1,
-      time: "10:00",
-      name: "มิลค์ - แมว",
-      detail: "คุณจุ๊ดจุ๊ด - 12-15 ธ.ค.",
-      status: "รอรับเข้า",
-      color: "#FCE9CC",
-      textColor: "#D99035",
-    },
-    {
-      id: 2,
-      time: "13:00",
-      name: "โบโบ้ - สุนัข",
-      detail: "คุณหมวย - 13-20 ธ.ค.",
-      status: "รอรับเข้า",
-      color: "#FCE9CC",
-      textColor: "#D99035",
-    },
-    {
-      id: 3,
-      time: "14:30",
-      name: "คุกกี้ - สุนัข",
-      detail: "คุณหมวย - 14-16 ธ.ค.",
-      status: "ยืนยันแล้ว",
-      color: "#DDF1E5",
-      textColor: "#4B9D73",
-    },
-    {
-      id: 4,
-      time: "16:00",
-      name: "มินนี่ - แมว",
-      detail: "คุณหมวย - 18-22 ธ.ค.",
-      status: "ยืนยันแล้ว",
-      color: "#DDF1E5",
-      textColor: "#4B9D73",
-    },
-    // {
-    //   id: 4,
-    //   time: "16:00",
-    //   name: "มินนี่ - แมว",
-    //   detail: "คุณหมวย - 18-22 ธ.ค.",
-    //   status: "ยืนยันแล้ว",
-    //   color: "#DDF1E5",
-    //   textColor: "#4B9D73",
-    // },
-    // {
-    //   id: 4,
-    //   time: "16:00",
-    //   name: "มินนี่ - แมว",
-    //   detail: "คุณหมวย - 18-22 ธ.ค.",
-    //   status: "ยืนยันแล้ว",
-    //   color: "#DDF1E5",
-    //   textColor: "#4B9D73",
-    // },
-  ];
-
-  // ข้อมูลบันทึกเข้า-ออกรับคืน
-  const activityList = [
-    {
-      id: 1,
-      name: "มิลค์ - แมว",
-      detail: "เข้า 10:00 • คุณจุ๊ดจุ๊ด",
-      action: "รับเข้าพัก",
-      color: "#174F83",
-    },
-    {
-      id: 2,
-      name: "มินนี่ - สุนัข",
-      detail: "ออก 14:00 • คุณหมวย",
-      action: "รับกลับ",
-      color: "#F39A13",
-    },
-    {
-      id: 3,
-      name: "โบโบ้ - สุนัข",
-      detail: "เข้า 16:00 • คุณหมวย",
-      action: "รับเข้าพัก",
-      color: "#174F83",
-    },
-    // {
-    //   id: 1,
-    //   name: "มิลค์ - แมว",
-    //   detail: "เข้า 10:00 • คุณจุ๊ดจุ๊ด",
-    //   action: "รับเข้าพัก",
-    //   color: "#174F83",
-    // },
-    // {
-    //   id: 2,
-    //   name: "มินนี่ - สุนัข",
-    //   detail: "ออก 14:00 • คุณหมวย",
-    //   action: "รับกลับ",
-    //   color: "#F39A13",
-    // },
-    // {
-    //   id: 3,
-    //   name: "โบโบ้ - สุนัข",
-    //   detail: "เข้า 16:00 • คุณหมวย",
-    //   action: "รับเข้าพัก",
-    //   color: "#174F83",
-    // },
-    // {
-    //   id: 1,
-    //   name: "มิลค์ - แมว",
-    //   detail: "เข้า 10:00 • คุณจุ๊ดจุ๊ด",
-    //   action: "รับเข้าพัก",
-    //   color: "#174F83",
-    // },
-    // {
-    //   id: 2,
-    //   name: "มินนี่ - สุนัข",
-    //   detail: "ออก 14:00 • คุณหมวย",
-    //   action: "รับกลับ",
-    //   color: "#F39A13",
-    // },
-    // {
-    //   id: 3,
-    //   name: "โบโบ้ - สุนัข",
-    //   detail: "เข้า 16:00 • คุณหมวย",
-    //   action: "รับเข้าพัก",
-    //   color: "#174F83",
-    // },
-  ];
-
-  // ข้อมูลสัตว์เลี้ยงที่รับฝาก
-  const [petList, setPetList] = useState([
-    {
-      id: 1,
-      name: "แมวขาวดำ - สุขี",
-      room: "A2",
-      owner: "คุณสายฝน",
-      status: "In Care",
-      statusColor: "#FCE9CC",
-      textColor: "#D99035",
-    },
-    {
-      id: 2,
-      name: "หมี - แมว",
-      room: "A5",
-      owner: "คุณหมวย",
-      status: "พร้อมรับกลับ",
-      statusColor: "#DDF1E5",
-      textColor: "#4B9D73",
-    },
-    {
-      id: 3,
-      name: "โบ้ - สุนัข",
-      room: "B1",
-      owner: "คุณจุ๊ด",
-      status: "พร้อมรับกลับ",
-      statusColor: "#DDF1E5",
-      textColor: "#4B9D73",
-    },
-    // {
-    //   id: 1,
-    //   name: "แมวขาวดำ - สุขี",
-    //   room: "A2",
-    //   owner: "คุณสายฝน",
-    //   status: "In Care",
-    //   statusColor: "#FCE9CC",
-    //   textColor: "#D99035",
-    // },
-    // {
-    //   id: 2,
-    //   name: "หมี - แมว",
-    //   room: "A5",
-    //   owner: "คุณหมวย",
-    //   status: "พร้อมรับกลับ",
-    //   statusColor: "#DDF1E5",
-    //   textColor: "#4B9D73",
-    // },
-    // {
-    //   id: 3,
-    //   name: "โบ้ - สุนัข",
-    //   room: "B1",
-    //   owner: "คุณจุ๊ด",
-    //   status: "พร้อมรับกลับ",
-    //   statusColor: "#DDF1E5",
-    //   textColor: "#4B9D73",
-    // },
-  ]);
-
-  // เปลี่ยนสถานะทันทีเมื่อเลือก Dropdown
-  const handleSelectStatus = (pet, newStatus) => {
-    const newStatusColor =
-      newStatus === "In Care" ? "#FCE9CC" : "#DDF1E5";
-
-    const newTextColor =
-      newStatus === "In Care" ? "#D99035" : "#4B9D73";
-
-    setPetList((prevList) =>
-      prevList.map((item) =>
-        item.id === pet.id
-          ? {
-              ...item,
-              status: newStatus,
-              statusColor: newStatusColor,
-              textColor: newTextColor,
-            }
-          : item
-      )
-    );
-
-    // ส่งค่าไปยัง App.js ทันที
-    if (onUpdatePetStatus) {
-      onUpdatePetStatus(pet.id, newStatus);
-    }
-
-    // ปิด Dropdown หลังเลือก
-    setShowStatusDropdownId(null);
-  };
-
-  const handleBranchSelect = (branch) => {
-    setSelectedBranch(branch);
-    setShowBranches(false);
-  };
-
   return (
     <View style={styles.container}>
-      {/* TOP DARK SECTION */}
       <View style={styles.topSection}>
         <View style={styles.welcomeSection}>
           <View style={styles.welcomeRow}>
-            <Text style={styles.welcomeText}>
-              สวัสดี, พี่มิลค์
-            </Text>
-
-            {/* BRANCH DROPDOWN */}
+            <Text style={styles.welcomeText}>สวัสดี, พี่มิลค์</Text>
             <View style={styles.branchContainer}>
-              <TouchableOpacity
-                style={styles.branchButton}
-                onPress={() => setShowBranches(!showBranches)}
-              >
-                <Text style={styles.branchText}>
-                  {selectedBranch}
-                </Text>
+              <TouchableOpacity style={styles.branchButton} onPress={() => setShowBranches((v) => !v)}>
+                <Text style={styles.branchText}>{selectedBranch}</Text>
                 <Text style={styles.branchArrow}>▼</Text>
               </TouchableOpacity>
-
               {showBranches && (
                 <View style={styles.branchDropdown}>
-                  {branches.map((branch, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.branchItem}
-                      onPress={() => handleBranchSelect(branch)}
-                    >
-                      <Text style={styles.branchItemText}>
-                        {branch}
-                      </Text>
+                  {branches.map((branch) => (
+                    <TouchableOpacity key={branch} style={styles.branchItem} onPress={() => { setSelectedBranch(branch); setShowBranches(false); }}>
+                      <Text style={styles.branchItemText}>{branch}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -312,308 +65,115 @@ export default function HomePageStaff({
             </View>
           </View>
         </View>
-
-        {/* STATISTICS */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>24</Text>
-            <Text style={styles.statLabel}>กำลังเข้าพัก</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>8</Text>
-            <Text style={styles.statLabel}>รอรับคืน</Text>
-          </View>
+          <View style={styles.statCard}><Text style={styles.statNumber}>{petList.filter((p) => p.status === "In Care").length}</Text><Text style={styles.statLabel}>กำลังเข้าพัก</Text></View>
+          <View style={styles.statCard}><Text style={styles.statNumber}>{petList.filter((p) => p.status === "พร้อมรับกลับ").length}</Text><Text style={styles.statLabel}>รอรับคืน</Text></View>
         </View>
       </View>
 
-      {/* MAIN CONTENT */}
-      <ScrollView
-        style={styles.mainScroll}
-        contentContainerStyle={styles.mainContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* TOP CARDS */}
+      <ScrollView style={styles.mainScroll} contentContainerStyle={styles.mainContent} showsVerticalScrollIndicator={false}>
         <View style={styles.topCards}>
-          {/* BOOKING QUEUE */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>
-                จัดการคิวฝาก
-              </Text>
-
-              <Text style={styles.cardSubtitle}>
-                รอยืนยัน 3 · ยืนยันแล้ว 5
-              </Text>
+              <Text style={styles.cardTitle}>จัดการคิวฝาก</Text>
+              <Text style={styles.cardSubtitle}>คิวทั้งหมด {bookingQueue.length}</Text>
             </View>
-
-            <ScrollView
-              style={styles.cardInnerScroll}
-              nestedScrollEnabled
-              showsVerticalScrollIndicator={true}
-            >
+            <ScrollView style={styles.cardInnerScroll} nestedScrollEnabled>
               {bookingQueue.map((item) => (
                 <View key={item.id} style={styles.queueRow}>
-                  <Text style={styles.queueTime}>
-                    {item.time}
-                  </Text>
-
+                  <Text style={styles.queueTime}>{item.time}</Text>
                   <View style={styles.queueInfo}>
-                    <Text style={styles.queueName}>
-                      {item.name}
-                    </Text>
-
-                    <Text style={styles.queueDetail}>
-                      {item.detail}
-                    </Text>
+                    <Text style={styles.queueName}>{item.name}</Text>
+                    <Text style={styles.queueDetail}>{item.detail}</Text>
                   </View>
-
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: item.color },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.statusText,
-                        { color: item.textColor },
-                      ]}
-                    >
-                      {item.status}
-                    </Text>
+                  <View style={[styles.statusBadge, { backgroundColor: item.color || "#FCE9CC" }]}>
+                    <Text style={[styles.statusText, { color: item.textColor || "#D99035" }]}>{item.status}</Text>
                   </View>
-
-                  <TouchableOpacity
-                    style={styles.detailButton}
-                    onPress={() =>
-                      onViewBooking && onViewBooking(item)
-                    }
-                  >
-                    <Text style={styles.detailButtonText}>
-                      ยืนยันคิว
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.detailButton}
-                    onPress={() =>
-                      onViewBooking && onViewBooking(item)
-                    }
-                  >
-                    <Text style={styles.detailButtonText}>
-                      ปฏิเสธคิว
-                    </Text>
-                  </TouchableOpacity>
+                  {item.status === "รอรับเข้า" ? (
+                    <>
+                      <TouchableOpacity style={styles.detailButton} onPress={() => onConfirmQueue ? onConfirmQueue(item) : onViewBooking && onViewBooking(item)}>
+                        <Text style={styles.detailButtonText}>ยืนยัน</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.rejectButton} onPress={() => onRejectQueue ? onRejectQueue(item) : onViewBooking && onViewBooking(item)}>
+                        <Text style={styles.rejectButtonText}>ปฏิเสธ</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <TouchableOpacity style={styles.detailButton} onPress={() => onViewBooking && onViewBooking(item)}>
+                      <Text style={styles.detailButtonText}>รายละเอียด</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
+              {!bookingQueue.length && <Text style={styles.emptyText}>ไม่มีคิวฝาก</Text>}
             </ScrollView>
           </View>
 
-          {/* CHECK IN / OUT */}
           <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>
-                บันทึกเข้า-ออกรับคืน
-              </Text>
-            </View>
-
-            <ScrollView
-              style={styles.cardInnerScroll}
-              nestedScrollEnabled
-              showsVerticalScrollIndicator={true}
-            >
+            <View style={styles.cardHeader}><Text style={styles.cardTitle}>บันทึกเข้า-ออกรับคืน</Text></View>
+            <ScrollView style={styles.cardInnerScroll} nestedScrollEnabled>
               {activityList.map((item) => (
                 <View key={item.id} style={styles.activityRow}>
                   <View style={styles.petAvatar} />
-
                   <View style={styles.activityInfo}>
-                    <Text style={styles.activityName}>
-                      {item.name}
-                    </Text>
-
-                    <Text style={styles.activityDetail}>
-                      {item.detail}
-                    </Text>
+                    <Text style={styles.activityName}>{item.name}</Text>
+                    <Text style={styles.activityDetail}>{item.detail}</Text>
                   </View>
-
                   <TouchableOpacity
-                    style={[
-                      styles.activityButton,
-                      { backgroundColor: item.color },
-                    ]}
-                    onPress={() => {
-                      if (item.action === "รับเข้าพัก") {
-                        onCheckIn && onCheckIn(item);
-                      } else {
-                        onCheckOut && onCheckOut(item);
-                      }
-                    }}
+                    style={[styles.activityButton, { backgroundColor: item.color || "#174F83" }]}
+                    onPress={() => item.action === "รับเข้าพัก" ? onCheckIn && onCheckIn(item) : onCheckOut && onCheckOut(item)}
                   >
-                    <Text style={styles.activityButtonText}>
-                      {item.action}
-                    </Text>
+                    <Text style={styles.activityButtonText}>{item.action}</Text>
                   </TouchableOpacity>
                 </View>
               ))}
+              {!activityList.length && <Text style={styles.emptyText}>ยังไม่มีประวัติกิจกรรม</Text>}
             </ScrollView>
           </View>
         </View>
 
-        {/* PET TABLE */}
         <View style={styles.petTableCard}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.cardTitle}>
-              สัตว์ที่รับฝาก
-            </Text>
-          </View>
-
-          {/* TABLE HEAD - ไม่เลื่อน */}
+          <View style={styles.tableHeader}><Text style={styles.cardTitle}>สัตว์ที่รับฝาก</Text></View>
           <View style={styles.tableRow}>
-            <Text style={[styles.tableHeading, styles.petNameCol]}>
-              สัตว์เลี้ยง
-            </Text>
-
-            <Text style={[styles.tableHeading, styles.ownerCol]}>
-              เจ้าของ
-            </Text>
-
-            <Text style={[styles.tableHeading, styles.statusCol]}>
-              สถานะ
-            </Text>
-
-            <Text style={[styles.tableHeading, styles.actionCol]}>
-              จัดการ
-            </Text>
+            <Text style={[styles.tableHeading, styles.petNameCol]}>สัตว์เลี้ยง</Text>
+            <Text style={[styles.tableHeading, styles.ownerCol]}>เจ้าของ</Text>
+            <Text style={[styles.tableHeading, styles.statusCol]}>สถานะ</Text>
+            <Text style={[styles.tableHeading, styles.actionCol]}>จัดการ</Text>
           </View>
-
-          {/* TABLE DATA - เลื่อนเฉพาะรายการ */}
-          <ScrollView
-            style={styles.petTableScroll}
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={true}
-          >
-            {petList.map((pet) => (
-              <View
-                key={pet.id}
-                style={[
-                  styles.tableRow,
-                  {
-                    zIndex:
-                      showStatusDropdownId === pet.id ? 100 : 1,
-                  },
-                ]}
-              >
-                <Text style={[styles.tableText, styles.petNameCol]}>
-                  {pet.name}
-                </Text>
-
-                <Text style={[styles.tableText, styles.ownerCol]}>
-                  {pet.owner}
-                </Text>
-
-                {/* STATUS DROPDOWN */}
-                <View
-                  style={[
-                    styles.statusCol,
-                    {
-                      zIndex:
-                        showStatusDropdownId === pet.id ? 101 : 1,
-                    },
-                  ]}
-                >
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={[
-                      styles.tableStatus,
-                      { backgroundColor: pet.statusColor },
-                    ]}
-                    onPress={() =>
-                      setShowStatusDropdownId(
-                        showStatusDropdownId === pet.id
-                          ? null
-                          : pet.id
-                      )
-                    }
-                  >
-                    <Text
-                      style={[
-                        styles.tableStatusText,
-                        { color: pet.textColor },
-                      ]}
+          <ScrollView style={styles.petTableScroll} nestedScrollEnabled>
+            {petList.map((pet) => {
+              const inCare = pet.status === "In Care";
+              return (
+                <View key={pet.id} style={[styles.tableRow, { zIndex: showStatusDropdownId === pet.id ? 100 : 1 }]}>
+                  <Text style={[styles.tableText, styles.petNameCol]}>{pet.name}</Text>
+                  <Text style={[styles.tableText, styles.ownerCol]}>{pet.owner}</Text>
+                  <View style={[styles.statusCol, { zIndex: showStatusDropdownId === pet.id ? 101 : 1 }]}>
+                    <TouchableOpacity
+                      style={[styles.tableStatus, { backgroundColor: inCare ? "#FCE9CC" : "#DDF1E5" }]}
+                      onPress={() => setShowStatusDropdownId(showStatusDropdownId === pet.id ? null : pet.id)}
                     >
-                      {pet.status} ▼
-                    </Text>
-                  </TouchableOpacity>
-
-                  {showStatusDropdownId === pet.id && (
-                    <View style={styles.statusDropdown}>
-                      {statusOptions.map((option) => (
-                        <TouchableOpacity
-                          key={option}
-                          activeOpacity={0.7}
-                          style={styles.statusDropdownItem}
-                          onPress={() =>
-                            handleSelectStatus(pet, option)
-                          }
-                        >
-                          <Text
-                            style={[
-                              styles.statusDropdownText,
-                              pet.status === option &&
-                                styles.selectedStatusText,
-                            ]}
-                          >
-                            {option}
-                            {pet.status === option ? " ✓" : ""}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
+                      <Text style={[styles.tableStatusText, { color: inCare ? "#D99035" : "#4B9D73" }]}>{pet.status} ▼</Text>
+                    </TouchableOpacity>
+                    {showStatusDropdownId === pet.id && (
+                      <View style={styles.statusDropdown}>
+                        {statusOptions.map((option) => (
+                          <TouchableOpacity key={option} style={styles.statusDropdownItem} onPress={() => handleSelectStatus(pet, option)}>
+                            <Text style={[styles.statusDropdownText, pet.status === option && styles.selectedStatusText]}>{option}{pet.status === option ? " ✓" : ""}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                  <View style={[styles.actionCol, styles.actionButtons]}>
+                    <TouchableOpacity style={styles.tableButton} onPress={() => handleViewPet(pet)}><Text style={styles.tableButtonText}>ดูรายละเอียด</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.tableButton} onPress={() => handleViewInformation(pet)}><Text style={styles.tableButtonText}>ข้อมูลเจ้าของ</Text></TouchableOpacity>
+                  </View>
                 </View>
-
-                {/* ACTION BUTTONS */}
-                <View
-                  style={[
-                    styles.actionCol,
-                    styles.actionButtons,
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={styles.tableButton}
-                    onPress={() => handleViewPet(pet)}
-                  >
-                    <Text style={styles.tableButtonText}>
-                      ดูรายละเอียด
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.tableButton}
-                    onPress={() => handleViewInformation(pet)}
-                  >
-                    <Text style={styles.tableButtonText}>
-                      ดูรายละเอียดเจ้าของ
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </ScrollView>
-
-          {/* SIDE PANELS */}
-          <StaffSidePanel
-            visible={showPanel}
-            pet={selectedPet}
-            onClose={() => setShowPanel(false)}
-          />
-
-          <UserSidePanel
-            visible={showInformationPanel}
-            information={selectedInformation}
-            onClose={() => setShowInformationPanel(false)}
-          />
+          <StaffSidePanel visible={showPanel} pet={selectedPet} onClose={() => setShowPanel(false)} />
+          <UserSidePanel visible={showInformationPanel} information={selectedInformation} onClose={() => setShowInformationPanel(false)} />
         </View>
       </ScrollView>
     </View>
@@ -839,6 +399,19 @@ const styles = StyleSheet.create({
   detailButtonText: {
     color: "#286BA5",
     fontSize: 11,
+  },
+
+  rejectButton: {
+    borderWidth: 1,
+    borderColor: "#F0D2D2",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 9,
+  },
+
+  rejectButtonText: {
+    color: "#D9534F",
+    fontSize: 10
   },
 
   // ACTIVITY

@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
@@ -8,6 +7,56 @@ import {
     StyleSheet,
     ScrollView,
 } from "react-native";
+
+// =====================================================
+// PET STATUS STYLE
+// ใช้สถานะกลางจาก App.js
+// แสดงข้อความตามค่าจริง ไม่แปลงชื่อสถานะ
+// =====================================================
+
+const getPetStatusStyle = (status) => {
+    switch (status) {
+        case "รอรับเข้า":
+            return {
+                backgroundColor: "#DDF1E5",
+                color: "#4B9D73",
+            };
+
+        case "In Care":
+            return {
+                backgroundColor: "#DDF1E5",
+                color: "#4B9D73",
+            };
+
+        case "รอรับกลับ":
+            return {
+                backgroundColor: "#DDF1E5",
+                color: "#4B9D73",
+            };
+
+        case "รับกลับแล้ว":
+            return {
+                backgroundColor: "#E5E7EB",
+                color: "#4B9D73",
+            };
+
+        case "ถูกปฏิเสธ":
+            return {
+                backgroundColor: "#FCE0E0",
+                color: "#D9534F",
+            };
+
+        default:
+            return {
+                backgroundColor: "#E5E7EB",
+                color: "#64748B",
+            };
+    }
+};
+
+// =====================================================
+// HOMEPAGE USER
+// =====================================================
 
 export default function HomePageUser({
     onBooking,
@@ -18,17 +67,23 @@ export default function HomePageUser({
     const [currentPetPage, setCurrentPetPage] = useState(0);
     const PETS_PER_PAGE = 4;
 
-    const totalPetPages = Math.ceil(pets.length / PETS_PER_PAGE);
+    const totalPetPages = Math.ceil(
+        pets.length / PETS_PER_PAGE
+    );
 
     // ถ้าจำนวนสัตว์เลี้ยงลดลง ให้กลับมาอยู่หน้าที่มีข้อมูล
-    React.useEffect(() => {
+    useEffect(() => {
         if (currentPetPage >= totalPetPages) {
-            setCurrentPetPage(Math.max(0, totalPetPages - 1));
+            setCurrentPetPage(
+                Math.max(0, totalPetPages - 1)
+            );
         }
     }, [currentPetPage, totalPetPages]);
 
     const previousPetPage = () => {
-        setCurrentPetPage((prev) => Math.max(0, prev - 1));
+        setCurrentPetPage((prev) =>
+            Math.max(0, prev - 1)
+        );
     };
 
     const nextPetPage = () => {
@@ -51,6 +106,7 @@ export default function HomePageUser({
                 ส่วนที่ 1: ด้านบนของ Guest
                 คงโครงสร้างเดิม เปลี่ยนเฉพาะ Navbar
             ====================================== */}
+
             <View style={styles.topSection}>
 
                 {/* อุ้งเท้ามุมซ้ายบน */}
@@ -101,7 +157,7 @@ export default function HomePageUser({
                     </svg>
                 </View>
 
-                {/* Logo และชื่อระบบ: เหมือน Guest */}
+                {/* Logo และชื่อระบบ */}
                 <View style={styles.brandSection}>
                     <Image
                         source={require("../1assets/piclogo.png")}
@@ -123,11 +179,11 @@ export default function HomePageUser({
                 </View>
             </View>
 
-
             {/* ======================================
                 ส่วนที่ 2: ด้านล่างของ Guest
                 เก็บ CTA และ Copyright ไว้ทั้งหมด
             ====================================== */}
+
             <View style={styles.bottomSection}>
 
                 {/* อุ้งเท้ามุมซ้ายล่าง */}
@@ -178,9 +234,8 @@ export default function HomePageUser({
                     </svg>
                 </View>
 
-                {/* ข้อความตรงกลาง: เก็บของ Guest ไว้ */}
+                {/* ข้อความตรงกลาง */}
                 <View style={styles.centerContent}>
-
                     <Text style={styles.startTitle}>
                         พร้อมจัดการสัตว์เลี้ยงของคุณแล้วหรือยัง?
                     </Text>
@@ -195,36 +250,31 @@ export default function HomePageUser({
                             เริ่มใช้งาน
                         </Text>
                     </TouchableOpacity>
-
                 </View>
-
             </View>
-
 
             {/* ======================================
                 ส่วนที่ 3: ส่วนบนของพื้นที่ User
                 แสดง titlelogo.png ทางซ้าย
             ====================================== */}
-            <View style={styles.userTopSection}>
 
+            <View style={styles.userTopSection}>
                 <Image
                     source={require("../1assets/titlelogo.png")}
                     style={styles.titleLogo}
                     resizeMode="contain"
                 />
-
             </View>
-
 
             {/* ======================================
                 ส่วนที่ 4: ส่วนล่างของพื้นที่ User
                 สัตว์ที่กำลังเข้าพัก
             ====================================== */}
+
             <View style={styles.petStaySection}>
 
                 {/* เส้นแบ่งสองชั้น + โลโก้ */}
                 <View style={styles.curveContainer}>
-
                     <svg
                         width="100%"
                         height="100"
@@ -281,114 +331,137 @@ export default function HomePageUser({
                         style={styles.curveLogo}
                         resizeMode="contain"
                     />
-
                 </View>
 
                 {/* พื้นที่เนื้อหาด้านใน */}
                 <View style={styles.contentSection}>
-                                        {/* อุ้งเท้ามุมขวาล่าง */}
-                <View style={styles.pawTopRight5}>
-                    <svg
-                        width="50"
-                        height="50"
-                        viewBox="-10 -10 120 120"
-                        fill="#3a5f81"
-                        opacity="1"
-                    >
-                        <ellipse cx="50" cy="65" rx="35" ry="30" />
-                        <ellipse cx="10" cy="25" rx="15" ry="15" />
-                        <ellipse cx="50" cy="10" rx="15" ry="15" />
-                        <ellipse cx="95" cy="22" rx="15" ry="15" />
-                    </svg>
-                </View>
+
+                    {/* อุ้งเท้ามุมขวาล่าง */}
+                    <View style={styles.pawTopRight5}>
+                        <svg
+                            width="50"
+                            height="50"
+                            viewBox="-10 -10 120 120"
+                            fill="#3a5f81"
+                            opacity="1"
+                        >
+                            <ellipse cx="50" cy="65" rx="35" ry="30" />
+                            <ellipse cx="10" cy="25" rx="15" ry="15" />
+                            <ellipse cx="50" cy="10" rx="15" ry="15" />
+                            <ellipse cx="95" cy="22" rx="15" ry="15" />
+                        </svg>
+                    </View>
 
                     <Text style={styles.sectionTitle}>
                         สัตว์ที่กำลังเข้าพัก
                     </Text>
 
-                    {/* คำอธิบาย + ปุ่มต่อไป */}
+                    {/* คำอธิบาย */}
                     <View style={styles.descriptionRow}>
-
                         <Text style={styles.description}>
                             ติดตามข้อมูลและสถานะของสัตว์เลี้ยงที่อยู่ในการดูแลทั้งหมดของเรา
                         </Text>
-
                     </View>
 
                     {/* การ์ดสัตว์เลี้ยง */}
                     <View style={styles.petSection}>
-
                         {displayedPets.length === 0 ? (
                             <Text style={styles.emptyPetText}>
                                 ยังไม่มีข้อมูลสัตว์เลี้ยง
                             </Text>
-                        ) : displayedPets.map((pet) => (
-                            <View
-                                key={pet.id}
-                                style={styles.petCard}
-                            >
-                                {/* กดที่รูปเพื่อเปิดรายละเอียดสัตว์เลี้ยง */}
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    onPress={() => onPetPress && onPetPress(pet)}
-                                >
-                                    <Image
-                                        source={pet.image}
-                                        style={styles.petImage}
-                                        resizeMode="cover"
-                                    />
-                                </TouchableOpacity>
+                        ) : (
+                            displayedPets.map((pet) => {
+                                const statusStyle = getPetStatusStyle(
+                                    pet.status
+                                );
 
-                                {/* ชื่อสัตว์ */}
-                                <Text style={styles.petName}>
-                                    {pet.name}
-                                </Text>
+                                return (
+                                    <TouchableOpacity
+                                        key={pet.id}
+                                        style={styles.petCard}
+                                        activeOpacity={0.8}
+                                        onPress={() =>
+                                            onPetPress && onPetPress(pet)
+                                        }
+                                    >
+                                        {/* รูปสัตว์แบบวงกลม */}
+                                        <Image
+                                            source={pet.image}
+                                            style={styles.petImage}
+                                            resizeMode="cover"
+                                        />
 
-                                {/* สถานะ */}
-                                <View style={styles.statusBox}>
-                                    <Text style={styles.statusText}>
-                                        {pet.status}
-                                    </Text>
-                                </View>
+                                        {/* ชื่อสัตว์ */}
+                                        <Text style={styles.petName}>
+                                            {pet.name}
+                                        </Text>
 
-                            </View>
-                        ))}
-
-                    </View>
-                        {pets.length > PETS_PER_PAGE && (
-                            <View style={styles.petPagination}>
-                                <TouchableOpacity
-                                    onPress={previousPetPage}
-                                    disabled={currentPetPage === 0}
-                                    activeOpacity={0.7}
-                                    style={[
-                                        styles.arrowButton,
-                                        currentPetPage === 0 && styles.arrowButtonDisabled,
-                                    ]}
-                                >
-                                    <Text style={styles.arrowText}>‹</Text>
-                                </TouchableOpacity>
-
-                                <Text style={styles.pageText}>
-                                    {currentPetPage + 1} / {totalPetPages}
-                                </Text>
-
-                                <TouchableOpacity
-                                    onPress={nextPetPage}
-                                    disabled={currentPetPage >= totalPetPages - 1}
-                                    activeOpacity={0.7}
-                                    style={[
-                                        styles.arrowButton,
-                                        currentPetPage >= totalPetPages - 1 && styles.arrowButtonDisabled,
-                                    ]}
-                                >
-                                    <Text style={styles.arrowText}>›</Text>
-                                </TouchableOpacity>
-                            </View>
+                                        {/* สถานะจริงจาก App.js */}
+                                        <View
+                                            style={[
+                                                styles.statusBox,
+                                                {
+                                                    backgroundColor:
+                                                        statusStyle.backgroundColor,
+                                                },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.statusText,
+                                                    {
+                                                        color:
+                                                            statusStyle.color,
+                                                    },
+                                                ]}
+                                            >
+                                                {pet.status || "ไม่ระบุสถานะ"}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })
                         )}
+                    </View>
 
+                    {/* ปุ่มเปลี่ยนหน้า */}
+                    {pets.length > PETS_PER_PAGE && (
+                        <View style={styles.petPagination}>
+                            <TouchableOpacity
+                                onPress={previousPetPage}
+                                disabled={currentPetPage === 0}
+                                activeOpacity={0.7}
+                                style={[
+                                    styles.arrowButton,
+                                    currentPetPage === 0 &&
+                                        styles.arrowButtonDisabled,
+                                ]}
+                            >
+                                <Text style={styles.arrowText}>‹</Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.pageText}>
+                                {currentPetPage + 1} / {totalPetPages}
+                            </Text>
+
+                            <TouchableOpacity
+                                onPress={nextPetPage}
+                                disabled={
+                                    currentPetPage >= totalPetPages - 1
+                                }
+                                activeOpacity={0.7}
+                                style={[
+                                    styles.arrowButton,
+                                    currentPetPage >= totalPetPages - 1 &&
+                                        styles.arrowButtonDisabled,
+                                ]}
+                            >
+                                <Text style={styles.arrowText}>›</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </View>
-                
+
                 {/* อุ้งเท้ามุมขวาล่าง */}
                 <View style={styles.pawTopRight6}>
                     <svg
@@ -404,6 +477,7 @@ export default function HomePageUser({
                         <ellipse cx="95" cy="22" rx="15" ry="15" />
                     </svg>
                 </View>
+
                 {/* Copyright */}
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>
@@ -411,11 +485,13 @@ export default function HomePageUser({
                     </Text>
                 </View>
             </View>
-
         </ScrollView>
     );
 }
 
+// =====================================================
+// STYLES
+// =====================================================
 
 const styles = StyleSheet.create({
 
@@ -506,7 +582,6 @@ const styles = StyleSheet.create({
         paddingBottom: 15,
     },
 
-
     // ส่วนล่าง Guest
     bottomSection: {
         paddingTop: 15,
@@ -531,13 +606,6 @@ const styles = StyleSheet.create({
 
     pawTopRight3: {
         position: "absolute",
-        top: 10,
-        right: 530,
-        transform: [{ rotate: "10deg" }],
-    },
-
-    pawTopRight3: {
-        position: "absolute",
         top: 40,
         right: 430,
         transform: [{ rotate: "10deg" }],
@@ -549,7 +617,7 @@ const styles = StyleSheet.create({
         right: 460,
         transform: [{ rotate: "-20deg" }],
     },
-    
+
     pawTopRight5: {
         position: "absolute",
         top: 170,
@@ -597,7 +665,6 @@ const styles = StyleSheet.create({
         color: "#8b8a8a",
         fontSize: 12,
     },
-
 
     // ======================================
     // Style ใหม่ของพื้นที่ User
@@ -711,8 +778,8 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
 
+    // สถานะใช้สีจาก getPetStatusStyle()
     statusBox: {
-        backgroundColor: "#D9EAD3",
         paddingHorizontal: 12,
         paddingVertical: 5,
         borderRadius: 20,
@@ -720,7 +787,6 @@ const styles = StyleSheet.create({
     },
 
     statusText: {
-        color: "#347343",
         fontSize: 18,
         fontFamily: "Itim",
     },
@@ -758,5 +824,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "Itim",
     },
-
 });

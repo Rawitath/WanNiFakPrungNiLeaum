@@ -442,18 +442,6 @@ export default function BookingUser({ onBack, onSubmit }) {
                     placeholder="เลือกวันที่รับกลับ"
                   />
 
-                  <TimeField
-                    label="เวลาเข้าพัก"
-                    value={form.checkInTime}
-                    type="checkInTime"
-                  />
-
-                  <TimeField
-                    label="เวลารับกลับ"
-                    value={form.checkOutTime}
-                    type="checkOutTime"
-                  />
-
                   {/* BRANCH */}
                   <Text style={styles.branchTitle}>
                     เลือกสาขา
