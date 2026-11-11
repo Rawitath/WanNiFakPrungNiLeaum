@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -27,8 +26,10 @@ const PetDetails = ({
     "In Care",
     "รอรับกลับ",
     "รับกลับแล้ว",
-    "ถูกปฏิเสธ",
   ];
+
+  // ตรวจสอบว่าต้องแสดง Stepper ขั้นตอนหรือไม่
+  const shouldShowStatusStepper = statusOptions.includes(status);
 
   const displayValue = (value) => {
     if (value === null || value === undefined || String(value).trim() === "") {
@@ -41,14 +42,17 @@ const PetDetails = ({
 
   const handleStatusChange = (value) => {
     setStatus(value);
-
     if (onStatusChange) {
       onStatusChange(value);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.containerContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.containerContent}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
@@ -74,7 +78,6 @@ const PetDetails = ({
         {/* Left Ticket Strip */}
         <View style={styles.ticketLeft}>
           <View style={styles.leftCircle} />
-
           <Text style={styles.ticketVertical}>TICKET</Text>
         </View>
 
@@ -83,9 +86,8 @@ const PetDetails = ({
           {/* Ticket Header */}
           <View style={styles.ticketHeader}>
             <Text style={styles.ticketLogo}>StayTodayForgotTomorrow</Text>
-
             <View style={styles.petId}>
-              <Text style={styles.petIdText}>{displayValue(pet?.id)}</Text>
+              <Text style={styles.petIdText}>{displayValue(pet?.id || pet?.bookingId)}</Text>
             </View>
           </View>
 
@@ -94,7 +96,6 @@ const PetDetails = ({
             <View style={styles.petInfo}>
               <Text style={styles.petName}>{displayValue(pet?.name)}</Text>
 
-              {/* หัวข้อและข้อมูลรับมาจาก App.js */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>ชนิด</Text>
                 <Text style={styles.infoValue}>{displayValue(pet?.petType || pet?.type)}</Text>
@@ -117,7 +118,9 @@ const PetDetails = ({
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>น้ำหนัก</Text>
-                <Text style={styles.infoValue}>{pet?.weight ? `${pet.weight} กก.` : "ไม่ได้ระบุ"}</Text>
+                <Text style={styles.infoValue}>
+                  {pet?.weight ? `${pet.weight} กก.` : "ไม่ได้ระบุ"}
+                </Text>
               </View>
 
               <View style={styles.infoRow}>
@@ -133,9 +136,9 @@ const PetDetails = ({
 
             {/* Pet Image */}
             <View style={styles.petImageContainer}>
-              {petImage ? (
+              {petImage || pet?.image ? (
                 <Image
-                  source={petImage}
+                  source={petImage || pet?.image}
                   style={styles.petImage}
                   resizeMode="cover"
                 />
@@ -146,7 +149,7 @@ const PetDetails = ({
               )}
 
               <Text style={styles.dateText}>
-                วันที่เข้าพัก {displayValue(pet?.checkIn || pet?.startDate)} - {displayValue(pet?.checkOut || pet?.endDate)}
+                วันที่เข้าพัก {displayValue(pet?.startDate || pet?.checkIn)} - {displayValue(pet?.endDate || pet?.checkOut)}
               </Text>
               <Text style={styles.dateText}>
                 สาขา {displayValue(pet?.branch)}
@@ -175,73 +178,74 @@ const PetDetails = ({
 
       {/* Status Box */}
       <View style={styles.statusBox}>
-        <Text style={styles.statusTitle}>สถานะสัตว์เลี้ยง</Text>
+        <Text style={styles.statusTitle}>
+          สถานะปัจจุบัน: {displayValue(status)}
+        </Text>
 
         {/* Progress Stepper */}
-        <View style={styles.statusStepper}>
-          {/* Progress Line */}
-          <View style={styles.statusProgressLine} />
+        {shouldShowStatusStepper ? (
+          <View style={styles.statusStepper}>
+            <View style={styles.statusProgressLine} />
 
-          {statusOptions.map((item, index) => {
-            const active = index === activeStatusIndex;
-            const completed = index < activeStatusIndex;
+            {statusOptions.map((item, index) => {
+              const active = index === activeStatusIndex;
+              const completed = index < activeStatusIndex;
 
-            return (
-              <TouchableOpacity
-                key={item}
-                style={styles.statusStep}
-                onPress={() => handleStatusChange(item)}
-                activeOpacity={0.8}
-              >
-                {/* Circle */}
-                <View
-                  style={[
-                    styles.statusCircle,
-                    (active || completed) && styles.statusCircleActive,
-                    active && styles.statusCircleCurrent,
-                  ]}
+              return (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.statusStep}
+                  onPress={() => handleStatusChange(item)}
+                  activeOpacity={0.8}
                 >
-                  <Text
+                  <View
                     style={[
-                      styles.statusCircleText,
-                      (active || completed) && styles.statusCircleTextActive,
+                      styles.statusCircle,
+                      (active || completed) && styles.statusCircleActive,
+                      active && styles.statusCircleCurrent,
                     ]}
                   >
-                    {completed ? "✓" : index + 1}
+                    <Text
+                      style={[
+                        styles.statusCircleText,
+                        (active || completed) && styles.statusCircleTextActive,
+                      ]}
+                    >
+                      {completed ? "✓" : index + 1}
+                    </Text>
+                  </View>
+
+                  <View style={styles.statusIndicator}>
+                    <View
+                      style={[
+                        styles.statusIndicatorLine,
+                        (active || completed) && styles.statusIndicatorLineActive,
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.statusIndicatorLine,
+                        (active || completed) && styles.statusIndicatorLineActive,
+                      ]}
+                    />
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.statusStepLabel,
+                      active && styles.statusStepLabelActive,
+                      completed && styles.statusStepLabelCompleted,
+                    ]}
+                  >
+                    {item}
                   </Text>
-                </View>
-
-                {/* Small Indicator */}
-                <View style={styles.statusIndicator}>
-                  <View
-                    style={[
-                      styles.statusIndicatorLine,
-                      (active || completed) && styles.statusIndicatorLineActive,
-                    ]}
-                  />
-
-                  <View
-                    style={[
-                      styles.statusIndicatorLine,
-                      (active || completed) && styles.statusIndicatorLineActive,
-                    ]}
-                  />
-                </View>
-
-                {/* Status Name */}
-                <Text
-                  style={[
-                    styles.statusStepLabel,
-                    active && styles.statusStepLabelActive,
-                    completed && styles.statusStepLabelCompleted,
-                  ]}
-                >
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={styles.emptyStatusStepper} />
+        )}
       </View>
     </ScrollView>
   );
@@ -253,13 +257,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-
   containerContent: {
     paddingHorizontal: 30,
     paddingBottom: 35,
   },
-
-  // Back Button
   backButton: {
     alignSelf: "flex-start",
     marginTop: 20,
@@ -268,33 +269,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
-
   backButtonText: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "bold",
   },
-
-  // Heading
   heading: {
     alignItems: "center",
-    // marginTop: 5,
     marginBottom: 30,
   },
-
   titleRow: {
     flexDirection: "row",
     alignSelf: "center",
     gap: 20,
-    // marginLeft: "21%",
   },
-
   titlelogo: {
     width: 370,
     height: 150,
   },
-
-  // Ticket
   ticket: {
     width: 850,
     height: 250,
@@ -307,7 +299,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 3, height: 4 },
   },
-
   ticketLeft: {
     width: 55,
     backgroundColor: "#246AA5",
@@ -315,14 +306,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 12,
   },
-
   leftCircle: {
     width: 26,
     height: 26,
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
   },
-
   ticketVertical: {
     color: "#FFFFFF",
     fontSize: 24,
@@ -331,26 +320,22 @@ const styles = StyleSheet.create({
     marginBottom: 33,
     textAlign: "center",
   },
-
   ticketMain: {
     flex: 1,
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 12,
   },
-
   ticketHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   ticketLogo: {
     color: "#FFAA00",
     fontSize: 20,
     fontWeight: "900",
   },
-
   petId: {
     backgroundColor: "#9CF0A9",
     width: 70,
@@ -358,12 +343,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
   },
-
   petIdText: {
     color: "#12642A",
     fontSize: 11,
   },
-
   ticketBody: {
     flex: 1,
     flexDirection: "row",
@@ -371,50 +354,41 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingHorizontal: 15,
   },
-
   petInfo: {
     flex: 1,
     justifyContent: "center",
   },
-
   petName: {
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "bold",
     marginBottom: 12,
   },
-
   infoRow: {
     flexDirection: "row",
     marginBottom: 7,
   },
-
   infoLabel: {
     color: "#FFFFFF",
     fontSize: 11,
     width: 75,
   },
-
   infoValue: {
     color: "#FFFFFF",
     fontSize: 11,
     flexShrink: 1,
   },
-
-  // Image
   petImageContainer: {
     width: 205,
     alignItems: "center",
-    justifyContent: "center",
+    justifycontent: "center",
     marginLeft: 10,
   },
-
   petImage: {
     width: 180,
     height: 120,
     backgroundColor: "#FFFFFF",
   },
-
   imagePlaceholder: {
     width: 180,
     height: 120,
@@ -422,33 +396,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   placeholderText: {
     color: "#FFFFFF",
     fontSize: 12,
   },
-
   dateText: {
     color: "#FFFFFF",
     fontSize: 10,
     marginTop: 12,
   },
-
-  // Barcode
   barcodeSide: {
     width: 58,
     backgroundColor: "#246AA5",
     padding: 7,
     justifyContent: "center",
   },
-
   barcode: {
     backgroundColor: "#FFFFFF",
     flex: 1,
     justifyContent: "space-evenly",
     paddingHorizontal: 3,
   },
-
   barcodeLine: {
     width: "100%",
     backgroundColor: "#FFFFFF",
@@ -456,8 +424,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#246AA5",
   },
-
-  // Status
   statusBox: {
     width: 460,
     alignSelf: "center",
@@ -468,7 +434,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     backgroundColor: "#FFFFFF",
   },
-
   statusTitle: {
     fontSize: 13,
     fontWeight: "bold",
@@ -476,8 +441,9 @@ const styles = StyleSheet.create({
     color: "#0B2B45",
     marginBottom: 20,
   },
-
-  // Stepper
+  emptyStatusStepper: {
+    height: 0,
+  },
   statusStepper: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -485,7 +451,6 @@ const styles = StyleSheet.create({
     position: "relative",
     width: "100%",
   },
-
   statusProgressLine: {
     position: "absolute",
     top: 13,
@@ -494,14 +459,11 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: "#246AA5",
   },
-
   statusStep: {
     flex: 1,
     alignItems: "center",
     zIndex: 1,
   },
-
-  // Circle
   statusCircle: {
     width: 27,
     height: 27,
@@ -512,12 +474,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   statusCircleActive: {
     backgroundColor: "#246AA5",
     borderColor: "#246AA5",
   },
-
   statusCircleCurrent: {
     borderWidth: 2,
     borderColor: "#246AA5",
@@ -526,37 +486,30 @@ const styles = StyleSheet.create({
     height: 30,
     marginTop: -1.5,
   },
-
   statusCircleText: {
     fontSize: 12,
     color: "#246AA5",
     fontWeight: "600",
   },
-
   statusCircleTextActive: {
     color: "#FFFFFF",
     fontWeight: "bold",
     fontSize: 13,
   },
-
-  // Status Label
   statusStepLabel: {
     fontSize: 9,
     color: "#718096",
     marginTop: 8,
     textAlign: "center",
   },
-
   statusStepLabelActive: {
     color: "#246AA5",
     fontWeight: "bold",
   },
-
   statusStepLabelCompleted: {
     color: "#246AA5",
     fontWeight: "600",
   },
-
 });
 
 export default PetDetails;

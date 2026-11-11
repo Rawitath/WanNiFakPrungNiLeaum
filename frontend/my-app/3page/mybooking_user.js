@@ -17,13 +17,18 @@ export default function MyBookingUser({
 
   const statusOptions = [
     "ทั้งหมด",
+    "จองสำเร็จ",
     "รอยืนยันคิว",
-    "รอรับเข้า",
-    "In Care",
-    "รอรับกลับ",
-    "รับกลับแล้ว",
     "ถูกปฏิเสธ",
   ];
+
+  // Map สถานะจาก App.js เข้ากับตัวเลือกแสดงผลหน้าจอง
+  const getDisplayStatus = (status) => {
+    if (["รอรับเข้า", "In Care", "รอรับกลับ", "รับกลับแล้ว"].includes(status)) {
+      return "จองสำเร็จ";
+    }
+    return status || "ไม่ได้ระบุ";
+  };
 
   const displayValue = (value) => {
     if (value === null || value === undefined || String(value).trim() === "") {
@@ -36,19 +41,21 @@ export default function MyBookingUser({
     () =>
       filter === "ทั้งหมด"
         ? bookings
-        : bookings.filter((item) => item.status === filter),
-    [bookings, filter],
+        : bookings.filter((item) => getDisplayStatus(item.status) === filter),
+    [bookings, filter]
   );
 
   const getStatusColor = (status) => {
-    if (status === "In Care" || status === "รับกลับแล้ว") return "#279b45";
-    if (status === "รอรับเข้า" || status === "รอรับกลับ" || status === "รอยืนยันคิว") return "#f39c12";
-    if (status === "ถูกปฏิเสธ") return "#e53935";
+    const displayStatus = getDisplayStatus(status);
+    if (displayStatus === "จองสำเร็จ") return "#279b45";
+    if (displayStatus === "รอยืนยันคิว") return "#f39c12";
+    if (displayStatus === "ถูกปฏิเสธ") return "#e53935";
     return "#333333";
   };
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -60,6 +67,7 @@ export default function MyBookingUser({
         <Text style={styles.headerTitle}>การจองของฉัน</Text>
       </View>
 
+      {/* Filter */}
       <View style={styles.filterArea}>
         <View style={styles.filterWrapper}>
           <TouchableOpacity
@@ -73,33 +81,32 @@ export default function MyBookingUser({
           </TouchableOpacity>
           {showFilter && (
             <View style={styles.filterDropdown}>
-              {statusOptions.map(
-                (status) => (
-                  <TouchableOpacity
-                    key={status}
-                    style={styles.filterOption}
-                    onPress={() => {
-                      setFilter(status);
-                      setShowFilter(false);
-                    }}
+              {statusOptions.map((status) => (
+                <TouchableOpacity
+                  key={status}
+                  style={styles.filterOption}
+                  onPress={() => {
+                    setFilter(status);
+                    setShowFilter(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      filter === status && styles.selectedFilterText,
+                    ]}
                   >
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        filter === status && styles.selectedFilterText,
-                      ]}
-                    >
-                      {status}
-                      {filter === status ? " ✓" : ""}
-                    </Text>
-                  </TouchableOpacity>
-                ),
-              )}
+                    {status}
+                    {filter === status ? " ✓" : ""}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           )}
         </View>
       </View>
 
+      {/* Content */}
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
@@ -107,8 +114,8 @@ export default function MyBookingUser({
       >
         <View style={styles.bookingList}>
           {filteredBookings.length ? (
-            filteredBookings.map((booking) => (
-              <View key={displayValue(booking.id)} style={styles.bookingCard}>
+            filteredBookings.map((booking, idx) => (
+              <View key={booking.id || idx} style={styles.bookingCard}>
                 <View style={styles.cardBar} />
                 <View style={styles.cardContent}>
                   <View style={styles.cardHeader}>
@@ -121,15 +128,18 @@ export default function MyBookingUser({
                         { color: getStatusColor(booking.status) },
                       ]}
                     >
-                      {displayValue(booking.status)}
+                      {displayValue(getDisplayStatus(booking.status))}
                     </Text>
                   </View>
-                  <Text style={styles.branchText}>สาขา {displayValue(booking.branch)}</Text>
+                  <Text style={styles.branchText}>
+                    สาขา {displayValue(booking.branch)}
+                  </Text>
                   <View style={styles.infoContainer}>
                     <View style={styles.infoColumn}>
                       <Text style={styles.infoLabel}>ข้อมูลผู้จอง</Text>
                       <Text style={styles.infoValue}>{displayValue(booking.name)}</Text>
                       <Text style={styles.infoValue}>{displayValue(booking.phone)}</Text>
+                      <Text style={styles.infoValue}>{displayValue(booking.email)}</Text>
                     </View>
                     <View style={styles.infoColumn}>
                       <Text style={styles.infoLabel}>ข้อมูลสัตว์เลี้ยง</Text>
@@ -138,7 +148,9 @@ export default function MyBookingUser({
                       <Text style={styles.infoValue}>สายพันธุ์: {displayValue(booking.breed)}</Text>
                       <Text style={styles.infoValue}>เพศ: {displayValue(booking.gender)}</Text>
                       <Text style={styles.infoValue}>วันเกิด: {displayValue(booking.birth || booking.age)}</Text>
-                      <Text style={styles.infoValue}>น้ำหนัก: {booking.weight ? `${booking.weight} กก.` : "ไม่ได้ระบุ"}</Text>
+                      <Text style={styles.infoValue}>
+                        น้ำหนัก: {booking.weight ? `${booking.weight} กก.` : "ไม่ได้ระบุ"}
+                      </Text>
                       <Text style={styles.infoValue}>สุขภาพ: {displayValue(booking.health)}</Text>
                       <Text style={styles.infoValue}>คำแนะนำ: {displayValue(booking.careNotes)}</Text>
                     </View>
@@ -147,12 +159,17 @@ export default function MyBookingUser({
                         วันที่เริ่ม-สิ้นสุดบริการ
                       </Text>
                       <Text style={styles.infoValue}>
-                        {displayValue(booking.startDate)} - {displayValue(booking.endDate)}
+                        {displayValue(booking.startDate || booking.checkIn)} - {displayValue(booking.endDate || booking.checkOut)}
                       </Text>
-                      <Text style={styles.infoValue}>เวลากดจอง: {displayValue(booking.bookingTime || booking.time)}</Text>
-                      <Text style={styles.infoValue}>เวลาเช็กอิน: {displayValue(booking.checkInTime)}</Text>
-                      <Text style={styles.infoValue}>เวลาเช็กเอาต์: {displayValue(booking.checkOutTime)}</Text>
-                      <Text style={styles.infoValue}>อีเมล: {displayValue(booking.email)}</Text>
+                      <Text style={styles.infoValue}>
+                        เวลากดจอง: {displayValue(booking.bookingTime || booking.time)}
+                      </Text>
+                      <Text style={styles.infoValue}>
+                        เวลาเช็กอิน: {displayValue(booking.checkInTime)}
+                      </Text>
+                      <Text style={styles.infoValue}>
+                        เวลาเช็กเอาต์: {displayValue(booking.checkOutTime)}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -173,14 +190,12 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#FFFFFF"
   },
-
   header: {
     height: 135,
     backgroundColor: "#0b2d47",
     alignItems: "center",
     paddingHorizontal: 30,
   },
-  
   backButton: {
     alignSelf: "flex-start",
     marginTop: 20,

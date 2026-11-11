@@ -568,7 +568,7 @@ export default function App() {
     }
     setDataSets((prev) =>
       prev.map((item) =>
-        item.pet.id === petId
+        getPetId(item) === petId
           ? {
               ...item,
               booking: {
