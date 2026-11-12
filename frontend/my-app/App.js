@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Alert, Platform, Linking } from "react-native";
 import { useFonts } from "expo-font";
@@ -77,12 +78,15 @@ const getPetId = (item) =>
   item?.pet?.name ||
   "";
 
+// อ่านเวลาที่ Backend บันทึกไว้
 const getBookingTimestamp = (booking) => {
   return (
-    booking?.bookingTime ||
-    booking?.booking_time ||
+    booking?.reservationDate ||
+    booking?.reservation_date ||
     booking?.bookingTimestamp ||
     booking?.booking_timestamp ||
+    booking?.bookingTime ||
+    booking?.booking_time ||
     booking?.createdAt ||
     booking?.created_at ||
     booking?.requestedAt ||
@@ -95,11 +99,16 @@ const getBookingTimestamp = (booking) => {
 };
 
 const formatBookingTime = (value) => {
-  if (!value) return "ไม่ได้ระบุ";
+  if (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ""
+  ) {
+    return "ไม่ได้ระบุ";
+  }
 
   let dateValue = value;
 
-  // รองรับ Unix timestamp ทั้งวินาทีและมิลลิวินาที
   if (typeof dateValue === "number") {
     if (dateValue < 100000000000) {
       dateValue *= 1000;
@@ -109,6 +118,7 @@ const formatBookingTime = (value) => {
     /^\d+$/.test(dateValue.trim())
   ) {
     dateValue = Number(dateValue);
+
     if (dateValue < 100000000000) {
       dateValue *= 1000;
     }
@@ -117,7 +127,7 @@ const formatBookingTime = (value) => {
   const date = new Date(dateValue);
 
   if (Number.isNaN(date.getTime())) {
-    return String(value);
+    return "ไม่ได้ระบุ";
   }
 
   return date.toLocaleString("th-TH", {
@@ -126,6 +136,7 @@ const formatBookingTime = (value) => {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   });
 };
@@ -162,55 +173,86 @@ export default function App() {
   const [isRestoring, setIsRestoring] = useState(true);
   const processedOAuthCodeRef = useRef(null);
 
-  // ตรวจจับ OAuth Callback (เช่น http://localhost:8081/oauth/google/callback หรือ deep link)                                                                                                     
-      useEffect(() => {                                                             
-        const handleOAuthUrl = async (rawUrl) => {                                  
-          if (!rawUrl) return;                                                      
-          try {                                                                     
-            const parsedUrl = new URL(rawUrl, "http://localhost:8081");             
-            if (                                                                    
-              parsedUrl.pathname.includes("/oauth/google/callback") ||              
-              parsedUrl.pathname.includes("/oauth/callback")                        
-            ) {                                                                     
-              const code = parsedUrl.searchParams.get("code");                      
-              // ถ้าไม่มี code หรือ code นี้ถูกประมวลผลไปแล้ว ให้ข้ามทันที                      
-              if (!code || processedOAuthCodeRef.current === code) return;          
-              processedOAuthCodeRef.current = code;                                 
-                                                                                    
-              // เคลียร์ URL บน browser ทันทีเพื่อไม่ให้ค้าง query string                    
-              if (Platform.OS === "web" && typeof window !== "undefined" &&         
-              window.history?.replaceState) {                                       
-                window.history.replaceState({}, document.title,                     
-                window.location.pathname.replace(/\/oauth\/.*$/, "") || "/");       
-              }                                                                     
-                                                                                    
-              const res = await oAuthCallback(code);                                
-              if (!res.ok || !res.data?.accessToken) {                              
-                showMessage(res.data?.message || res.data?.error ||                 
-                "ยืนยันการเข้าสู่ระบบด้วย Google ไม่สำเร็จ");                                
-                return;                                                             
-              }                                                                     
-              await processUserAuth(res.data.accessToken);                          
-            }                                                                       
-          } catch (err) {                                                           
-            console.warn("handleOAuthUrl error:", err);                             
-          }                                                                         
-        }
+  // =====================================================
+  // OAUTH CALLBACK
+  // =====================================================
 
-    // 1. ตรวจสอบในโหมด Web
-    if (Platform.OS === "web" && typeof window !== "undefined" && window.location) {
+  useEffect(() => {
+    const handleOAuthUrl = async (rawUrl) => {
+      if (!rawUrl) return;
+
+      try {
+        const parsedUrl = new URL(
+          rawUrl,
+          "http://localhost:8081"
+        );
+
+        if (
+          parsedUrl.pathname.includes("/oauth/google/callback") ||
+          parsedUrl.pathname.includes("/oauth/callback")
+        ) {
+          const code = parsedUrl.searchParams.get("code");
+
+          if (
+            !code ||
+            processedOAuthCodeRef.current === code
+          ) {
+            return;
+          }
+
+          processedOAuthCodeRef.current = code;
+
+          if (
+            Platform.OS === "web" &&
+            typeof window !== "undefined" &&
+            window.history?.replaceState
+          ) {
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname.replace(
+                /\/oauth\/.*$/,
+                ""
+              ) || "/"
+            );
+          }
+
+          const res = await oAuthCallback(code);
+
+          if (!res.ok || !res.data?.accessToken) {
+            showMessage(
+              res.data?.message ||
+              res.data?.error ||
+              "ยืนยันการเข้าสู่ระบบด้วย Google ไม่สำเร็จ"
+            );
+            return;
+          }
+
+          await processUserAuth(res.data.accessToken);
+        }
+      } catch (err) {
+        console.warn("handleOAuthUrl error:", err);
+      }
+    };
+
+    if (
+      Platform.OS === "web" &&
+      typeof window !== "undefined" &&
+      window.location
+    ) {
       handleOAuthUrl(window.location.href);
     }
 
-    // 2. ตรวจสอบ Initial URL สำหรับ Native หรือ Deep Link
     Linking.getInitialURL().then((url) => {
       if (url) handleOAuthUrl(url);
     });
 
-    // 3. ฟัง URL Event ในกรณี redirect กลับมาตอนแอปเปิดอยู่
-    const subscription = Linking.addEventListener("url", (event) => {
-      handleOAuthUrl(event.url);
-    });
+    const subscription = Linking.addEventListener(
+      "url",
+      (event) => {
+        handleOAuthUrl(event.url);
+      }
+    );
 
     return () => {
       subscription?.remove?.();
@@ -236,8 +278,15 @@ export default function App() {
   const userDatasets =
     activeUser && activeUser.role === "user"
       ? dataSets.filter((item) => {
-          const uEmail = (activeUser.email || "").trim().toLowerCase();
-          const itemEmail = (item.owner?.email || "").trim().toLowerCase();
+          const uEmail = (activeUser.email || "")
+            .trim()
+            .toLowerCase();
+
+          const itemEmail = (
+            item.owner?.email || ""
+          )
+            .trim()
+            .toLowerCase();
 
           return Boolean(
             uEmail && itemEmail && itemEmail === uEmail
@@ -254,7 +303,6 @@ export default function App() {
 
     id: getPetId(item),
 
-    // ข้อมูลสัตว์เลี้ยงจริง
     name: item.pet.name || "",
     petType: item.pet.petType || "",
     breed: item.pet.breed || "",
@@ -265,35 +313,50 @@ export default function App() {
     health: item.pet.health || "",
     careNotes: item.pet.careNotes || "",
 
-    // รูปภาพ
-    image: item.pet.image || require("./1assets/piclogo.png"),
+    image:
+      item.pet.image ||
+      require("./1assets/piclogo.png"),
 
-    // สถานะจริงจากการจอง
     status: normalizePetStatus(item.booking.status),
 
-    // ข้อมูลการเข้าพัก
-    checkIn: item.booking.checkIn || item.booking.startDate || "",
-    checkOut: item.booking.checkOut || item.booking.endDate || "",
-    startDate: item.booking.startDate || item.booking.checkIn || "",
-    endDate: item.booking.endDate || item.booking.checkOut || "",
+    checkIn:
+      item.booking.checkIn ||
+      item.booking.startDate ||
+      "",
 
-    // ข้อมูลการจอง
+    checkOut:
+      item.booking.checkOut ||
+      item.booking.endDate ||
+      "",
+
+    startDate:
+      item.booking.startDate ||
+      item.booking.checkIn ||
+      "",
+
+    endDate:
+      item.booking.endDate ||
+      item.booking.checkOut ||
+      "",
+
     branch: item.booking.branch || "",
     bookingId: item.booking.id || "",
-    bookingTime: item.booking.bookingTime || item.booking.time || "",
 
-    // ข้อมูลเจ้าของ
+    bookingTime:
+      item.booking.bookingTime ||
+      item.booking.time ||
+      "",
+
     owner: item.owner || {},
     ownerName: item.owner?.name || "",
     ownerPhone: item.owner?.phone || "",
     ownerEmail: item.owner?.email || "",
   }));
 
-  // ค้นหาข้อมูลสัตว์เลี้ยงล่าสุด เพื่อให้หน้า PetDetails
-  // แสดงสถานะที่อัปเดตจาก App.js เสมอ
   const activeSelectedPet = selectedPet
     ? pets.find(
-        (pet) => String(pet.id) === String(selectedPet.id)
+        (pet) =>
+          String(pet.id) === String(selectedPet.id)
       ) || selectedPet
     : null;
 
@@ -303,18 +366,36 @@ export default function App() {
 
   const bookings = userDatasets.map((item) => ({
     ...item.booking,
-    id: item.booking.id || item.owner?.id || item.pet.id,
+
+    id:
+      item.booking.id ||
+      item.booking.reservationId ||
+      "",
+
+    reservationDate:
+      item.booking.reservationDate ||
+      item.booking.bookingTimestamp ||
+      null,
+
+    bookingTimestamp:
+      item.booking.reservationDate ||
+      item.booking.bookingTimestamp ||
+      null,
+
     pet: item.pet.name || "",
     petType: item.pet.petType || "",
     breed: item.pet.breed || "",
     gender: item.pet.gender || "",
-    age: item.pet.birth || item.pet.age || "",
+    birth: item.pet.birth || item.pet.age || "",
+    age: item.pet.age || "",
     weight: item.pet.weight || "",
     health: item.pet.health || "",
     careNotes: item.pet.careNotes || "",
+
     name: item.owner?.name || "",
     phone: item.owner?.phone || "",
     email: item.owner?.email || "",
+
     status: normalizePetStatus(item.booking.status),
   }));
 
@@ -325,7 +406,9 @@ export default function App() {
   const staffPets = dataSets.map((item) => ({
     id: getPetId(item),
     name: item.pet.name || "",
-    image: item.pet.image || require("./1assets/piclogo.png"),
+    image:
+      item.pet.image ||
+      require("./1assets/piclogo.png"),
     owner: item.owner?.name || "",
     status: normalizePetStatus(item.booking.status),
     branch: item.booking.branch || "",
@@ -335,8 +418,12 @@ export default function App() {
     customerPhone: item.owner?.phone,
     customerEmail: item.owner?.email,
     bookingId: item.booking.id,
-    checkIn: item.booking.startDate || item.booking.checkIn,
-    checkOut: item.booking.endDate || item.booking.checkOut,
+    checkIn:
+      item.booking.startDate ||
+      item.booking.checkIn,
+    checkOut:
+      item.booking.endDate ||
+      item.booking.checkOut,
   }));
 
   // =====================================================
@@ -344,14 +431,30 @@ export default function App() {
   // =====================================================
 
   const bookingQueue = dataSets.map((item) => ({
-    id: item.booking.id || item.queue?.id,
+    id:
+      item.booking.id ||
+      item.queue?.id,
+
     bookingId: item.booking.id,
     petId: getPetId(item),
-    time: item.queue?.time || item.booking.bookingTime || "10:00",
+
+    time:
+      item.queue?.time ||
+      item.booking.bookingTime ||
+      "10:00",
+
     name: item.pet.name || "",
     branch: item.booking.branch || "",
     status: normalizePetStatus(item.booking.status),
-    detail: `${item.owner?.name || ""} - ${item.booking.startDate || ""} ถึง ${item.booking.endDate || ""}`,
+
+    detail: `${
+      item.owner?.name || ""
+    } - ${
+      item.booking.startDate || ""
+    } ถึง ${
+      item.booking.endDate || ""
+    }`,
+
     customerName: item.owner?.name,
     customerPhone: item.owner?.phone,
     customerEmail: item.owner?.email,
@@ -395,147 +498,187 @@ export default function App() {
 
         const accountEmail = String(
           customer?.email || ""
-        ).trim().toLowerCase();
+        )
+          .trim()
+          .toLowerCase();
 
         const ownReservations = accountEmail
           ? reservationRows.filter((r) =>
               String(
                 r.customerEmail || r.email || ""
-              ).trim().toLowerCase() === accountEmail
+              )
+                .trim()
+                .toLowerCase() === accountEmail
             )
           : reservationRows;
 
-        const backendDataSets = ownReservations.map((r, idx) => {
-          const matchedPet = backendPets.find((p) =>
-            String(p.customerEmail || "").trim().toLowerCase() ===
-              String(r.customerEmail || "").trim().toLowerCase() &&
-            String(p.petName || "").trim().toLowerCase() ===
-              String(r.petName || "").trim().toLowerCase()
-          );
+        const backendDataSets = ownReservations.map(
+          (r, idx) => {
+            const matchedPet = backendPets.find((p) =>
+              String(p.customerEmail || "")
+                .trim()
+                .toLowerCase() ===
+                String(r.customerEmail || "")
+                  .trim()
+                  .toLowerCase() &&
+              String(p.petName || "")
+                .trim()
+                .toLowerCase() ===
+                String(r.petName || "")
+                  .trim()
+                  .toLowerCase()
+            );
 
-          const plannedIn = r.checkIn
-            ? new Date(r.checkIn).getTime()
-            : 0;
+            const plannedIn = r.checkIn
+              ? new Date(r.checkIn).getTime()
+              : 0;
 
-          const actualIn = matchedPet?.checkIn
-            ? new Date(matchedPet.checkIn).getTime()
-            : 0;
+            const actualIn = matchedPet?.checkIn
+              ? new Date(matchedPet.checkIn).getTime()
+              : 0;
 
-          const plannedOut = r.checkOut
-            ? new Date(r.checkOut).getTime()
-            : 0;
+            const plannedOut = r.checkOut
+              ? new Date(r.checkOut).getTime()
+              : 0;
 
-          const actualOut = matchedPet?.checkOut
-            ? new Date(matchedPet.checkOut).getTime()
-            : 0;
+            const actualOut = matchedPet?.checkOut
+              ? new Date(matchedPet.checkOut).getTime()
+              : 0;
 
-          const checkedIn =
-            actualIn &&
-            (!plannedIn || Math.abs(actualIn - plannedIn) > 60000);
+            const checkedIn =
+              actualIn &&
+              (!plannedIn ||
+                Math.abs(actualIn - plannedIn) > 60000);
 
-          const checkedOut =
-            actualOut &&
-            (!plannedOut || Math.abs(actualOut - plannedOut) > 60000);
+            const checkedOut =
+              actualOut &&
+              (!plannedOut ||
+                Math.abs(actualOut - plannedOut) > 60000);
 
-          const bookingStatus = matchedPet
-            ? (
-                checkedOut
-                  ? "รับกลับแล้ว"
-                  : checkedIn
-                  ? "In Care"
-                  : "รอรับเข้า"
-              )
-            : (
-                r.status === "accepted" || r.status === "confirmed"
-                  ? "รอรับเข้า"
-                  : r.status === "in_care"
-                  ? "In Care"
-                  : r.status === "rejected" || r.status === "cancelled"
-                  ? "ถูกปฏิเสธ"
-                  : r.status === "completed"
-                  ? "รับกลับแล้ว"
-                  : "รอยืนยันคิว"
-              );
+            const bookingStatus = matchedPet
+              ? (
+                  checkedOut
+                    ? "รับกลับแล้ว"
+                    : checkedIn
+                    ? "In Care"
+                    : "รอรับเข้า"
+                )
+              : (
+                  r.status === "accepted" ||
+                  r.status === "confirmed"
+                    ? "รอรับเข้า"
+                    : r.status === "in_care"
+                    ? "In Care"
+                    : r.status === "rejected" ||
+                      r.status === "cancelled"
+                    ? "ถูกปฏิเสธ"
+                    : r.status === "completed"
+                    ? "รับกลับแล้ว"
+                    : "รอยืนยันคิว"
+                );
 
-          return {
-            owner: {
-              id: r.customerName || `O${idx}`,
-              username: customer?.username || "",
-              name: r.customerName || customer?.name || "ลูกค้า",
-              phone: r.customerPhone || "",
-              email: r.customerEmail || "",
-            },
+            const reservationTimestamp =
+              getBookingTimestamp(r);
 
-            pet: {
-              id: String(
-                matchedPet?.petId ||
-                matchedPet?.id ||
-                r.reservationId ||
-                r.id ||
-                idx
-              ),
-              name: r.petName || "สัตว์เลี้ยง",
-              petType: r.petType || "สุนัข",
-              breed: r.petBreed || "",
-              gender: r.petSex || "ผู้",
-              birth: r.petBirth || "",
-              weight: String(r.petWeight || ""),
-              health: r.petCondition || "",
-              careNotes: r.petNote || "",
-              image: require("./1assets/piclogo.png"),
-            },
+            return {
+              owner: {
+                id: r.customerName || `O${idx}`,
+                username: customer?.username || "",
+                name:
+                  r.customerName ||
+                  customer?.name ||
+                  "ลูกค้า",
+                phone: r.customerPhone || "",
+                email: r.customerEmail || "",
+              },
 
-            booking: {
-              id: String(r.reservationId || r.id || idx),
-              branch: r.branch || r.branchName || r.branch_name || "",
+              pet: {
+                id: String(
+                  matchedPet?.petId ||
+                  matchedPet?.id ||
+                  r.reservationId ||
+                  r.id ||
+                  idx
+                ),
 
-              startDate: r.checkIn
-                ? new Date(r.checkIn).toLocaleDateString("th-TH")
-                : "",
+                name: r.petName || "สัตว์เลี้ยง",
+                petType: r.petType || "สุนัข",
+                breed: r.petBreed || "",
+                gender: r.petSex || "ผู้",
+                birth: r.petBirth || "",
+                weight: String(r.petWeight || ""),
+                health: r.petCondition || "",
+                careNotes: r.petNote || "",
+                image: require("./1assets/piclogo.png"),
+              },
 
-              endDate: r.checkOut
-                ? new Date(r.checkOut).toLocaleDateString("th-TH")
-                : "",
+              booking: {
+                id: String(
+                  r.reservationId ||
+                  r.id ||
+                  idx
+                ),
 
-              checkIn: r.checkIn
-                ? new Date(r.checkIn).toLocaleDateString("th-TH")
-                : "",
+                branch:
+                  r.branch ||
+                  r.branchName ||
+                  r.branch_name ||
+                  "",
 
-              checkOut: r.checkOut
-                ? new Date(r.checkOut).toLocaleDateString("th-TH")
-                : "",
+                startDate: r.checkIn
+                  ? new Date(
+                      r.checkIn
+                    ).toLocaleDateString("th-TH")
+                  : "",
 
-              // เก็บเวลาที่กดจองจริง
-              bookingTimestamp: getBookingTimestamp(r),
+                endDate: r.checkOut
+                  ? new Date(
+                      r.checkOut
+                    ).toLocaleDateString("th-TH")
+                  : "",
 
-              bookingTime: formatBookingTime(
-                getBookingTimestamp(r)
-              ),
+                checkIn: r.checkIn
+                  ? new Date(
+                      r.checkIn
+                    ).toLocaleDateString("th-TH")
+                  : "",
 
-              checkInTime: r.checkIn
-                ? formatClockTime(r.checkIn)
-                : "",
+                checkOut: r.checkOut
+                  ? new Date(
+                      r.checkOut
+                    ).toLocaleDateString("th-TH")
+                  : "",
 
-              checkOutTime: r.checkOut
-                ? formatClockTime(r.checkOut)
-                : "",
+                // เวลาจองจริงจาก Backend
+                reservationDate: reservationTimestamp,
 
-              status: bookingStatus,
-            },
+                bookingTimestamp: reservationTimestamp,
 
-            queue: {
-              id: `Q${idx}`,
-              time: formatBookingTime(
-                r.bookingTime ||
-                r.booking_time ||
-                r.createdAt ||
-                r.created_at ||
-                r.requestedAt ||
-                r.timestamp
-              ),
-            },
-          };
-        });
+                bookingTime: formatBookingTime(
+                  reservationTimestamp
+                ),
+
+                checkInTime: r.checkIn
+                  ? formatClockTime(r.checkIn)
+                  : "",
+
+                checkOutTime: r.checkOut
+                  ? formatClockTime(r.checkOut)
+                  : "",
+
+                status: bookingStatus,
+              },
+
+              queue: {
+                id: `Q${idx}`,
+
+                time: formatBookingTime(
+                  reservationTimestamp
+                ),
+              },
+            };
+          }
+        );
 
         setDataSets(backendDataSets);
       }
@@ -549,6 +692,10 @@ export default function App() {
   // =====================================================
 
   const loadStaffData = async () => {
+
+    console.log("เวลาที่ Backend ส่งมา:", reservationTimestamp);
+    console.log("ข้อมูลการจองทั้งหมด:", r);
+    
     try {
       const [resRes, petsRes] = await Promise.all([
         apiGetStaffReservations(),
@@ -562,11 +709,12 @@ export default function App() {
             : [];
 
         const backendStaffSets = resRes.data.map((r, idx) => {
-          const matchedPet = backendPets.find((p) =>
-            String(p.customerEmail || "").trim().toLowerCase() ===
-              String(r.customerEmail || "").trim().toLowerCase() &&
-            String(p.petName || "").trim().toLowerCase() ===
-              String(r.petName || "").trim().toLowerCase()
+          const matchedPet = backendPets.find(
+            (p) =>
+              String(p.customerEmail || "").trim().toLowerCase() ===
+                String(r.customerEmail || "").trim().toLowerCase() &&
+              String(p.petName || "").trim().toLowerCase() ===
+                String(r.petName || "").trim().toLowerCase()
           );
 
           const statusMap = {
@@ -601,11 +749,13 @@ export default function App() {
 
             const checkedIn =
               actualIn &&
-              (!plannedIn || Math.abs(actualIn - plannedIn) > 60000);
+              (!plannedIn ||
+                Math.abs(actualIn - plannedIn) > 60000);
 
             const checkedOut =
               actualOut &&
-              (!plannedOut || Math.abs(actualOut - plannedOut) > 60000);
+              (!plannedOut ||
+                Math.abs(actualOut - plannedOut) > 60000);
 
             currentStatus = checkedOut
               ? "รับกลับแล้ว"
@@ -613,6 +763,12 @@ export default function App() {
               ? "In Care"
               : "รอรับเข้า";
           }
+
+          // อ่านเวลาจองจาก Backend
+          const reservationTimestamp = getBookingTimestamp(r);
+
+            console.log("เวลาที่ Backend ส่งมา:", reservationTimestamp);
+            console.log("เวลาหลังแปลง:", new Date(reservationTimestamp).toString());
 
           return {
             owner: {
@@ -643,42 +799,42 @@ export default function App() {
 
             booking: {
               id: String(r.reservationId || r.id || idx),
-              branch: r.branch || r.branchName || r.branch_name || "",
+
+              branch:
+                r.branch ||
+                r.branchName ||
+                r.branch_name ||
+                "",
+
               startDate: r.checkIn
                 ? new Date(r.checkIn).toLocaleDateString("th-TH")
                 : "",
+
               endDate: r.checkOut
                 ? new Date(r.checkOut).toLocaleDateString("th-TH")
                 : "",
+
               checkIn: r.checkIn
                 ? new Date(r.checkIn).toLocaleDateString("th-TH")
                 : "",
+
               checkOut: r.checkOut
                 ? new Date(r.checkOut).toLocaleDateString("th-TH")
                 : "",
-              bookingTimestamp: getBookingTimestamp(r),
-              bookingTime: formatBookingTime(
-                getBookingTimestamp(r) ||
-                r.bookingTime ||
-                r.booking_time ||
-                r.createdAt ||
-                r.created_at ||
-                r.requestedAt ||
-                r.timestamp
-              ),
+
+              // ใช้เวลาที่ Backend บันทึกไว้
+              reservationDate: reservationTimestamp,
+              bookingTimestamp: reservationTimestamp,
+              bookingTime: formatBookingTime(reservationTimestamp),
+
               status: currentStatus,
             },
 
             queue: {
               id: `Q${idx}`,
-              time: formatBookingTime(
-                r.bookingTime ||
-                r.booking_time ||
-                r.createdAt ||
-                r.created_at ||
-                r.requestedAt ||
-                r.timestamp
-              ),
+
+              // ให้เวลาในหน้าจัดการคิวใช้ค่าเดียวกัน
+              time: formatBookingTime(reservationTimestamp),
             },
           };
         });
@@ -714,6 +870,7 @@ export default function App() {
       console.warn("loadStaffData error:", err);
     }
   };
+
 
   // =====================================================
   // RESTORE PAGE AFTER REFRESH
