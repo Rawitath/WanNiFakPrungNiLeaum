@@ -297,32 +297,7 @@ export default function App() {
     checkOut: item.booking.endDate || item.booking.checkOut,
   }));
   // ACCOUNT STATE
-  // const [accounts, setAccounts] = useState([
-  //   {
-  //     username: "a",
-  //     password: "123",
-  //     role: "user",
-  //     name: "ผู้ใช้งาน A",
-  //     phone: "083xxxxxxx",
-  //     email: "user@gmail.com",
-  //   },
-  //   {
-  //     username: "b",
-  //     password: "123",
-  //     role: "staff",
-  //     name: "พนักงาน B",
-  //     phone: "084xxxxxxx",
-  //     email: "staff@gmail.com",
-  //   },
-  //   {
-  //     username: "c",
-  //     password: "123",
-  //     role: "admin",
-  //     name: "ผู้ดูแลระบบ C",
-  //     phone: "085xxxxxxx",
-  //     email: "admin@gmail.com",
-  //   },
-  // ]);
+  const [accounts, setAccounts] = useState([]);
   // POPUP STATE
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupType, setPopupType] = useState("loginFailed");

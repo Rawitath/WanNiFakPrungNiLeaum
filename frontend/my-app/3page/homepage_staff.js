@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
 
   mainContent: {
     paddingHorizontal: 50,
-    paddingBottom: 35,
+    // paddingBottom: 35,
   },
 
   // TOP CARDS
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 0,
-    height: 330,
+    height: 300,
     backgroundColor: "#FFFFFF",
     borderRadius: 9,
     paddingHorizontal: 24,
@@ -541,7 +541,8 @@ const styles = StyleSheet.create({
     marginHorizontal: "10%",
     paddingHorizontal: 24,
     paddingVertical: 20,
-    height: 360,
+    // minheight: 260,
+    height: 300,
   },
 
   tableHeader: {
@@ -656,5 +657,11 @@ const styles = StyleSheet.create({
   tableButtonText: {
     color: "#286BA5",
     fontSize: 11,
+  },
+
+  emptyText:{
+    marginTop: 20,
+    alignSelf: "center",
+    color: "#8795A3",
   },
 });

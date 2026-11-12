@@ -198,7 +198,7 @@ export default function UserSidePanel({ visible, onClose, pet, information }) {
                         </View>
 
                         {/* อุ้งเท้ามุมซ้ายล่าง */}
-                        <View style={styles.pawTopLeft3}>
+                        <View style={styles.pawTopLeft2}>
                             <svg
                                 width="50"
                                 height="50"
@@ -215,21 +215,6 @@ export default function UserSidePanel({ visible, onClose, pet, information }) {
 
                     </ScrollView>
 
-                    {/* อุ้งเท้ามุมซ้ายล่าง */}
-                    <View style={styles.pawTopLeft2}>
-                        <svg
-                            width="50"
-                            height="50"
-                            viewBox="-10 -10 120 120"
-                            fill="#345172"
-                            opacity="1"
-                        >
-                            <ellipse cx="50" cy="65" rx="35" ry="30" />
-                            <ellipse cx="10" cy="25" rx="15" ry="15" />
-                            <ellipse cx="50" cy="10" rx="15" ry="15" />
-                            <ellipse cx="95" cy="22" rx="15" ry="15" />
-                        </svg>
-                    </View>
 
                     {/* ส่วนล่างของ Panel */}
                     <View style={styles.bottomContainer}>
@@ -292,13 +277,6 @@ const styles = StyleSheet.create({
         top: 165,
         left: 300,
         transform: [{ rotate: "30deg" }],
-    },
-
-    pawTopLeft3: {
-        position: "absolute",
-        top: 745,
-        left: 180,
-        transform: [{ rotate: "300deg" }],
     },
 
     topHeader: {
@@ -409,7 +387,7 @@ const styles = StyleSheet.create({
     },
 
     petRows: {
-        maxHeight: 550,
+        maxHeight: 390,
     },
 
     emptyPets: {
