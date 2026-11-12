@@ -881,17 +881,24 @@ export default function App() {
   // เปลี่ยนสถานะจริงจาก booking.status จุดเดียว
   // =====================================================
   const handlePetStatusChange = async (petId, newStatus) => {
-    const allowedStatuses = ["In Care", "พร้อมรับกลับ"];
+    const allowedStatuses = ["In Care", "พร้อมรับกลับ", "รับกลับแล้ว"];
     if (!allowedStatuses.includes(newStatus)) {
       console.log("Invalid pet status:", newStatus);
-      return;
+      return false;
+    }
+
+    const target = dataSets.find((item) => String(getPetId(item)) === String(petId));
+    const reservationId = target?.booking?.id;
+    if (!reservationId) {
+      console.warn("ไม่พบ reservationId สำหรับสัตว์เลี้ยง:", petId);
+      return false;
     }
 
     try {
-      const result = await apiUpdateStaffPetStatus({ id: petId, status: newStatus });
+      const result = await apiUpdateStaffPetStatus({ id: reservationId, status: newStatus });
       if (!result?.ok) {
         console.warn("อัปเดตสถานะสัตว์ไม่สำเร็จ:", result?.data);
-        return;
+        return false;
       }
 
       setDataSets((prev) =>
@@ -906,8 +913,10 @@ export default function App() {
           ? { ...prev, status: newStatus }
           : prev
       );
+      return true;
     } catch (err) {
       console.warn("apiUpdateStaffPetStatus error:", err);
+      return false;
     }
   };
 
@@ -943,40 +952,41 @@ export default function App() {
   const handleActivity = async (item, action) => {
     const targetId = item.petId || item.id;
     const entryType = action === "รับเข้าพัก" ? "check-in" : "check-out";
+    const newStatus = action === "รับเข้าพัก" ? "In Care" : "รับกลับแล้ว";
+
     try {
-      await apiRecordStaffPetEntry({
+      const entryResult = await apiRecordStaffPetEntry({
         id: targetId,
         type: entryType,
         timestamp: new Date().toISOString(),
       });
-      await loadStaffData();
-    } catch (err) {
-      console.warn("apiRecordStaffPetEntry error:", err);
-    }
+      if (!entryResult?.ok) {
+        console.warn("บันทึกเวลาเข้า-ออกรับคืนไม่สำเร็จ:", entryResult?.data);
+        return;
+      }
 
-    if (item.petId) {
-      let newStatus = null;
-      if (action === "รับเข้าพัก") {
-        newStatus = "In Care";
-      } else if (action === "รับกลับ") {
-        newStatus = "รับกลับแล้ว";
+      if (item.petId) {
+        const statusSaved = await handlePetStatusChange(item.petId, newStatus);
+        if (!statusSaved) return;
       }
-      if (newStatus) {
-        handlePetStatusChange(item.petId, newStatus);
-      }
+
+      await loadStaffData();
+      await loadCustomerData();
+      setActivityList((prev) => [
+        {
+          id: `A${Date.now()}`,
+          name: item.name || "",
+          petId: item.petId || null,
+          branch: item.branch,
+          action,
+          detail: `${action} • ${item.detail || ""}`,
+          color: action === "รับเข้าพัก" ? "#174F83" : "#FACC15",
+        },
+        ...prev,
+      ]);
+    } catch (err) {
+      console.warn("handleActivity error:", err);
     }
-    setActivityList((prev) => [
-      {
-        id: `A${Date.now()}`,
-        name: item.name || "",
-        petId: item.petId || null,
-        branch: item.branch,
-        action,
-        detail: `${action} • ${item.detail || ""}`,
-        color: action === "รับเข้าพัก" ? "#174F83" : "#F39A13",
-      },
-      ...prev,
-    ]);
   };
 
   // =====================================================

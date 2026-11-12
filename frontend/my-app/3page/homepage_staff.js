@@ -149,10 +149,10 @@ export default function HomePageStaff({
                     <Text style={styles.activityDetail}>{item.detail}</Text>
                   </View>
                   <TouchableOpacity
-                    style={[styles.activityButton, { backgroundColor: item.color || "#174F83" }]}
+                    style={[styles.activityButton, { backgroundColor: item.action === "รับกลับ" ? "#FACC15" : (item.color || "#174F83") }]}
                     onPress={() => item.action === "รับเข้าพัก" ? onCheckIn && onCheckIn(item) : onCheckOut && onCheckOut(item)}
                   >
-                    <Text style={styles.activityButtonText}>{item.action}</Text>
+                    <Text style={[styles.activityButtonText, item.action === "รับกลับ" && { color: "#713F12" }]}>{item.action}</Text>
                   </TouchableOpacity>
                 </View>
               ))}
