@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Linking } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, StyleSheet, Linking, Platform } from "react-native";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // API Services
@@ -20,6 +20,8 @@ import {
   apiConfirmStaffReservation,
   apiGetManagerStatus,
   apiManagerRegisterStaff,
+  oAuthLogin,
+  oAuthCallback,
   parseJwt,
   clearAuthToken,
   getAuthToken,
@@ -159,6 +161,7 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [activeUser, setActiveUser] = useState(null);
   const [isRestoring, setIsRestoring] = useState(true);
+  const processedOAuthCode = useRef(null);
   // DATA STATE
   const [dataSets, setDataSets] = useState(INITIAL_DATA);
   const [activityList, setActivityList] = useState([]);
@@ -423,10 +426,31 @@ export default function App() {
     dataSets,
     activityList,
   ]);
-  // LOADING
-  if (!fontsLoaded || isRestoring) {
-    return null;
-  }
+  // รองรับทั้ง Web URL และ Deep Link บน Android/iOS
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined") {
+        handleOAuthRedirect(window.location.href);
+      }
+      return;
+    }
+
+    let isMounted = true;
+
+    Linking.getInitialURL().then((url) => {
+      if (isMounted && url) handleOAuthRedirect(url);
+    });
+
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      if (isMounted) handleOAuthRedirect(url);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription?.remove?.();
+    };
+  }, []);
+
   // =====================================================
   // API LOADERS
   // =====================================================
@@ -615,6 +639,147 @@ export default function App() {
       }
     } catch (err) {
       console.warn("loadAdminData error:", err);
+    }
+  };
+
+  // =====================================================
+  // GOOGLE OAUTH
+  // =====================================================
+  // ใช้ token จาก Google OAuth เข้าสู่ระบบด้วยขั้นตอนเดียวกับ Login ปกติ
+  const processUserAuth = async (accessToken) => {
+    if (!accessToken) {
+      throw new Error("ไม่พบ access token จาก Google");
+    }
+
+    const payload = parseJwt(accessToken) || {};
+    let userRole = payload.role || payload.userRole || "user";
+
+    if (userRole === "customer") userRole = "user";
+    if (userRole === "manager") userRole = "admin";
+
+    const role = ["user", "staff", "admin"].includes(userRole)
+      ? userRole
+      : "user";
+
+    let profile = {
+      name: payload.username || payload.name || "ผู้ใช้ Google",
+      email: payload.email || "",
+      phone: payload.phone || "",
+    };
+
+    try {
+      const profRes = await apiGetProfile();
+      if (profRes?.ok && profRes.data) {
+        profile = {
+          name:
+            profRes.data.username ||
+            profRes.data.name ||
+            payload.username ||
+            payload.name ||
+            "ผู้ใช้ Google",
+          email: profRes.data.email || payload.email || "",
+          phone: profRes.data.phone || payload.phone || "",
+        };
+      }
+    } catch (error) {
+      console.warn("Google OAuth profile error:", error);
+    }
+
+    const userObj = {
+      username:
+        payload.username ||
+        profile.email ||
+        profile.name ||
+        "google-user",
+      role,
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+    };
+
+    setActiveUser(userObj);
+    setShowRegister(false);
+    setShowForgotPassword(false);
+    setShowBooking(false);
+    setShowMyBooking(false);
+    setShowPetDetails(false);
+    setSelectedPet(null);
+    setShowProfile(false);
+    setCurrentPage(role);
+
+    if (role === "user") await loadCustomerData();
+    else if (role === "staff") await loadStaffData();
+    else if (role === "admin") await loadAdminData();
+  };
+
+  // เริ่มต้นเข้าสู่ระบบด้วย Google
+  const handleGoogleLogin = async () => {
+    try {
+      const loginUrl = await oAuthLogin();
+
+      if (!loginUrl) {
+        throw new Error("ไม่สามารถสร้างลิงก์ Google Login ได้");
+      }
+
+      if (Platform.OS === "web") {
+        window.location.href = loginUrl;
+      } else {
+        await Linking.openURL(loginUrl);
+      }
+    } catch (error) {
+      console.warn("Google OAuth login error:", error);
+      showLoginError(error?.message || "ไม่สามารถเข้าสู่ระบบด้วย Google ได้");
+    }
+  };
+
+  // รับ callback จาก Backend หลัง Google ยืนยันตัวตนสำเร็จ
+  const handleOAuthRedirect = async (incomingUrl) => {
+    if (!incomingUrl) return;
+
+    try {
+      const parsedUrl = new URL(incomingUrl);
+      const path = parsedUrl.pathname || "";
+      const isOAuthCallback =
+        path.includes("/oauth/google/callback") ||
+        path.includes("/oauth/callback");
+
+      if (!isOAuthCallback) return;
+
+      const oauthError =
+        parsedUrl.searchParams.get("error") ||
+        parsedUrl.searchParams.get("message");
+
+      if (oauthError) {
+        showLoginError("เข้าสู่ระบบด้วย Google ไม่สำเร็จ: " + oauthError);
+        return;
+      }
+
+      const code = parsedUrl.searchParams.get("code");
+      if (!code || processedOAuthCode.current === code) return;
+
+      processedOAuthCode.current = code;
+
+      const result = await oAuthCallback(code);
+      const accessToken = result?.data?.accessToken;
+
+      if (!result?.ok || !accessToken) {
+        processedOAuthCode.current = null;
+        throw new Error(
+          result?.data?.message ||
+            result?.data?.error ||
+            "ไม่สามารถยืนยันตัวตนจาก Google ได้"
+        );
+      }
+
+      await processUserAuth(accessToken);
+
+      // ล้าง code ออกจาก URL บนเว็บ ป้องกัน callback ซ้ำเมื่อ refresh
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (error) {
+      console.warn("Google OAuth callback error:", error);
+      showLoginError(error?.message || "เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบด้วย Google");
     }
   };
 
@@ -1051,6 +1216,11 @@ export default function App() {
     />
   );
 
+  // LOADING
+  if (!fontsLoaded || isRestoring) {
+    return null;
+  }
+
   // =====================================================
   // RENDER
   // =====================================================
@@ -1090,13 +1260,7 @@ export default function App() {
             }}
             onLogin={handleLogin}
             onForgotPassword={() => setShowForgotPassword(true)}
-            onGoogleLogin={() => {
-              const base =
-                process.env.EXPO_PUBLIC_API_URL ||
-                process.env.API_URL ||
-                "http://localhost:3000";
-              Linking.openURL(`${base}/api/oauth/google`);
-            }}
+            onGoogleLogin={handleGoogleLogin}
             onRegister={() => setShowRegister(true)}
           />
         ))}
