@@ -30,6 +30,8 @@ const getPetBranch = (pet) =>
     pet.branchName ||
     pet.branch_name ||
     pet.branch_name_th ||
+    pet.branchId ||
+    pet.branch_id ||
     "ไม่ระบุสาข"
   ).trim();
 
@@ -37,7 +39,21 @@ const getPetType = (pet) =>
   pet.petType || pet.pet_type || pet.type || pet.animalType || pet.animal_type || "";
 
 const getPetStatus = (pet) =>
-  String(pet.status || pet.petStatus || pet.pet_status || "").trim();
+  String(pet.status || pet.petStatus || pet.pet_status || "")
+    .trim()
+    .toLowerCase();
+
+const getBranchId = (branch) =>
+  String(branch?.branchId || branch?.branch_id || branch?.id || "").trim();
+
+const getBranchName = (branch) =>
+  String(
+    branch?.branch_name ||
+    branch?.branchName ||
+    branch?.name ||
+    branch?.branch ||
+    ""
+  ).trim();
 
 // ==============================
 // PAW PRINT
@@ -103,10 +119,49 @@ export default function HomepageAdmin({
     ? overviewData.pets
     : [];
 
+  const branchNameById = React.useMemo(() => {
+    const names = new Map();
+    (Array.isArray(overviewData?.branches) ? overviewData.branches : []).forEach(
+      (branch) => {
+        const id = getBranchId(branch);
+        const name = getBranchName(branch);
+        if (id && name) names.set(id, name);
+      }
+    );
+    return names;
+  }, [overviewData?.branches]);
+
+  const petsWithBranchName = React.useMemo(
+    () =>
+      adminPets.map((pet) => {
+        const branchId = String(pet.branchId || pet.branch_id || "").trim();
+        return {
+          ...pet,
+          branch:
+            pet.branch ||
+            pet.branchName ||
+            pet.branch_name ||
+            pet.branch_name_th ||
+            branchNameById.get(branchId) ||
+            "ไม่ระบุสาข",
+        };
+      }),
+    [adminPets, branchNameById]
+  );
+
   const allBranches = React.useMemo(() => {
     const grouped = {};
 
-    adminPets.forEach((pet) => {
+    (Array.isArray(overviewData?.branches) ? overviewData.branches : []).forEach(
+      (branch) => {
+        const branchName = getBranchName(branch);
+        if (branchName && !grouped[branchName]) {
+          grouped[branchName] = { name: branchName, animals: {}, total: 0 };
+        }
+      }
+    );
+
+    petsWithBranchName.forEach((pet) => {
       const branchName = getPetBranch(pet);
       const typeName = normalizeAnimalType(getPetType(pet));
 
@@ -128,7 +183,7 @@ export default function HomepageAdmin({
         }))
         .filter((animal) => animal.count > 0),
     }));
-  }, [adminPets]);
+  }, [petsWithBranchName, overviewData?.branches]);
 
   const branchOptions = [
     "ทุกสาขา",
@@ -142,8 +197,8 @@ export default function HomepageAdmin({
 
   const petsInSelectedBranch =
     selectedBranch === "ทุกสาขา"
-      ? adminPets
-      : adminPets.filter((pet) => getPetBranch(pet) === selectedBranch);
+      ? petsWithBranchName
+      : petsWithBranchName.filter((pet) => getPetBranch(pet) === selectedBranch);
 
   const displayedAnimalSummary = React.useMemo(() => {
     const counts = {
@@ -177,24 +232,22 @@ export default function HomepageAdmin({
 
   const displayedStatusData = React.useMemo(() => {
     const statuses = [
-      { label: "กำลังเข้าพัก", count: 0 },
-      { label: "พร้อมรับกลับ", count: 0 },
-      { label: "อยู่ระหว่างตรวจสุขภาพ", count: 0 },
-      { label: "ออกจากสาขาแล้ว", count: 0 },
+      { label: "รอเข้าพัก", count: 0 },
+      { label: "In Care", count: 0 },
+      { label: "รอรับกลับ", count: 0 },
+      { label: "รับกลับแล้ว", count: 0 },
     ];
 
     petsInSelectedBranch.forEach((pet) => {
       const status = getPetStatus(pet);
 
-      if (["In Care", "in_care", "สบายดี", "กำลังเข้าพัก"].includes(status)) {
+      if (["pending", "รอเข้าพัก", "รอรับเข้า", "รอยืนยันคิว", "accepted", "confirmed"].includes(status)) {
         statuses[0].count += 1;
-      } else if (["พร้อมรับกลับ", "รอรับกลับ"].includes(status)) {
+      } else if (["in care", "in_care", "กำลังเข้าพัก", "สบายดี", "ไม่สบาย"].includes(status)) {
         statuses[1].count += 1;
-      } else if (
-        ["รอรับเข้า", "รอยืนยันคิว", "pending", "accepted", "confirmed"].includes(status)
-      ) {
+      } else if (["พร้อมรับกลับ", "รอรับกลับ", "ready for pickup", "ready_for_pickup"].includes(status)) {
         statuses[2].count += 1;
-      } else if (["รับกลับแล้ว", "completed"].includes(status)) {
+      } else if (["รับกลับแล้ว", "completed", "checked out", "checked_out"].includes(status)) {
         statuses[3].count += 1;
       }
     });
@@ -473,8 +526,8 @@ export default function HomepageAdmin({
             >
               {/* ANIMAL SUMMARY */}
               <View style={styles.summaryCard}>
-                <Text style={styles.summaryTitle}>
-                  ชนิดสัตว์เลี้ยง (รวมทุกสาขา)
+              <Text style={styles.summaryTitle}>
+                  ชนิดสัตว์เลี้ยง ({selectedBranch})
                 </Text>
 
                 <View style={styles.yellowLine} />
