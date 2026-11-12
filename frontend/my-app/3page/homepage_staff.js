@@ -70,7 +70,33 @@ export default function HomePageStaff({
   };
 
   const handleViewInformation = (information) => {
-    setSelectedInformation(information);
+    const normalize = (value) => String(value || "").trim().toLowerCase();
+    const email = normalize(information?.customerEmail || information?.email);
+    const phone = normalize(information?.customerPhone || information?.phone);
+    const customerName = normalize(information?.customerName || information?.owner);
+
+    // petList มีข้อมูลครบทุกสถานะ ส่วน filteredPetList ใช้กรองเฉพาะตารางหลัก
+    const customerPets = petList.filter((candidate) => {
+      const candidateEmail = normalize(candidate?.customerEmail || candidate?.email);
+      const candidatePhone = normalize(candidate?.customerPhone || candidate?.phone);
+      const candidateName = normalize(candidate?.customerName || candidate?.owner);
+
+      if (email) return candidateEmail === email;
+      if (phone) return candidatePhone === phone;
+      return Boolean(customerName && candidateName === customerName);
+    });
+
+    // ใช้รหัสสัตว์เลี้ยงตัดรายการซ้ำที่อาจเกิดจากการจองหลายครั้ง
+    const uniqueCustomerPets = Array.from(
+      new Map(
+        customerPets.map((candidate, index) => [
+          String(candidate?.petId || candidate?.id || `pet-${index}`),
+          candidate,
+        ])
+      ).values()
+    );
+
+    setSelectedInformation({ ...information, pets: uniqueCustomerPets });
     setShowInformationPanel(true);
   };
 

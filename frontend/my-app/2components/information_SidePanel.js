@@ -48,6 +48,18 @@ export default function UserSidePanel({ visible, onClose, pet, information }) {
     };
 
     const target = information || pet;
+    const petsFromTarget =
+        (Array.isArray(target?.pets) && target.pets) ||
+        (Array.isArray(target?.animals) && target.animals) ||
+        (Array.isArray(target?.petList) && target.petList) ||
+        (Array.isArray(target?.customer?.pets) && target.customer.pets) ||
+        (Array.isArray(target) && target) ||
+        [];
+    const petsToDisplay = petsFromTarget.length > 0
+        ? petsFromTarget
+        : (target?.petId || target?.pet_id || target?.petName || target?.pet_name || target?.name)
+            ? [target]
+            : [];
     const booking = {
         bookingId: target?.bookingId || target?.id || "0001",
 
@@ -57,14 +69,14 @@ export default function UserSidePanel({ visible, onClose, pet, information }) {
             { label: "อีเมล", value: target?.customerEmail || target?.owner?.email || target?.email || "example@email.com" },
         ],
 
-        pets: [
-            {
-                petId: target?.petId || target?.id || "P001",
-                petName: target?.petName || target?.name || "สัตว์เลี้ยง",
-                type: target?.petType || target?.type || "สุนัข",
-                breed: target?.petBreed || target?.breed || "-",
-            },
-        ],
+        // แสดงสัตว์เลี้ยงทุกตัวที่มีในข้อมูล โดยไม่กรองตามสถานะ
+        pets: petsToDisplay.map((item, index) => ({
+            petId: item?.petId || item?.pet_id || item?.id || `P${index + 1}`,
+            petName: item?.petName || item?.pet_name || item?.name || "สัตว์เลี้ยง",
+            type: item?.petType || item?.pet_type || item?.type || "-",
+            breed: item?.petBreed || item?.pet_breed || item?.breed || "-",
+            status: item?.status || item?.petStatus || item?.pet_status || "-",
+        })),
     };
 
     // Component สำหรับแสดงหัวข้อและข้อมูล
@@ -159,21 +171,29 @@ export default function UserSidePanel({ visible, onClose, pet, information }) {
                                     <Text style={styles.petTableHeader}>PetID</Text>
                                     <Text style={styles.petTableHeader}>Petname</Text>
                                     <Text style={styles.petTableHeader}>Type</Text>
-                                    <Text style={styles.petTableHeader}>Breed</Text>
+                                    <Text style={styles.petTableHeader}>สถานะ</Text>
                                 </View>
 
                             {/* เส้นสีเหลือง */}
                             <View style={styles.footerLine2} />
 
                                 {/* ข้อมูลในตาราง */}
-                                {booking.pets.map((pet) => (
-                                    <View key={pet.petId} style={styles.petTableRow}>
-                                        <Text style={styles.petTableCell}>{pet.petId}</Text>
-                                        <Text style={styles.petTableCell}>{pet.petName}</Text>
-                                        <Text style={styles.petTableCell}>{pet.type}</Text>
-                                        <Text style={styles.petTableCell}>{pet.breed}</Text>
-                                    </View>
-                                ))}
+                                <ScrollView
+                                    style={styles.petRows}
+                                    nestedScrollEnabled
+                                    showsVerticalScrollIndicator
+                                >
+                                    {booking.pets.length > 0 ? booking.pets.map((pet, index) => (
+                                        <View key={`${pet.petId}-${index}`} style={styles.petTableRow}>
+                                            <Text style={styles.petTableCell}>{pet.petId}</Text>
+                                            <Text style={styles.petTableCell}>{pet.petName}</Text>
+                                            <Text style={styles.petTableCell}>{pet.type}</Text>
+                                            <Text style={styles.petTableCell}>{pet.status}</Text>
+                                        </View>
+                                    )) : (
+                                        <Text style={styles.emptyPets}>ไม่พบข้อมูลสัตว์เลี้ยง</Text>
+                                    )}
+                                </ScrollView>
                             </View>
                         </View>
 
@@ -261,22 +281,23 @@ const styles = StyleSheet.create({
     panelBorder2: {
         backgroundColor: "#03314c",
         width: 500,
+        // height: "100%",
         paddingVertical: 15,
         paddingHorizontal: 0,
-        marginBottom: 20,
+        // marginBottom: 20,
     },
 
     pawTopLeft2: {
         position: "absolute",
-        top: 180,
+        top: 165,
         left: 300,
         transform: [{ rotate: "30deg" }],
     },
 
     pawTopLeft3: {
         position: "absolute",
-        top: 445,
-        left: 50,
+        top: 745,
+        left: 180,
         transform: [{ rotate: "300deg" }],
     },
 
@@ -380,11 +401,22 @@ const styles = StyleSheet.create({
     },
     
     petTable: {
-        width: "92%",
+        width: "96%",
         borderWidth: "none",
         borderColor: "none",
         marginTop: 10,
-        marginLeft: 40,
+        marginLeft: 28,
+    },
+
+    petRows: {
+        maxHeight: 550,
+    },
+
+    emptyPets: {
+        color: "#FFFFFF",
+        fontSize: 12,
+        textAlign: "center",
+        paddingVertical: 14,
     },
 
     petTableRow: {
@@ -396,7 +428,7 @@ const styles = StyleSheet.create({
     petTableHeader: {
         flex: 1,
         color: "#FFFFFF",
-        fontSize: 12,
+        fontSize: 15,
         fontWeight: "bold",
         textAlign: "center",
         paddingVertical: 10,
@@ -407,7 +439,7 @@ const styles = StyleSheet.create({
     petTableCell: {
         flex: 1,
         color: "#FFFFFF",
-        fontSize: 12,
+        fontSize: 13,
         textAlign: "center",
         paddingVertical: 12,
         borderRightWidth: "none",
