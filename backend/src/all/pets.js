@@ -103,26 +103,21 @@ async function updateStatus(req, res, next) {
       return res.status(400).json({ error: 'id and status are required' });
     }
 
-    const allowed = ['สบายดี', 'ไม่สบาย'];
+    const allowed = ['In Care', 'พร้อมรับกลับ', 'สบายดี', 'ไม่สบาย'];
     if (!allowed.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+      return res.status(400).json({ error: 'Invalid pet status' });
     }
 
-    try {
-      await db.query(
-        'UPDATE pets SET status = $1 WHERE pet_id::text = $2',
-        [status, String(id)]
-      );
-    } catch (dbErr) {
-      // Fallback
-    }
-
-    const found = pets.find(
-      (p) => String(p.petId) === String(id) || String(p.id) === String(id)
+    const result = await db.query(
+      'UPDATE pets SET status = $1 WHERE pet_id::text = $2 RETURNING pet_id',
+      [status, String(id)]
     );
-    if (found) {
-      found.status = status;
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'Pet not found' });
     }
+
+    const found = pets.find((p) => String(p.petId) === String(id) || String(p.id) === String(id));
+    if (found) found.status = status;
 
     return res.status(200).json({ success: true, id, status });
   } catch (err) {
@@ -144,15 +139,15 @@ async function recordEntry(req, res, next) {
 
     try {
       if (type === 'check-in') {
-        await db.query('UPDATE pets SET check_in = $1 WHERE pet_id::text = $2', [
-          timestamp,
-          String(id),
-        ]);
+        await db.query(
+          "UPDATE pets SET check_in = $1, status = 'In Care' WHERE pet_id::text = $2",
+          [timestamp, String(id)]
+        );
       } else if (type === 'check-out') {
-        await db.query('UPDATE pets SET check_out = $1 WHERE pet_id::text = $2', [
-          timestamp,
-          String(id),
-        ]);
+        await db.query(
+          "UPDATE pets SET check_out = $1, status = 'รับกลับแล้ว' WHERE pet_id::text = $2",
+          [timestamp, String(id)]
+        );
       }
     } catch (dbErr) {
       // Fallback
@@ -162,8 +157,8 @@ async function recordEntry(req, res, next) {
       (p) => String(p.petId) === String(id) || String(p.id) === String(id)
     );
     if (found) {
-      if (type === 'check-in') found.checkIn = timestamp;
-      if (type === 'check-out') found.checkOut = timestamp;
+      if (type === 'check-in') { found.checkIn = timestamp; found.status = 'In Care'; }
+      if (type === 'check-out') { found.checkOut = timestamp; found.status = 'รับกลับแล้ว'; }
     }
 
     return res.status(201).json({ success: true, message: 'Entry recorded' });

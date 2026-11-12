@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const PANEL_WIDTH = SCREEN_WIDTH / 3;
+const PANEL_WIDTH = SCREEN_WIDTH / 4;
 
 export default function StaffSidePanel({ visible, onClose, pet }) {
     const slideAnim = useRef(
@@ -47,30 +47,32 @@ export default function StaffSidePanel({ visible, onClose, pet }) {
         onClose();
     };
 
-    // ข้อมูลตัวอย่าง สามารถแก้ไขภายหลังได้
+    // ข้อมูลการจอง นำมาจาก pet prop หรือ fallback
     const booking = {
-        bookingId: "B001",
+        bookingId: pet?.bookingId || pet?.id || "B001",
 
         customer: [
-            { label: "ชื่อ", value: "คุณสมหญิง" },
-            { label: "เบอร์", value: "08X-XXX-XXXX" },
-            { label: "อีเมล", value: "example@email.com" },
+            { label: "ชื่อ", value: pet?.customerName || pet?.owner?.name || (typeof pet?.owner === "string" ? pet.owner : "คุณลูกค้า") },
+            { label: "เบอร์", value: pet?.customerPhone || pet?.owner?.phone || pet?.phone || "08X-XXX-XXXX" },
+            { label: "อีเมล", value: pet?.customerEmail || pet?.owner?.email || pet?.email || "example@email.com" },
         ],
 
         pet: [
-            { label: "ชื่อ", value: "เบย" },
-            { label: "ชนิด", value: "สุนัข" },
-            { label: "สายพันธุ์", value: "โกลเด้น" },
-            { label: "น้ำหนัก", value: "2 กิโล" },
-            { label: "เพศ", value: "ผู้" },
-            { label: "วันเกิด", value: "23/01/2564" },
-            { label: "โรคประจำตัว", value: "-" },
-            { label: "ข้อจำกัด", value: "ไม่ชอบคนเสียงดัง" },
+            { label: "ชื่อ", value: pet?.petName || pet?.name || "สัตว์เลี้ยง" },
+            { label: "ชนิด", value: pet?.petType || pet?.type || "สุนัข" },
+            { label: "สายพันธุ์", value: pet?.petBreed || pet?.breed || "-" },
+            { label: "น้ำหนัก", value: pet?.petWeight !== undefined ? `${pet.petWeight} กก.` : (pet?.weight ? `${pet.weight} กก.` : "-") },
+            { label: "เพศ", value: pet?.petSex || pet?.gender || "-" },
+            { label: "วันเกิด", value: pet?.petBirth || pet?.birth || pet?.age || "-" },
+            { label: "โรคประจำตัว", value: pet?.petCondition || pet?.health || "-" },
+            { label: "ข้อจำกัด", value: pet?.petNote || pet?.careNotes || "-" },
         ],
 
         detail: [
-            { label: "วันที่เข้าพัก", value: "13/01/2569" },
-            { label: "วันที่รับกลับ", value: "14/01/2569" },
+            { label: "สาขา", value: pet?.branch || "-" },
+            { label: "สถานะ", value: pet?.status || "-" },
+            { label: "วันที่เข้าพัก", value: pet?.checkIn || pet?.startDate || "-" },
+            { label: "วันที่รับกลับ", value: pet?.checkOut || pet?.endDate || "-" },
         ],
     };
 
@@ -134,12 +136,6 @@ export default function StaffSidePanel({ visible, onClose, pet }) {
                                 รายละเอียดการจอง
                             </Text>
 
-                            <Pressable
-                                onPress={closePanel}
-                                style={styles.closeButton}
-                            >
-                                <Text style={styles.closeText}>✕</Text>
-                            </Pressable>
                         </View>
 
                         {/* กรอบสีน้ำเงินอ่อน */}
@@ -209,27 +205,6 @@ export default function StaffSidePanel({ visible, onClose, pet }) {
 
                     {/* ส่วนล่างของ Panel */}
                     <View style={styles.bottomContainer}>
-                        {/* ปุ่ม */}
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => { }}
-                            >
-                                <Text style={styles.actionButtonText}>
-                                    ยืนยัน
-                                </Text>
-                            </TouchableOpacity>
-                        
-
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => { }}
-                            >
-                                <Text style={styles.actionButtonText}>
-                                    ติดต่อลูกค้า
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
 
                         {/* เส้นสีเหลือง */}
                         <View style={styles.footerLine} />
@@ -269,15 +244,15 @@ const styles = StyleSheet.create({
 
     panelBorder: {
         backgroundColor: "#1a6692",
-        width: "100%",
+        width: 500,
         paddingVertical: 5,
-        paddingHorizontal: 15,
+        paddingHorizontal: 8,
         marginBottom: 0,
     },
 
     panelBorder2: {
         backgroundColor: "#03314c",
-        width: "100%",
+        width: 500 ,
         paddingVertical: 15,
         paddingHorizontal: 0,
         marginBottom: 20,
@@ -285,7 +260,7 @@ const styles = StyleSheet.create({
 
     pawTopLeft2: {
         position: "absolute",
-        top: 90,
+        top: 720,
         left: 300,
         transform: [{ rotate: "30deg" }],
     },
@@ -311,18 +286,6 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
 
-    closeButton: {
-        position: "absolute",
-        right: 0,
-        top: 0,
-        padding: 3,
-    },
-
-    closeText: {
-        color: "#FFFFFF",
-        fontSize: 15,
-    },
-
     scrollContent: {
         paddingBottom: 5,
     },
@@ -333,7 +296,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 26,
         marginTop: 5,
-        marginLeft: 57,
+        marginLeft: 40,
     },
 
     section: {
@@ -343,7 +306,7 @@ const styles = StyleSheet.create({
     sectionHeader: {
         backgroundColor: "#9BD4F5",
         alignSelf: "flex-end",
-        width: "87%",
+        width: "92%",
         paddingVertical: 9,
         paddingHorizontal: 15,
         marginBottom: 12,
@@ -382,24 +345,6 @@ const styles = StyleSheet.create({
     bottomContainer: {
         paddingTop: 10,
         paddingBottom: 10,
-    },
-
-    buttonContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 10,
-        marginLeft: 40,
-        width: "80%",
-    },
-
-    actionButton: {
-        backgroundColor: "#f8931f",
-        width: "30%",
-        paddingVertical: 10,
-        borderRadius: 10,
-        alignItems: "center",
-
     },
 
     actionButtonText: {

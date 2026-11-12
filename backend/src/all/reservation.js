@@ -3,26 +3,26 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '../config/db.js';
 
 let reservations = [
-  {
-    id: 1,
-    reservationId: 1,
-    branch: 'ลาดกระบัง',
-    customerName: 'John Doe',
-    customerPhone: '0890123456',
-    customerEmail: 'test@example.com',
-    petName: 'สุทธิชัย',
-    petType: 'Dog',
-    petBreed: 'Golden Retriever',
-    petSex: 'Male',
-    petWeight: 25,
-    petBirth: '2020-05-15',
-    petCondition: 'หอบหืด',
-    petNote: 'อย่าให้คึกเยอะ',
-    reservationDate: new Date().toISOString(),
-    checkIn: '2026-11-10T19:13:00.000Z',
-    checkOut: '2026-11-15T20:00:00.000Z',
-    status: 'pending',
-  },
+  // {
+  //   id: 1,
+  //   reservationId: 1,
+  //   branch: 'ลาดกระบัง',
+  //   customerName: 'John Doe',
+  //   customerPhone: '0890123456',
+  //   customerEmail: 'test@example.com',
+  //   petName: 'สุทธิชัย',
+  //   petType: 'Dog',
+  //   petBreed: 'Golden Retriever',
+  //   petSex: 'Male',
+  //   petWeight: 25,
+  //   petBirth: '2020-05-15',
+  //   petCondition: 'หอบหืด',
+  //   petNote: 'อย่าให้คึกเยอะ',
+  //   reservationDate: new Date().toISOString(),
+  //   checkIn: '2026-11-10T19:13:00.000Z',
+  //   checkOut: '2026-11-15T20:00:00.000Z',
+  //   status: 'pending',
+  // },
 ];
 
 export function formatReservation(row) {
@@ -43,7 +43,8 @@ export function formatReservation(row) {
     petBirth: row.pet_birth ? (row.pet_birth instanceof Date ? row.pet_birth.toISOString().split('T')[0] : String(row.pet_birth).split('T')[0]) : row.petBirth,
     petCondition: row.pet_condition || row.petCondition,
     petNote: row.pet_note || row.petNote,
-    reservationDate: row.reservation_date || row.reservationDate,
+    // created_at เป็น timestamptz จึงเก็บเวลาที่กดจองได้ละเอียดกว่าคอลัมน์ reservation_date ที่เดิมเป็น DATE
+    reservationDate: row.created_at || row.reservationDate || row.reservation_date,
     checkIn: row.check_in || row.checkIn,
     checkOut: row.check_out || row.checkOut,
     status: row.status,
@@ -53,6 +54,7 @@ export function formatReservation(row) {
 /** GET /customer/reservation */
 async function getReservations(req, res, next) {
   try {
+    await db.query("ALTER TABLE reservations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'");
     const id = req.query.id;
     if (id !== undefined && id !== null && id !== '') {
       try {
@@ -149,58 +151,54 @@ async function createReservation(req, res, next) {
     const reservationId = uuidv4();
     const reservationDate = new Date().toISOString();
 
-    try {
-      let branchId = null;
-      const bRes = await db.query(
-        'SELECT branch_id FROM branches WHERE branch_name = $1 OR branch_id::text = $1',
-        [branch]
-      );
-      if (bRes.rows.length > 0) {
-        branchId = bRes.rows[0].branch_id;
-      }
+    // เพิ่มคอลัมน์สถานะให้ฐานข้อมูลเดิมรองรับสถานะการจอง
+    await db.query("ALTER TABLE reservations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'");
 
-      let userId = req.user?.userid;
-      if (!userId) {
-        const uRes = await db.query('SELECT userid FROM users WHERE email = $1', [customerEmail]);
-        if (uRes.rows.length > 0) {
-          userId = uRes.rows[0].userid;
-        }
-      }
-
+    const branchName = String(branch).trim().replace(/^สาขา\s*/i, "");
+    let bRes = await db.query(
+      'SELECT branch_id FROM branches WHERE LOWER(TRIM(branch_name)) = LOWER(TRIM($1)) OR branch_id::text = $1 LIMIT 1',
+      [branchName]
+    );
+    // บางฐานข้อมูลเดิมมี admin อยู่แล้ว แต่ยังไม่มีข้อมูล branches จาก initadmin
+    const validBranches = ['ลาดกระบัง', 'ร่มเกล้า', 'ปราจีนบุรี', 'หาดใหญ่'];
+    if (!bRes.rows.length && validBranches.includes(branchName)) {
       await db.query(
-        `INSERT INTO reservations (
-           reservation_id, userid, branch_id, customer_name, customer_phone, customer_email,
-           reservation_date, check_in, check_out, pet_name, pet_type, pet_breed,
-           pet_sex, pet_weight, pet_birth, pet_condition, pet_note
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
-        [
-          reservationId,
-          userId,
-          branchId,
-          customerName,
-          customerPhone,
-          customerEmail,
-          new Date(),
-          checkIn,
-          checkOut,
-          petName,
-          petType,
-          petBreed,
-          petSex,
-          petWeight,
-          petBirth,
-          petCondition,
-          petNote,
-        ]
+        'INSERT INTO branches (branch_id, branch_name) SELECT $1, $2 WHERE NOT EXISTS (SELECT 1 FROM branches WHERE branch_name = $2)',
+        [uuidv4(), branchName]
       );
-    } catch (dbErr) {
-      // In-memory fallback if DB fails
+      bRes = await db.query(
+        'SELECT branch_id FROM branches WHERE LOWER(TRIM(branch_name)) = LOWER(TRIM($1)) LIMIT 1',
+        [branchName]
+      );
     }
+    if (!bRes.rows.length) {
+      return res.status(400).json({ error: `ไม่พบสาขา ${branchName} ในฐานข้อมูล` });
+    }
+    const branchId = bRes.rows[0].branch_id;
+
+    let userId = req.user?.userid;
+    if (!userId) {
+      const uRes = await db.query('SELECT userid FROM users WHERE email = $1', [customerEmail]);
+      if (uRes.rows.length > 0) userId = uRes.rows[0].userid;
+    }
+
+    await db.query(
+      `INSERT INTO reservations (
+         reservation_id, userid, branch_id, customer_name, customer_phone, customer_email,
+         reservation_date, check_in, check_out, pet_name, pet_type, pet_breed,
+         pet_sex, pet_weight, pet_birth, pet_condition, pet_note, status
+       ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'pending')`,
+      [
+        reservationId, userId, branchId, customerName, customerPhone, customerEmail,
+        checkIn, checkOut, petName, petType, petBreed, petSex, petWeight, petBirth, petCondition, petNote,
+      ]
+    );
 
     const newRes = {
       id: reservationId,
       reservationId,
-      branch,
+      branch: branchName,
+      branchId,
       customerName,
       customerPhone,
       customerEmail,
@@ -219,7 +217,7 @@ async function createReservation(req, res, next) {
     };
     reservations.push(newRes);
 
-    return res.status(201).json({ reservationId, reservationDate });
+    return res.status(201).json({ reservationId, reservationDate, branch: branchName, status: 'pending' });
   } catch (err) {
     next(err);
   }

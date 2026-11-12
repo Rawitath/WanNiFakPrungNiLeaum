@@ -29,10 +29,10 @@ const getPetStatusStyle = (status) => {
                 backgroundColor: "#DDF1E5", // สีเขียวสดใส
                 color: "#4B9D73",
             };
-        case "รอรับกลับ":
+        case "พร้อมรับกลับ":
             return {
-                backgroundColor: "#FEF08A", // สีเหลืองพร้อมรับกลับ
-                color: "#CA8A04",
+                backgroundColor: "#DDF1E5", // สีเหลืองพร้อมรับกลับ
+                color: "#4B9D73",
             };
         case "รับกลับแล้ว":
             return {

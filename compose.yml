@@ -8,6 +8,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
+    environment:
+      - EXPO_PUBLIC_API_URL=http://localhost:3000
+      - API_URL=http://localhost:3000
     networks:
       - stayforget-network
 
@@ -29,6 +32,8 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - CHOKIDAR_INTERVAL=1000
       - FAST_REFRESH=true
+      - EXPO_PUBLIC_API_URL=http://localhost:3000
+      - API_URL=http://localhost:3000
     ports:
       - "8081:8081"
     networks:
@@ -44,7 +49,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:8081/api/oauth/google/callback}
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:8081/oauth/google/callback}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-none}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-none}
       DB_HOST: db
@@ -62,6 +67,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "3000:3000"
     networks:
       - stayforget-network
 
@@ -86,6 +93,8 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       PASSWORD_ENDEC_SALT: ${PASSWORD_ENDEC_SALT}
       NODE_ENV: test
+    ports:
+      - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -100,7 +109,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     environment:
-      OAUTH_REDIRECT_URI: 'http://backend-dev:3000/api/oauth/google/callback'
+      OAUTH_REDIRECT_URI: 'http://localhost:8081/oauth/google/callback'
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       DB_HOST: db-dev
@@ -125,12 +134,12 @@ services:
       - stayforget-network
 
   db:
-    image: postgres:18-alpine
+    image: stayforget-postgres:18-alpine
+    build: ./db
     profiles: ["", "prod", "test", "backend"]
     restart: unless-stopped
     volumes:
       - stayforget_db:/var/lib/postgresql
-      - ./init-scripts/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-stayforget}
       POSTGRES_USER: ${POSTGRES_USER:-stayforget}
@@ -139,17 +148,18 @@ services:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-stayforget} -d $${POSTGRES_DB:-stayforget}"]
       interval: 3s
       timeout: 3s
-      retries: 5
+      retries: 10
+      start_period: 30s
     networks:
       - stayforget-network
 
   db-dev:
-    image: postgres:18-alpine
+    image: stayforget-postgres:18-alpine
+    build: ./db
     profiles: ["dev", "dev-backend"]
     restart: on-failure
     volumes:
       - stayforget_dev_db:/var/lib/postgresql
-      - ./init-scripts/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     environment:
       POSTGRES_DB: dev
       POSTGRES_USER: dev
@@ -158,7 +168,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
       interval: 3s
       timeout: 3s
-      retries: 5
+      retries: 10
+      start_period: 30s
     ports:
       - "5432:5432"
     networks:

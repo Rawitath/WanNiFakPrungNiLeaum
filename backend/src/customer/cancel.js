@@ -9,10 +9,13 @@ async function cancelReservation(req, res, next) {
       return res.status(400).json({ success: false, message: 'Reservation id is required' });
     }
 
-    try {
-      await db.query('DELETE FROM reservations WHERE reservation_id::text = $1', [String(id)]);
-    } catch (dbErr) {
-      // In-memory fallback
+    await db.query("ALTER TABLE reservations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'");
+    const updateResult = await db.query(
+      "UPDATE reservations SET status = 'cancelled' WHERE reservation_id::text = $1 RETURNING reservation_id",
+      [String(id)]
+    );
+    if (!updateResult.rows.length) {
+      return res.status(404).json({ success: false, message: 'Reservation not found' });
     }
 
     const idx = reservations.findIndex(

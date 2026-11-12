@@ -89,21 +89,6 @@ const config = POPUP_CONFIG[type];
           <Paw style={styles.pawBottomLeft} />
           <Paw style={styles.pawBottomRight} />
 
-          {/* Icon */}
-          <View
-            style={[
-              styles.iconCircle,
-              {
-                backgroundColor: config.color,
-                borderColor: config.borderColor,
-              },
-            ]}
-          >
-            <Text style={styles.iconText}>
-              {config.icon}
-            </Text>
-          </View>
-
           {/* Message */}
           <Text style={styles.message}>
             {message || config.message}

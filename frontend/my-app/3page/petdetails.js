@@ -12,40 +12,53 @@ const PetDetails = ({
   onBack,
   pet,
   petImage,
-  initialStatus = "In Care",
+  initialStatus,
   onStatusChange,
 }) => {
-  const [status, setStatus] = useState(initialStatus);
 
-  useEffect(() => {
-    setStatus(initialStatus || "รอรับเข้า");
-  }, [initialStatus, pet?.id]);
+const currentInitialStatus =
+  pet?.status || initialStatus || "รอยืนยันคิว";
 
-  const statusOptions = [
-    "รอรับเข้า",
-    "In Care",
-    "รอรับกลับ",
-    "รับกลับแล้ว",
-  ];
+const [status, setStatus] = useState(currentInitialStatus);
 
-  // ตรวจสอบว่าต้องแสดง Stepper ขั้นตอนหรือไม่
-  const shouldShowStatusStepper = statusOptions.includes(status);
+useEffect(() => {
+  setStatus(
+    pet?.status || initialStatus || "รอยืนยันคิว"
+  );
+}, [initialStatus, pet?.id, pet?.status]);
 
-  const displayValue = (value) => {
-    if (value === null || value === undefined || String(value).trim() === "") {
-      return "ไม่ได้ระบุ";
-    }
-    return String(value);
-  };
+const statusOptions = [
+  "รอรับเข้า",
+  "In Care",
+  "พร้อมรับกลับ",
+  "รับกลับแล้ว",
+];
 
-  const activeStatusIndex = statusOptions.indexOf(status);
+const isPendingOrRejected =
+  status === "รอยืนยันคิว" ||
+  status === "ถูกปฏิเสธ" ||
+  status === "pending" ||
+  status === "rejected";
 
-  const handleStatusChange = (value) => {
-    setStatus(value);
-    if (onStatusChange) {
-      onStatusChange(value);
-    }
-  };
+const shouldShowStatusStepper =
+  !isPendingOrRejected &&
+  statusOptions.includes(status);
+
+const displayValue = (value) => {
+  if (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ""
+  ) {
+    return "ไม่ได้ระบุ";
+  }
+
+  return String(value);
+};
+
+const activeStatusIndex = isPendingOrRejected
+  ? -1
+  : statusOptions.indexOf(status);
 
   return (
     <ScrollView
@@ -148,12 +161,12 @@ const PetDetails = ({
                 </View>
               )}
 
-              <Text style={styles.dateText}>
+              {/* <Text style={styles.dateText}>
                 วันที่เข้าพัก {displayValue(pet?.startDate || pet?.checkIn)} - {displayValue(pet?.endDate || pet?.checkOut)}
               </Text>
               <Text style={styles.dateText}>
                 สาขา {displayValue(pet?.branch)}
-              </Text>
+              </Text> */}
             </View>
           </View>
         </View>
@@ -182,8 +195,17 @@ const PetDetails = ({
           สถานะปัจจุบัน: {displayValue(status)}
         </Text>
 
-        {/* Progress Stepper */}
-        {shouldShowStatusStepper ? (
+        {isPendingOrRejected ? (
+          <View style={styles.emptyStatusStepper}>
+            <View style={styles.emptyStepperTrack}>
+              <Text style={styles.emptyStepperText}>
+                {status === "ถูกปฏิเสธ" || status === "rejected"
+                  ? "คำขอการจองถูกปฏิเสธ — ไม่มีความคืบหน้า"
+                  : "รอยืนยันคิวจากเจ้าหน้าที่ — ยังไม่มีความคืบหน้า"}
+              </Text>
+            </View>
+          </View>
+        ) : shouldShowStatusStepper ? (
           <View style={styles.statusStepper}>
             <View style={styles.statusProgressLine} />
 
@@ -192,23 +214,20 @@ const PetDetails = ({
               const completed = index < activeStatusIndex;
 
               return (
-                <TouchableOpacity
-                  key={item}
-                  style={styles.statusStep}
-                  onPress={() => handleStatusChange(item)}
-                  activeOpacity={0.8}
-                >
+                <View key={item} style={styles.statusStep}>
                   <View
                     style={[
                       styles.statusCircle,
-                      (active || completed) && styles.statusCircleActive,
+                      (active || completed) &&
+                        styles.statusCircleActive,
                       active && styles.statusCircleCurrent,
                     ]}
                   >
                     <Text
                       style={[
                         styles.statusCircleText,
-                        (active || completed) && styles.statusCircleTextActive,
+                        (active || completed) &&
+                          styles.statusCircleTextActive,
                       ]}
                     >
                       {completed ? "✓" : index + 1}
@@ -219,13 +238,15 @@ const PetDetails = ({
                     <View
                       style={[
                         styles.statusIndicatorLine,
-                        (active || completed) && styles.statusIndicatorLineActive,
+                        (active || completed) &&
+                          styles.statusIndicatorLineActive,
                       ]}
                     />
                     <View
                       style={[
                         styles.statusIndicatorLine,
-                        (active || completed) && styles.statusIndicatorLineActive,
+                        (active || completed) &&
+                          styles.statusIndicatorLineActive,
                       ]}
                     />
                   </View>
@@ -239,7 +260,7 @@ const PetDetails = ({
                   >
                     {item}
                   </Text>
-                </TouchableOpacity>
+                </View>
               );
             })}
           </View>
@@ -337,8 +358,10 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   petId: {
+    marginTop: 5,
+    marginRight: 20,
     backgroundColor: "#9CF0A9",
-    width: 70,
+    width: 250,
     paddingVertical: 4,
     borderRadius: 20,
     alignItems: "center",
@@ -382,6 +405,7 @@ const styles = StyleSheet.create({
     width: 205,
     alignItems: "center",
     justifycontent: "center",
+    marginTop: 15,
     marginLeft: 10,
   },
   petImage: {
@@ -509,6 +533,28 @@ const styles = StyleSheet.create({
   statusStepLabelCompleted: {
     color: "#246AA5",
     fontWeight: "600",
+  },
+  emptyStatusStepper: {
+    width: "100%",
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyStepperTrack: {
+    backgroundColor: "#F8FAFC",
+    paddingHorizontal: 25,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderStyle: "dashed",
+    alignItems: "center",
+    minWidth: 260,
+  },
+  emptyStepperText: {
+    fontSize: 13,
+    color: "#64748B",
+    fontWeight: "500",
   },
 });
 

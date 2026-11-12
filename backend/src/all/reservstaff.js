@@ -51,6 +51,7 @@ router.use('/staff', staffOnly);
  */
 router.get('/staff/reservation', async (req, res, next) => {
   try {
+    await db.query("ALTER TABLE reservations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'");
     const id = req.query.id;
     if (id !== undefined && id !== null && id !== '') {
       try {
@@ -302,6 +303,7 @@ router.put('/staff/reservation', async (req, res, next) => {
  */
 router.put('/staff/reservation/:reservationId/confirm', async (req, res, next) => {
   try {
+    await db.query("ALTER TABLE reservations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'");
     const { id, accept } = req.body || {};
     if (typeof accept === 'undefined') {
       return res.status(400).json({ error: 'accept required' });
@@ -311,78 +313,57 @@ router.put('/staff/reservation/:reservationId/confirm', async (req, res, next) =
     const isAccepted = String(accept) === 'true';
 
     if (isAccepted) {
-      let petRecord = null;
-      try {
-        const resQuery = await db.query(
-          'SELECT * FROM reservations WHERE reservation_id::text = $1',
-          [String(targetId)]
-        );
-        if (resQuery.rows.length > 0) {
-          const r = resQuery.rows[0];
-          const newPetId = uuidv4();
-          await db.query(
-            `INSERT INTO pets (
-               pet_id, userid, branch_id, customer_name, customer_phone, customer_email,
-               reservation_date, check_in, check_out, pet_name, pet_type, pet_breed,
-               pet_sex, pet_weight, pet_birth, status, pet_condition, pet_note
-             ) VALUES (
-               $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
-             )`,
-            [
-              newPetId,
-              r.userid,
-              r.branch_id,
-              r.customer_name,
-              r.customer_phone,
-              r.customer_email,
-              r.reservation_date || new Date(),
-              r.check_in,
-              r.check_out,
-              r.pet_name,
-              r.pet_type,
-              r.pet_breed,
-              r.pet_sex,
-              r.pet_weight,
-              r.pet_birth,
-              'confirmed',
-              r.pet_condition,
-              r.pet_note,
-            ]
-          );
-          petRecord = { id: newPetId, petId: newPetId, ...r, status: 'confirmed' };
-        }
-      } catch (dbErr) {
-        // Fallback
+      const resQuery = await db.query(
+        'SELECT * FROM reservations WHERE reservation_id::text = $1',
+        [String(targetId)]
+      );
+      if (!resQuery.rows.length) {
+        return res.status(404).json({ success: false, error: 'Reservation not found' });
       }
 
-      const foundRes = reservations.find(
-        (r) => String(r.reservationId) === String(targetId) || String(r.id) === String(targetId)
+      const r = resQuery.rows[0];
+      const existingPet = await db.query(
+        `SELECT pet_id FROM pets
+         WHERE customer_email = $1 AND pet_name = $2 AND branch_id = $3
+           AND check_in = $4 AND check_out = $5
+         LIMIT 1`,
+        [r.customer_email, r.pet_name, r.branch_id, r.check_in, r.check_out]
       );
-      if (foundRes) {
-        foundRes.status = 'accepted';
-        pets.push({
-          id: foundRes.id || 1,
-          petId: foundRes.reservationId || 1,
-          customerName: foundRes.customerName,
-          customerPhone: foundRes.customerPhone,
-          customerEmail: foundRes.customerEmail,
-          petName: foundRes.petName,
-          petType: foundRes.petType,
-          petBreed: foundRes.petBreed,
-          petSex: foundRes.petSex,
-          petWeight: foundRes.petWeight,
-          petBirth: foundRes.petBirth,
-          petCondition: foundRes.petCondition,
-          petNote: foundRes.petNote,
-          status: 'confirmed',
-          checkIn: foundRes.checkIn,
-          checkOut: foundRes.checkOut,
-          branch: foundRes.branch,
-        });
+
+      if (!existingPet.rows.length) {
+        await db.query(
+          `INSERT INTO pets (
+             pet_id, userid, branch_id, customer_name, customer_phone, customer_email,
+             reservation_date, check_in, check_out, pet_name, pet_type, pet_breed,
+             pet_sex, pet_weight, pet_birth, status, pet_condition, pet_note
+           ) VALUES (
+             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+           )`,
+          [
+            uuidv4(), r.userid, r.branch_id, r.customer_name, r.customer_phone,
+            r.customer_email, r.reservation_date || new Date().toISOString(),
+            r.check_in, r.check_out, r.pet_name, r.pet_type, r.pet_breed, r.pet_sex,
+            r.pet_weight, r.pet_birth, 'confirmed', r.pet_condition, r.pet_note,
+          ]
+        );
       }
+
+      await db.query(
+        "UPDATE reservations SET status = 'accepted' WHERE reservation_id::text = $1",
+        [String(targetId)]
+      );
+
+      const foundRes = reservations.find(
+        (item) => String(item.reservationId) === String(targetId) || String(item.id) === String(targetId)
+      );
+      if (foundRes) foundRes.status = 'accepted';
 
       return res.status(200).json({ success: true, status: 'accepted' });
     } else {
+      await db.query(
+        "UPDATE reservations SET status = 'rejected' WHERE reservation_id::text = $1",
+        [String(targetId)]
+      );
       const foundRes = reservations.find(
         (r) => String(r.reservationId) === String(targetId) || String(r.id) === String(targetId)
       );

@@ -336,10 +336,10 @@ pipeline {
                                 command: """
                                     docker compose -p ${env.COMPOSE_PROJECT_NAME} up -d backend
                                     docker run --rm \\
-                                        --network ${env.COMPOSE_PROJECT_NAME}_stayforget-network \\
+                                        --network host \\
                                         curlimages/curl:latest \\
                                         curl --fail --retry 5 --retry-delay 3 --retry-connrefused \\
-                                        http://backend:3000/api/docs
+                                        http://localhost:3000/api/docs
                                 """,
                                 useCredentials: true
                             )
@@ -360,10 +360,10 @@ pipeline {
                                 command: """
                                     docker compose -p ${env.COMPOSE_PROJECT_NAME} up -d frontend
                                         docker run --rm \\
-                                            --network ${env.COMPOSE_PROJECT_NAME}_stayforget-network \\
+                                            --network host \\
                                             curlimages/curl:latest \\
                                             curl --fail --retry 5 --retry-delay 3 --retry-connrefused \\
-                                            http://frontend:8081/
+                                            http://localhost:8081/
                                 """,
                                 useCredentials: false
                             )
@@ -387,17 +387,15 @@ pipeline {
                                 command: """
                                     docker compose -p ${env.COMPOSE_PROJECT_NAME} up -d
                                     sleep 10
-                                    # 3. ดึงชื่อ Network จริงของ Compose project มาใช้โดยอัตโนมัติ
-                                    COMPOSE_NET=\$(docker network ls --filter "name=${env.COMPOSE_PROJECT_NAME}" --format "{{.Name}}" | head -n 1)
 
                                     # 4. ยิง curl ทดสอบทีละตัว
                                     echo "=== Checking Frontend ==="
-                                    docker run --rm --network \${COMPOSE_NET} curlimages/curl:latest \
-                                        curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://frontend:8081/
+                                    docker run --rm --network host curlimages/curl:latest \
+                                        curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://localhost:8081/
 
                                     echo "=== Checking Backend ==="
-                                    docker run --rm --network \${COMPOSE_NET} curlimages/curl:latest \
-                                        curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://backend:3000/api/docs
+                                    docker run --rm --network host curlimages/curl:latest \
+                                        curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000/api/docs
                                 """,
                                 useCredentials: true
                             )

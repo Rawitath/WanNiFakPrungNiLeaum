@@ -12,9 +12,9 @@ import {
 } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const PANEL_WIDTH = SCREEN_WIDTH / 3;
+const PANEL_WIDTH = SCREEN_WIDTH / 4;
 
-export default function UserSidePanel({ visible, onClose, pet }) {
+export default function UserSidePanel({ visible, onClose, pet, information }) {
     const slideAnim = useRef(
         new Animated.Value(PANEL_WIDTH)
     ).current;
@@ -47,19 +47,36 @@ export default function UserSidePanel({ visible, onClose, pet }) {
         onClose();
     };
 
+    const target = information || pet;
+    const petsFromTarget =
+        (Array.isArray(target?.pets) && target.pets) ||
+        (Array.isArray(target?.animals) && target.animals) ||
+        (Array.isArray(target?.petList) && target.petList) ||
+        (Array.isArray(target?.customer?.pets) && target.customer.pets) ||
+        (Array.isArray(target) && target) ||
+        [];
+    const petsToDisplay = petsFromTarget.length > 0
+        ? petsFromTarget
+        : (target?.petId || target?.pet_id || target?.petName || target?.pet_name || target?.name)
+            ? [target]
+            : [];
     const booking = {
-        bookingId: "0001",
+        bookingId: target?.bookingId || target?.id || "0001",
 
         customer: [
-            { label: "ชื่อ", value: "คุณสมหญิง" },
-            { label: "เบอร์", value: "08X-XXX-XXXX" },
-            { label: "อีเมล", value: "example@email.com" },
+            { label: "ชื่อ", value: target?.customerName || target?.owner?.name || (typeof target?.owner === "string" ? target.owner : "คุณลูกค้า") },
+            { label: "เบอร์", value: target?.customerPhone || target?.owner?.phone || target?.phone || "08X-XXX-XXXX" },
+            { label: "อีเมล", value: target?.customerEmail || target?.owner?.email || target?.email || "example@email.com" },
         ],
 
-        pets: [
-            { petId: "P001", petName: "Mochi", type: "Dog", breed: "Golden" },
-            { petId: "P002", petName: "Momo", type: "Cat", breed: "Persian" },
-        ],
+        // แสดงสัตว์เลี้ยงทุกตัวที่มีในข้อมูล โดยไม่กรองตามสถานะ
+        pets: petsToDisplay.map((item, index) => ({
+            petId: item?.petId || item?.pet_id || item?.id || `P${index + 1}`,
+            petName: item?.petName || item?.pet_name || item?.name || "สัตว์เลี้ยง",
+            type: item?.petType || item?.pet_type || item?.type || "-",
+            breed: item?.petBreed || item?.pet_breed || item?.breed || "-",
+            status: item?.status || item?.petStatus || item?.pet_status || "-",
+        })),
     };
 
     // Component สำหรับแสดงหัวข้อและข้อมูล
@@ -119,13 +136,6 @@ export default function UserSidePanel({ visible, onClose, pet }) {
                             <Text style={styles.title}>
                                 ข้อมูลลูกค้า
                             </Text>
-
-                            <Pressable
-                                onPress={closePanel}
-                                style={styles.closeButton}
-                            >
-                                <Text style={styles.closeText}>✕</Text>
-                            </Pressable>
                         </View>
 
                         {/* กรอบสีน้ำเงินอ่อน */}
@@ -138,9 +148,9 @@ export default function UserSidePanel({ visible, onClose, pet }) {
                     >
 
                         {/* รหัสการจอง */}
-                        <Text style={styles.bookingId}>
+                        {/* <Text style={styles.bookingId}>
                             รหัสลูกค้า: {booking.bookingId}
-                        </Text>
+                        </Text> */}
 
                         {/* ข้อมูลลูกค้า */}
                         {renderSection(
@@ -161,26 +171,34 @@ export default function UserSidePanel({ visible, onClose, pet }) {
                                     <Text style={styles.petTableHeader}>PetID</Text>
                                     <Text style={styles.petTableHeader}>Petname</Text>
                                     <Text style={styles.petTableHeader}>Type</Text>
-                                    <Text style={styles.petTableHeader}>Breed</Text>
+                                    <Text style={styles.petTableHeader}>สถานะ</Text>
                                 </View>
 
                             {/* เส้นสีเหลือง */}
                             <View style={styles.footerLine2} />
 
                                 {/* ข้อมูลในตาราง */}
-                                {booking.pets.map((pet) => (
-                                    <View key={pet.petId} style={styles.petTableRow}>
-                                        <Text style={styles.petTableCell}>{pet.petId}</Text>
-                                        <Text style={styles.petTableCell}>{pet.petName}</Text>
-                                        <Text style={styles.petTableCell}>{pet.type}</Text>
-                                        <Text style={styles.petTableCell}>{pet.breed}</Text>
-                                    </View>
-                                ))}
+                                <ScrollView
+                                    style={styles.petRows}
+                                    nestedScrollEnabled
+                                    showsVerticalScrollIndicator
+                                >
+                                    {booking.pets.length > 0 ? booking.pets.map((pet, index) => (
+                                        <View key={`${pet.petId}-${index}`} style={styles.petTableRow}>
+                                            <Text style={styles.petTableCell}>{pet.petId}</Text>
+                                            <Text style={styles.petTableCell}>{pet.petName}</Text>
+                                            <Text style={styles.petTableCell}>{pet.type}</Text>
+                                            <Text style={styles.petTableCell}>{pet.status}</Text>
+                                        </View>
+                                    )) : (
+                                        <Text style={styles.emptyPets}>ไม่พบข้อมูลสัตว์เลี้ยง</Text>
+                                    )}
+                                </ScrollView>
                             </View>
                         </View>
 
                         {/* อุ้งเท้ามุมซ้ายล่าง */}
-                        <View style={styles.pawTopLeft3}>
+                        <View style={styles.pawTopLeft2}>
                             <svg
                                 width="50"
                                 height="50"
@@ -197,36 +215,9 @@ export default function UserSidePanel({ visible, onClose, pet }) {
 
                     </ScrollView>
 
-                    {/* อุ้งเท้ามุมซ้ายล่าง */}
-                    <View style={styles.pawTopLeft2}>
-                        <svg
-                            width="50"
-                            height="50"
-                            viewBox="-10 -10 120 120"
-                            fill="#345172"
-                            opacity="1"
-                        >
-                            <ellipse cx="50" cy="65" rx="35" ry="30" />
-                            <ellipse cx="10" cy="25" rx="15" ry="15" />
-                            <ellipse cx="50" cy="10" rx="15" ry="15" />
-                            <ellipse cx="95" cy="22" rx="15" ry="15" />
-                        </svg>
-                    </View>
 
                     {/* ส่วนล่างของ Panel */}
                     <View style={styles.bottomContainer}>
-                        {/* ปุ่ม */}
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => { }}
-                            >
-                                <Text style={styles.actionButtonText}>
-                                    ยืนยัน
-                                </Text>
-                            </TouchableOpacity>
-
-                        </View>
 
                         {/* เส้นสีเหลือง */}
                         <View style={styles.footerLine} />
@@ -266,7 +257,7 @@ const styles = StyleSheet.create({
 
     panelBorder: {
         backgroundColor: "#1a6692",
-        width: "100%",
+        width: 500,
         paddingVertical: 5,
         paddingHorizontal: 15,
         marginBottom: 0,
@@ -274,24 +265,18 @@ const styles = StyleSheet.create({
 
     panelBorder2: {
         backgroundColor: "#03314c",
-        width: "100%",
+        width: 500,
+        // height: "100%",
         paddingVertical: 15,
         paddingHorizontal: 0,
-        marginBottom: 20,
+        // marginBottom: 20,
     },
 
     pawTopLeft2: {
         position: "absolute",
-        top: 230,
+        top: 165,
         left: 300,
         transform: [{ rotate: "30deg" }],
-    },
-
-    pawTopLeft3: {
-        position: "absolute",
-        top: 445,
-        left: 50,
-        transform: [{ rotate: "300deg" }],
     },
 
     topHeader: {
@@ -308,18 +293,6 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
 
-    closeButton: {
-        position: "absolute",
-        right: 0,
-        top: 0,
-        padding: 4,
-    },
-
-    closeText: {
-        color: "#FFFFFF",
-        fontSize: 15,
-    },
-
     scrollContent: {
         paddingBottom: 5,
     },
@@ -330,7 +303,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 26,
         marginTop: 5,
-        marginLeft: 57,
+        marginLeft: 40,
     },
 
     section: {
@@ -340,7 +313,7 @@ const styles = StyleSheet.create({
     sectionHeader: {
         backgroundColor: "#9BD4F5",
         alignSelf: "flex-end",
-        width: "87%",
+        width: "92%",
         marginTop: 10,
         paddingVertical: 9,
         paddingHorizontal: 15,
@@ -382,26 +355,6 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
     },
 
-    buttonContainer: {
-        marginBottom: 10,
-        width: "100%",
-        alignItems: "center",
-    },
-
-    actionButton: {
-        backgroundColor: "#f8931f",
-        width: "30%",
-        paddingVertical: 10,
-        borderRadius: 10,
-        alignItems: "center",
-    },
-
-    actionButtonText: {
-        color: "#fbf7f7",
-        fontSize: 15,
-        fontWeight: "regular",
-    },
-
     footerLine: {
         height: 3,
         backgroundColor: "#fcaf3b",
@@ -426,11 +379,22 @@ const styles = StyleSheet.create({
     },
     
     petTable: {
-        width: "80%",
+        width: "96%",
         borderWidth: "none",
         borderColor: "none",
         marginTop: 10,
-        marginLeft: 60,
+        marginLeft: 28,
+    },
+
+    petRows: {
+        maxHeight: 390,
+    },
+
+    emptyPets: {
+        color: "#FFFFFF",
+        fontSize: 12,
+        textAlign: "center",
+        paddingVertical: 14,
     },
 
     petTableRow: {
@@ -442,7 +406,7 @@ const styles = StyleSheet.create({
     petTableHeader: {
         flex: 1,
         color: "#FFFFFF",
-        fontSize: 12,
+        fontSize: 15,
         fontWeight: "bold",
         textAlign: "center",
         paddingVertical: 10,
@@ -453,7 +417,7 @@ const styles = StyleSheet.create({
     petTableCell: {
         flex: 1,
         color: "#FFFFFF",
-        fontSize: 12,
+        fontSize: 13,
         textAlign: "center",
         paddingVertical: 12,
         borderRightWidth: "none",

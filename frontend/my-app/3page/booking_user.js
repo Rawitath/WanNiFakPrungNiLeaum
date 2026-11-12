@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { BRANCHES } from "../2components/branchConfig";
 import {
   View,
   Text,
@@ -17,20 +18,15 @@ const formatDate = (date) => {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
-
   return `${day}/${month}/${year}`;
 };
 
 // แปลง DD/MM/YYYY เป็น Date
 const parseDate = (value) => {
   if (!value) return null;
-
   const [day, month, year] = value.split("/").map(Number);
-
   if (!day || !month || !year) return null;
-
   const date = new Date(year, month - 1, day);
-
   if (
     date.getDate() !== day ||
     date.getMonth() !== month - 1 ||
@@ -38,11 +34,10 @@ const parseDate = (value) => {
   ) {
     return null;
   }
-
   return date;
 };
 
-// ช่องกรอกข้อมูล แยกออกมานอก BookingUser เพื่อไม่ให้ช่องกรอกถูกสร้างใหม่ทุกครั้งที่พิมพ์
+// ช่องกรอกข้อมูล
 const Field = ({
   label,
   value,
@@ -53,12 +48,8 @@ const Field = ({
 }) => (
   <View style={styles.fieldContainer}>
     <Text style={styles.fieldLabel}>{label}</Text>
-
     <TextInput
-      style={[
-        styles.input,
-        multiline && styles.multilineInput,
-      ]}
+      style={[styles.input, multiline && styles.multilineInput]}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder || ""}
@@ -71,6 +62,7 @@ const Field = ({
 );
 
 export default function BookingUser({ onBack, onSubmit }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBranches, setShowBranches] = useState(false);
   const [branch, setBranch] = useState("");
 
@@ -88,24 +80,16 @@ export default function BookingUser({ onBack, onSubmit }) {
     careNotes: "",
     checkIn: "",
     checkOut: "",
-    checkInTime: "",
-    checkOutTime: "",
+    bookingTime: "",
   });
 
-  // ควบคุม Modal เลือกวันและเวลา
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerType, setPickerType] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(new Date());
-
-  const [selectedHour, setSelectedHour] = useState("09");
+  const [selectedHour, setSelectedHour] = useState("10");
   const [selectedMinute, setSelectedMinute] = useState("00");
 
-  const branches = [
-    "สาขาลาดกระบัง",
-    "สาขาร่มเกล้า",
-    "สาขาปราจีนบุรี",
-    "สาขาหาดใหญ่",
-  ];
+  const selectedBranch = BRANCHES.find((item) => item.value === branch);
 
   const updateForm = (key, value) => {
     setForm((prev) => ({
@@ -117,30 +101,20 @@ export default function BookingUser({ onBack, onSubmit }) {
   // เปิดปฏิทิน
   const openDatePicker = (type) => {
     setPickerType(type);
-
     const currentDate = parseDate(form[type]) || new Date();
-
     setCalendarMonth(
-      new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        1
-      )
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     );
-
     setPickerVisible(true);
   };
 
   // เปิดตัวเลือกเวลา
   const openTimePicker = (type) => {
     setPickerType(type);
-
-    const currentTime = form[type] || "09:00";
+    const currentTime = form[type] || "10:00";
     const [hour, minute] = currentTime.split(":");
-
-    setSelectedHour(hour || "09");
+    setSelectedHour(hour || "10");
     setSelectedMinute(minute || "00");
-
     setPickerVisible(true);
   };
 
@@ -152,38 +126,61 @@ export default function BookingUser({ onBack, onSubmit }) {
       day
     );
 
+    // วันเกิดต้องไม่เป็นวันที่ในอนาคต
+    if (pickerType === "age") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate > today) {
+        Alert.alert(
+          "แจ้งเตือน",
+          "วันเกิดไม่สามารถเป็นวันที่ในอนาคตได้"
+        );
+        return;
+      }
+    }
+
     updateForm(pickerType, formatDate(selectedDate));
     setPickerVisible(false);
   };
 
-  // เลือกเวลา
+  // ยืนยันเวลา
   const handleConfirmTime = () => {
     const selectedTime = `${selectedHour}:${selectedMinute}`;
-
     updateForm(pickerType, selectedTime);
     setPickerVisible(false);
   };
 
   // เปลี่ยนเดือน
   const changeMonth = (amount) => {
-    setCalendarMonth(
-      (prev) =>
-        new Date(
-          prev.getFullYear(),
-          prev.getMonth() + amount,
-          1
-        )
-    );
+    setCalendarMonth((prev) => {
+      const nextMonth = new Date(
+        prev.getFullYear(),
+        prev.getMonth() + amount,
+        1
+      );
+
+      // วันเกิดไม่สามารถเลื่อนไปยังเดือนในอนาคต
+      if (pickerType === "age") {
+        const currentMonth = new Date();
+        currentMonth.setDate(1);
+        currentMonth.setHours(0, 0, 0, 0);
+        if (nextMonth > currentMonth) {
+          return prev;
+        }
+      }
+
+      return nextMonth;
+    });
   };
 
-  // คำนวณจำนวนวันในเดือน
+  // จำนวนวันในเดือน
   const daysInMonth = new Date(
     calendarMonth.getFullYear(),
     calendarMonth.getMonth() + 1,
     0
   ).getDate();
 
-  // วันแรกของเดือน โดยให้วันจันทร์เป็นวันแรก
+  // วันเริ่มต้นของสัปดาห์
   const firstDay = (
     new Date(
       calendarMonth.getFullYear(),
@@ -208,22 +205,26 @@ export default function BookingUser({ onBack, onSubmit }) {
   ];
 
   const weekDays = ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"];
+  const isBirthdayPicker = pickerType === "age";
 
-  // ตรวจสอบข้อมูลก่อนส่ง
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const isCurrentCalendarMonth =
+    calendarMonth.getFullYear() === today.getFullYear() &&
+    calendarMonth.getMonth() === today.getMonth();
+
+  // ตรวจสอบและส่งข้อมูลการจอง
   const handleSubmit = () => {
     if (
-      !form.ownerName.trim() ||
-      !form.phone.trim() ||
       !form.petName.trim() ||
       !form.checkIn ||
       !form.checkOut ||
-      !form.checkInTime ||
-      !form.checkOutTime ||
       !branch
     ) {
       Alert.alert(
         "แจ้งเตือน",
-        "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน"
+        "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วนและเลือกสาขา"
       );
       return;
     }
@@ -244,23 +245,23 @@ export default function BookingUser({ onBack, onSubmit }) {
       return;
     }
 
+    // branch เป็นชื่อสาขาจริงที่ Backend ใช้ค้นหา branch_id
     const bookingData = {
       ...form,
       branch,
     };
 
-    if (onSubmit) {
-      onSubmit(bookingData);
-    } else {
-      Alert.alert("สำเร็จ", "ส่งข้อมูลการจองเรียบร้อยแล้ว");
+    if (onSubmit && !isSubmitting) {
+      setIsSubmitting(true);
+      Promise.resolve(onSubmit(bookingData))
+        .finally(() => setIsSubmitting(false));
     }
   };
 
-  // แสดงช่องเลือกวัน
+  // ช่องเลือกวันที่
   const DateField = ({ label, value, type, placeholder }) => (
     <View style={styles.fieldContainer}>
       <Text style={styles.fieldLabel}>{label}</Text>
-
       <TouchableOpacity
         style={styles.pickerButton}
         onPress={() => openDatePicker(type)}
@@ -274,39 +275,13 @@ export default function BookingUser({ onBack, onSubmit }) {
         >
           {value || placeholder || "เลือกวันที่"}
         </Text>
-
         <Text style={styles.pickerIcon}>▦</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  // แสดงช่องเลือกเวลา
-  const TimeField = ({ label, value, type }) => (
-    <View style={styles.fieldContainer}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-
-      <TouchableOpacity
-        style={styles.pickerButton}
-        onPress={() => openTimePicker(type)}
-        activeOpacity={0.8}
-      >
-        <Text
-          style={[
-            styles.pickerButtonText,
-            !value && styles.placeholderText,
-          ]}
-        >
-          {value || "เลือกเวลา"}
-        </Text>
-
-        <Text style={styles.pickerIcon}>◷</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {/* BACK BUTTON */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={onBack}
@@ -315,10 +290,8 @@ export default function BookingUser({ onBack, onSubmit }) {
         <Text style={styles.backButtonText}>ย้อนกลับ</Text>
       </TouchableOpacity>
 
-      {/* MAIN SECTION */}
       <View style={styles.mainWrapper}>
         <View style={styles.mainSection}>
-          {/* LEFT SIDE */}
           <View style={styles.leftSection}>
             <Image
               source={require("../1assets/titlelogo.png")}
@@ -327,7 +300,6 @@ export default function BookingUser({ onBack, onSubmit }) {
             />
           </View>
 
-          {/* RIGHT SIDE */}
           <View style={styles.rightSection}>
             <Text style={styles.title}>Booking Form</Text>
 
@@ -340,8 +312,6 @@ export default function BookingUser({ onBack, onSubmit }) {
               <View style={styles.formColumns}>
                 {/* COLUMN 1 */}
                 <View style={styles.formColumn}>
-
-                  {/* PET INFORMATION */}
                   <Text style={styles.sectionTitle}>
                     ข้อมูลสัตว์เลี้ยง
                   </Text>
@@ -349,54 +319,42 @@ export default function BookingUser({ onBack, onSubmit }) {
                   <Field
                     label="ชื่อสัตว์เลี้ยง"
                     value={form.petName}
-                    onChangeText={(v) =>
-                      updateForm("petName", v)
-                    }
+                    onChangeText={(v) => updateForm("petName", v)}
                     placeholder="กรอกชื่อสัตว์เลี้ยง"
                   />
 
                   <Field
                     label="ประเภท"
                     value={form.petType}
-                    onChangeText={(v) =>
-                      updateForm("petType", v)
-                    }
+                    onChangeText={(v) => updateForm("petType", v)}
                     placeholder="เช่น สุนัข / แมว"
                   />
 
                   <Field
                     label="สายพันธุ์"
                     value={form.breed}
-                    onChangeText={(v) =>
-                      updateForm("breed", v)
-                    }
+                    onChangeText={(v) => updateForm("breed", v)}
                     placeholder="กรอกสายพันธุ์"
                   />
 
                   <Field
                     label="เพศ"
                     value={form.gender}
-                    onChangeText={(v) =>
-                      updateForm("gender", v)
-                    }
+                    onChangeText={(v) => updateForm("gender", v)}
                     placeholder="กรอกเพศ"
                   />
 
-                  <Field
+                  <DateField
                     label="วันเกิด"
                     value={form.age}
-                    onChangeText={(v) =>
-                      updateForm("age", v)
-                    }
-                    placeholder="วัน/เดือน/ปี"
+                    type="age"
+                    placeholder="วันเกิด"
                   />
 
                   <Field
                     label="น้ำหนัก"
                     value={form.weight}
-                    onChangeText={(v) =>
-                      updateForm("weight", v)
-                    }
+                    onChangeText={(v) => updateForm("weight", v)}
                     placeholder="น้ำหนัก (กิโลกรัม)"
                     keyboardType="decimal-pad"
                   />
@@ -404,9 +362,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                   <Field
                     label="โรคประจำตัว/ประวัติการแพ้ยา-อาหาร"
                     value={form.health}
-                    onChangeText={(v) =>
-                      updateForm("health", v)
-                    }
+                    onChangeText={(v) => updateForm("health", v)}
                     placeholder="กรอกรายละเอียด"
                     multiline
                   />
@@ -414,9 +370,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                   <Field
                     label="ข้อจำกัด/คำแนะนำในการดูแล"
                     value={form.careNotes}
-                    onChangeText={(v) =>
-                      updateForm("careNotes", v)
-                    }
+                    onChangeText={(v) => updateForm("careNotes", v)}
                     placeholder="กรอกรายละเอียด"
                     multiline
                   />
@@ -436,22 +390,19 @@ export default function BookingUser({ onBack, onSubmit }) {
                   />
 
                   <DateField
-                    label="วันที่เข้ารับ"
+                    label="วันที่เข้ารับกลับ"
                     value={form.checkOut}
                     type="checkOut"
                     placeholder="เลือกวันที่รับกลับ"
                   />
 
-                  {/* BRANCH */}
                   <Text style={styles.branchTitle}>
                     เลือกสาขา
                   </Text>
 
                   <TouchableOpacity
                     style={styles.branchButton}
-                    onPress={() =>
-                      setShowBranches(!showBranches)
-                    }
+                    onPress={() => setShowBranches(true)}
                     activeOpacity={0.8}
                   >
                     <Text
@@ -460,55 +411,26 @@ export default function BookingUser({ onBack, onSubmit }) {
                         !branch && styles.branchPlaceholder,
                       ]}
                     >
-                      {branch || "เลือกสาขา"}
+                      {selectedBranch?.label || "เลือกสาขา"}
                     </Text>
-
                     <Text style={styles.arrow}>▼</Text>
                   </TouchableOpacity>
-
-                  {showBranches && (
-                    <View style={styles.dropdown}>
-                      {branches.map((item) => (
-                        <TouchableOpacity
-                          key={item}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setBranch(item);
-                            setShowBranches(false);
-                          }}
-                        >
-                          <Text style={styles.dropdownText}>
-                            {item}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
 
                   <TouchableOpacity
                     style={styles.confirmButton}
                     onPress={handleSubmit}
+                    disabled={isSubmitting}
                     activeOpacity={0.8}
                   >
                     <Text style={styles.confirmText}>
-                      ยืนยัน
+                      {isSubmitting
+                        ? "กำลังบันทึก..."
+                        : "ยืนยันการจอง"}
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </ScrollView>
-          </View>
-
-          {/* PET DECORATION */}
-          <View
-            style={styles.petDecoration}
-            pointerEvents="none"
-          >
-            <Image
-              source={require("../1assets/piclogo.png")}
-              style={styles.petpic}
-              resizeMode="cover"
-            />
           </View>
         </View>
       </View>
@@ -522,17 +444,19 @@ export default function BookingUser({ onBack, onSubmit }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.pickerModal}>
-            {/* DATE PICKER */}
-            {pickerType === "checkIn" ||
+            {pickerType === "age" ||
+            pickerType === "checkIn" ||
             pickerType === "checkOut" ? (
               <>
                 <Text style={styles.modalTitle}>
-                  {pickerType === "checkIn"
+                  {pickerType === "age"
+                    ? "เลือกวันเกิดสัตว์เลี้ยง"
+                    : pickerType === "checkIn"
                     ? "เลือกวันที่ฝาก"
                     : "เลือกวันที่รับกลับ"}
                 </Text>
 
-                {/* MONTH HEADER */}
+                {/* หัวปฏิทิน */}
                 <View style={styles.calendarHeader}>
                   <TouchableOpacity
                     style={styles.monthButton}
@@ -547,28 +471,40 @@ export default function BookingUser({ onBack, onSubmit }) {
                   </Text>
 
                   <TouchableOpacity
-                    style={styles.monthButton}
+                    style={[
+                      styles.monthButton,
+                      isBirthdayPicker &&
+                        isCurrentCalendarMonth &&
+                        styles.disabledMonthButton,
+                    ]}
                     onPress={() => changeMonth(1)}
+                    disabled={
+                      isBirthdayPicker && isCurrentCalendarMonth
+                    }
                   >
-                    <Text style={styles.monthButtonText}>›</Text>
+                    <Text
+                      style={[
+                        styles.monthButtonText,
+                        isBirthdayPicker &&
+                          isCurrentCalendarMonth &&
+                          styles.disabledCalendarText,
+                      ]}
+                    >
+                      ›
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* WEEK DAYS */}
+                {/* วันในสัปดาห์ */}
                 <View style={styles.calendarGrid}>
                   {weekDays.map((day) => (
-                    <View
-                      key={day}
-                      style={styles.calendarCell}
-                    >
-                      <Text style={styles.weekDayText}>
-                        {day}
-                      </Text>
+                    <View key={day} style={styles.calendarCell}>
+                      <Text style={styles.weekDayText}>{day}</Text>
                     </View>
                   ))}
                 </View>
 
-                {/* DATE GRID */}
+                {/* วันที่ในปฏิทิน */}
                 <View style={styles.calendarGrid}>
                   {Array.from(
                     { length: firstDay },
@@ -584,10 +520,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                     { length: daysInMonth },
                     (_, index) => {
                       const day = index + 1;
-
-                      const selectedDate = parseDate(
-                        form[pickerType]
-                      );
+                      const selectedDate = parseDate(form[pickerType]);
 
                       const isSelected =
                         selectedDate &&
@@ -597,33 +530,32 @@ export default function BookingUser({ onBack, onSubmit }) {
                         selectedDate.getFullYear() ===
                           calendarMonth.getFullYear();
 
-                      const isToday =
-                        new Date().getDate() === day &&
-                        new Date().getMonth() ===
-                          calendarMonth.getMonth() &&
-                        new Date().getFullYear() ===
-                          calendarMonth.getFullYear();
+                      const dateToCheck = new Date(
+                        calendarMonth.getFullYear(),
+                        calendarMonth.getMonth(),
+                        day
+                      );
+
+                      const isFutureBirthday =
+                        isBirthdayPicker && dateToCheck > today;
 
                       return (
                         <TouchableOpacity
                           key={day}
                           style={[
                             styles.calendarCell,
-                            isSelected &&
-                              styles.selectedCalendarCell,
+                            isSelected && styles.selectedCalendarCell,
+                            isFutureBirthday && styles.disabledCalendarCell,
                           ]}
-                          onPress={() =>
-                            handleSelectDate(day)
-                          }
+                          onPress={() => handleSelectDate(day)}
+                          disabled={isFutureBirthday}
+                          activeOpacity={0.75}
                         >
                           <Text
                             style={[
                               styles.calendarDayText,
-                              isSelected &&
-                                styles.selectedCalendarText,
-                              isToday &&
-                                !isSelected &&
-                                styles.todayCalendarText,
+                              isSelected && styles.selectedCalendarText,
+                              isFutureBirthday && styles.disabledCalendarText,
                             ]}
                           >
                             {day}
@@ -638,13 +570,10 @@ export default function BookingUser({ onBack, onSubmit }) {
                   style={styles.cancelButton}
                   onPress={() => setPickerVisible(false)}
                 >
-                  <Text style={styles.cancelButtonText}>
-                    ยกเลิก
-                  </Text>
+                  <Text style={styles.cancelButtonText}>ยกเลิก</Text>
                 </TouchableOpacity>
               </>
             ) : (
-              /* TIME PICKER */
               <>
                 <Text style={styles.modalTitle}>
                   {pickerType === "checkInTime"
@@ -659,11 +588,8 @@ export default function BookingUser({ onBack, onSubmit }) {
                 </View>
 
                 <View style={styles.timeColumns}>
-                  {/* HOURS */}
                   <View style={styles.timeColumn}>
-                    <Text style={styles.timeColumnTitle}>
-                      ชั่วโมง
-                    </Text>
+                    <Text style={styles.timeColumnTitle}>ชั่วโมง</Text>
 
                     <ScrollView
                       style={styles.timeScroll}
@@ -673,8 +599,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                       <View style={styles.timeGrid}>
                         {Array.from(
                           { length: 24 },
-                          (_, index) =>
-                            String(index).padStart(2, "0")
+                          (_, index) => String(index).padStart(2, "0")
                         ).map((hour) => (
                           <TouchableOpacity
                             key={hour}
@@ -683,9 +608,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                               selectedHour === hour &&
                                 styles.selectedTimeOption,
                             ]}
-                            onPress={() =>
-                              setSelectedHour(hour)
-                            }
+                            onPress={() => setSelectedHour(hour)}
                           >
                             <Text
                               style={[
@@ -702,11 +625,8 @@ export default function BookingUser({ onBack, onSubmit }) {
                     </ScrollView>
                   </View>
 
-                  {/* MINUTES */}
                   <View style={styles.timeColumn}>
-                    <Text style={styles.timeColumnTitle}>
-                      นาที
-                    </Text>
+                    <Text style={styles.timeColumnTitle}>นาที</Text>
 
                     <ScrollView
                       style={styles.timeScroll}
@@ -716,10 +636,9 @@ export default function BookingUser({ onBack, onSubmit }) {
                       <View style={styles.timeGrid}>
                         {Array.from(
                           { length: 60 },
-                          (_, index) =>
-                            String(index).padStart(2, "0")
+                          (_, index) => String(index).padStart(2, "0")
                         )
-                          .filter((minute) => Number(minute) % 5 === 0)
+                          .filter((m) => Number(m) % 5 === 0)
                           .map((minute) => (
                             <TouchableOpacity
                               key={minute}
@@ -728,9 +647,7 @@ export default function BookingUser({ onBack, onSubmit }) {
                                 selectedMinute === minute &&
                                   styles.selectedTimeOption,
                               ]}
-                              onPress={() =>
-                                setSelectedMinute(minute)
-                              }
+                              onPress={() => setSelectedMinute(minute)}
                             >
                               <Text
                                 style={[
@@ -753,22 +670,69 @@ export default function BookingUser({ onBack, onSubmit }) {
                     style={styles.cancelButton}
                     onPress={() => setPickerVisible(false)}
                   >
-                    <Text style={styles.cancelButtonText}>
-                      ยกเลิก
-                    </Text>
+                    <Text style={styles.cancelButtonText}>ยกเลิก</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={styles.timeConfirmButton}
                     onPress={handleConfirmTime}
                   >
-                    <Text style={styles.timeConfirmText}>
-                      เลือกเวลานี้
-                    </Text>
+                    <Text style={styles.timeConfirmText}>เลือกเวลานี้</Text>
                   </TouchableOpacity>
                 </View>
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* BRANCH PICKER MODAL */}
+      <Modal
+        visible={showBranches}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowBranches(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.branchModal}>
+            <Text style={styles.modalTitle}>เลือกสาขาที่ต้องการจอง</Text>
+
+            {BRANCHES.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={[
+                  styles.branchModalOption,
+                  branch === item.value && styles.branchModalOptionSelected,
+                ]}
+                onPress={() => {
+                  setBranch(item.value);
+                  setShowBranches(false);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.branchModalOptionText,
+                    branch === item.value &&
+                      styles.branchModalOptionTextSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+
+                {branch === item.value ? (
+                  <Text style={styles.branchModalCheck}>✓</Text>
+                ) : null}
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={styles.branchModalCancel}
+              onPress={() => setShowBranches(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.cancelButtonText}>ยกเลิก</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -781,8 +745,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-
-  // BACK BUTTON
   backButton: {
     alignSelf: "flex-start",
     marginTop: 20,
@@ -792,20 +754,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
-
   backButtonText: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "bold",
   },
-
-  // MAIN SECTION
   mainWrapper: {
     flex: 1,
     justifyContent: "center",
     marginBottom: 70,
   },
-
   mainSection: {
     minHeight: 520,
     backgroundColor: "#0C2B43",
@@ -816,19 +774,16 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
   },
-
   leftSection: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 2,
   },
-
   titlelogo: {
     width: 420,
     height: 170,
   },
-
   rightSection: {
     flex: 1.35,
     zIndex: 2,
@@ -837,7 +792,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 10,
   },
-
   title: {
     color: "#F5A400",
     fontSize: 19,
@@ -845,25 +799,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 22,
   },
-
   formScroll: {
     flex: 1,
   },
-
   formScrollContent: {
     paddingBottom: 20,
   },
-
   formColumns: {
     flexDirection: "row",
     gap: 25,
   },
-
   formColumn: {
     flex: 1,
     minWidth: 0,
   },
-
   sectionTitle: {
     color: "#F5A400",
     fontSize: 13,
@@ -871,18 +820,14 @@ const styles = StyleSheet.create({
     marginBottom: 7,
     marginTop: 10,
   },
-
-  // INPUT
   fieldContainer: {
     marginBottom: 10,
   },
-
   fieldLabel: {
     color: "#D6E0E8",
     fontSize: 10,
     marginBottom: 4,
   },
-
   input: {
     minHeight: 32,
     borderBottomWidth: 1,
@@ -892,13 +837,10 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 2,
   },
-
   multilineInput: {
     minHeight: 48,
     textAlignVertical: "top",
   },
-
-  // DATE / TIME INPUT
   pickerButton: {
     height: 34,
     borderBottomWidth: 1,
@@ -908,22 +850,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 3,
   },
-
   pickerButtonText: {
     color: "#FFFFFF",
     fontSize: 12,
   },
-
   placeholderText: {
     color: "#8293A0",
   },
-
   pickerIcon: {
     color: "#F5A400",
     fontSize: 17,
   },
-
-  // BRANCH
   branchTitle: {
     color: "#F5A400",
     fontSize: 12,
@@ -931,7 +868,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 5,
   },
-
   branchButton: {
     height: 34,
     backgroundColor: "#F47B0B",
@@ -941,21 +877,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 4,
   },
-
   branchText: {
     color: "#FFFFFF",
     fontSize: 11,
   },
-
   branchPlaceholder: {
     color: "#FFE0C2",
   },
-
   arrow: {
     color: "#FFFFFF",
     fontSize: 12,
   },
-
+  branchModal: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 20,
+    elevation: 10,
+  },
+  branchModalOption: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E8EDF1",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  branchModalOptionSelected: {
+    backgroundColor: "#EAF1F6",
+    borderRadius: 7,
+  },
+  branchModalOptionText: {
+    color: "#314B62",
+    fontSize: 13,
+  },
+  branchModalOptionTextSelected: {
+    color: "#246AA5",
+    fontWeight: "bold",
+  },
+  branchModalCheck: {
+    color: "#246AA5",
+    fontSize: 17,
+    fontWeight: "bold",
+  },
+  branchModalCancel: {
+    alignSelf: "flex-end",
+    marginTop: 15,
+    backgroundColor: "#E8EDF1",
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
   dropdown: {
     backgroundColor: "#FFFFFF",
     borderRadius: 3,
@@ -963,19 +938,15 @@ const styles = StyleSheet.create({
     zIndex: 10,
     elevation: 5,
   },
-
   dropdownItem: {
     padding: 9,
     borderBottomWidth: 1,
     borderBottomColor: "#EEEEEE",
   },
-
   dropdownText: {
     fontSize: 11,
     color: "#0C2B43",
   },
-
-  // CONFIRM
   confirmButton: {
     backgroundColor: "#F0A000",
     height: 42,
@@ -985,29 +956,11 @@ const styles = StyleSheet.create({
     marginTop: 35,
     marginHorizontal: 15,
   },
-
   confirmText: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "bold",
   },
-
-  // PET DECORATION
-  petDecoration: {
-    position: "absolute",
-    right: 330,
-    bottom: 140,
-    flexDirection: "row",
-    opacity: 0.15,
-    zIndex: 1,
-  },
-
-  petpic: {
-    width: 500,
-    height: 320,
-  },
-
-  // MODAL
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",
@@ -1015,7 +968,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-
   pickerModal: {
     width: "100%",
     maxWidth: 390,
@@ -1024,7 +976,6 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 10,
   },
-
   modalTitle: {
     color: "#0C2B43",
     fontSize: 18,
@@ -1032,15 +983,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 18,
   },
-
-  // CALENDAR
   calendarHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 15,
   },
-
   monthButton: {
     width: 36,
     height: 36,
@@ -1049,24 +997,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   monthButtonText: {
     color: "#246AA5",
     fontSize: 25,
     fontWeight: "bold",
   },
-
+  disabledMonthButton: {
+    opacity: 0.35,
+  },
+  disabledCalendarCell: {
+    backgroundColor: "#F3F5F7",
+  },
+  disabledCalendarText: {
+    color: "#B8C1C9",
+  },
   monthTitle: {
     color: "#0C2B43",
     fontSize: 16,
     fontWeight: "bold",
   },
-
   calendarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
   },
-
   calendarCell: {
     width: "14.2857%",
     height: 42,
@@ -1074,33 +1027,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
   },
-
   weekDayText: {
     color: "#8293A0",
     fontSize: 12,
     fontWeight: "bold",
   },
-
   calendarDayText: {
     color: "#314B62",
     fontSize: 13,
   },
-
   selectedCalendarCell: {
     backgroundColor: "#246AA5",
   },
-
   selectedCalendarText: {
     color: "#FFFFFF",
     fontWeight: "bold",
   },
-
-  todayCalendarText: {
-    color: "#F0A000",
-    fontWeight: "bold",
-  },
-
-  // TIME PICKER
   timePreview: {
     backgroundColor: "#EAF1F6",
     borderRadius: 10,
@@ -1108,22 +1050,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 15,
   },
-
   timePreviewText: {
     color: "#246AA5",
     fontSize: 30,
     fontWeight: "bold",
   },
-
   timeColumns: {
     flexDirection: "row",
     gap: 15,
   },
-
   timeColumn: {
     flex: 1,
   },
-
   timeColumnTitle: {
     color: "#0C2B43",
     fontSize: 13,
@@ -1131,18 +1069,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
   },
-
   timeScroll: {
     height: 180,
   },
-
   timeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 5,
   },
-
   timeOption: {
     width: "30%",
     minWidth: 35,
@@ -1152,29 +1087,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   selectedTimeOption: {
     backgroundColor: "#246AA5",
   },
-
   timeOptionText: {
     color: "#314B62",
     fontSize: 12,
   },
-
   selectedTimeText: {
     color: "#FFFFFF",
     fontWeight: "bold",
   },
-
-  // MODAL BUTTONS
   modalActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 10,
     marginTop: 18,
   },
-
   cancelButton: {
     alignSelf: "flex-end",
     paddingHorizontal: 18,
@@ -1183,13 +1112,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#E8EDF1",
     marginTop: 15,
   },
-
   cancelButtonText: {
     color: "#526779",
     fontSize: 12,
     fontWeight: "bold",
   },
-
   timeConfirmButton: {
     paddingHorizontal: 18,
     paddingVertical: 10,
@@ -1197,7 +1124,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#246AA5",
     marginTop: 15,
   },
-
   timeConfirmText: {
     color: "#FFFFFF",
     fontSize: 12,
