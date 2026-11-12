@@ -335,7 +335,7 @@ router.put('/staff/reservation/:reservationId/confirm', async (req, res, next) =
               r.customer_name,
               r.customer_phone,
               r.customer_email,
-              r.reservation_date || new Date(),
+              r.reservation_date || new Date().toISOString(),
               r.check_in,
               r.check_out,
               r.pet_name,
