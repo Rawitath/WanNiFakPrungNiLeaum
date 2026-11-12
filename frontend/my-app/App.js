@@ -14,7 +14,7 @@ import {
   apiCancelReservation,
   apiGetCustomerPets,
   apiGetStaffPets,
-  apiUpdateStaffPetStatus,
+  apiUpdateStaffPetHealth,
   apiRecordStaffPetEntry,
   apiGetStaffReservations,
   apiConfirmStaffReservation,
@@ -64,6 +64,7 @@ const normalizePetStatus = (status) => {
     cancelled: "ถูกปฏิเสธ",
     completed: "รับกลับแล้ว",
     in_care: "In Care",
+    "in care": "In Care",
     confirmed: "รอรับเข้า",
     "อยู่ระหว่างดูแล": "In Care",
     "รอรับกลับ": "พร้อมรับกลับ",
@@ -235,6 +236,7 @@ export default function App() {
         branchId: item.booking?.branchId || null,
         action: status === "รอรับเข้า" ? "รับเข้าพัก" : "รับกลับ",
         detail: `${item.owner?.name || ""} - ${item.booking?.startDate || item.booking?.checkIn || ""} ถึง ${item.booking?.endDate || item.booking?.checkOut || ""}`,
+        color: status === "รอรับเข้า" ? "#174F83" : "#FACC15",
       };
     });
 
@@ -455,45 +457,76 @@ export default function App() {
         apiGetCustomerPets(),
       ]);
 
+      const customerPetRows = Array.isArray(petRes?.data)
+        ? petRes.data
+        : Array.isArray(petRes?.data?.pets)
+        ? petRes.data.pets
+        : [];
+
       if (resRes.ok && Array.isArray(resRes.data)) {
-        const backendDataSets = resRes.data.map((r, idx) => ({
-          owner: {
-            id: r.customerName || `O${idx}`,
-            username: activeUser?.username || "",
-            name: r.customerName || activeUser?.name || "ลูกค้า",
-            phone: r.customerPhone || "",
-            email: r.customerEmail || "",
-          },
-          pet: {
-            id: String(r.reservationId || r.id || idx),
-            name: r.petName || "สัตว์เลี้ยง",
-            petType: r.petType || "สุนัข",
-            breed: r.petBreed || "",
-            gender: r.petSex || "ผู้",
-            birth: r.petBirth || "",
-            weight: String(r.petWeight || ""),
-            health: r.petCondition || "",
-            careNotes: r.petNote || "",
-            image: require("./1assets/piclogo.png"),
-          },
-          booking: {
-            id: String(r.reservationId || r.id || idx),
-            branch: getBranchValue(r.branch || r.branch_name || ""),
-            branchId: r.branchId || r.branch_id || null,
-            reservationDate: r.reservationDate || r.reservation_date || null,
-            startDate: r.checkIn ? new Date(r.checkIn).toLocaleDateString("th-TH") : "",
-            endDate: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
-            checkIn: r.checkIn ? new Date(r.checkIn).toLocaleDateString("th-TH") : "",
-            checkOut: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
-            bookingTime: r.reservationDate ? new Date(r.reservationDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "10:00",
-            time: "10:00",
-            status: normalizePetStatus(r.status),
-          },
-          queue: {
-            id: `Q${idx}`,
-            time: "10:00",
-          },
-        }));
+        const backendDataSets = resRes.data.map((r, idx) => {
+          const branchName = getBranchValue(r.branch || r.branch_name || "");
+          const reservationId = String(r.reservationId || r.id || idx);
+          const matchedPet = customerPetRows.find((pet) => {
+            const sameName =
+              String(pet.petName || pet.pet_name || "").trim().toLowerCase() ===
+              String(r.petName || r.pet_name || "").trim().toLowerCase();
+            const reservationEmail = String(r.customerEmail || r.customer_email || "").trim().toLowerCase();
+            const petEmail = String(pet.customerEmail || pet.customer_email || "").trim().toLowerCase();
+            const sameEmail = !reservationEmail || !petEmail || reservationEmail === petEmail;
+            const petBranch = getBranchValue(pet.branch || pet.branch_name || "");
+            const sameBranch = !branchName || !petBranch || branchName === petBranch;
+            // ไม่เทียบวัน check-in เพราะ Backend จะเขียนเวลาจริงทับ check_in
+            // เมื่อเจ้าหน้าที่กดรับเข้า ทำให้วันจริงอาจไม่ตรงกับวันที่จองไว้
+            return sameName && sameEmail && sameBranch;
+          });
+
+          const lifecycleStatus = matchedPet?.status;
+          const isLifecycleStatus = ["In Care", "พร้อมรับกลับ", "รับกลับแล้ว"].includes(lifecycleStatus);
+          const bookingStatus = isLifecycleStatus
+            ? lifecycleStatus
+            : normalizePetStatus(r.status);
+
+          return {
+            owner: {
+              id: r.customerName || r.customer_name || `O${idx}`,
+              username: activeUser?.username || "",
+              name: r.customerName || r.customer_name || activeUser?.name || "ลูกค้า",
+              phone: r.customerPhone || r.customer_phone || "",
+              email: r.customerEmail || r.customer_email || "",
+            },
+            pet: {
+              id: String(matchedPet?.petId || matchedPet?.pet_id || reservationId),
+              branch: branchName,
+              branchId: r.branchId || r.branch_id || matchedPet?.branchId || matchedPet?.branch_id || null,
+              name: r.petName || r.pet_name || "สัตว์เลี้ยง",
+              petType: r.petType || r.pet_type || "สุนัข",
+              breed: r.petBreed || r.pet_breed || "",
+              gender: r.petSex || r.pet_sex || "ผู้",
+              birth: r.petBirth || r.pet_birth || "",
+              weight: String(r.petWeight || r.pet_weight || ""),
+              health: r.petCondition || r.pet_condition || "",
+              careNotes: r.petNote || r.pet_note || "",
+              image: require("./1assets/piclogo.png"),
+            },
+            booking: {
+              id: reservationId,
+              branch: branchName,
+              branchId: r.branchId || r.branch_id || matchedPet?.branchId || matchedPet?.branch_id || null,
+              reservationDate: r.reservationDate || r.reservation_date || null,
+              startDate: (r.checkIn || r.check_in) ? new Date(r.checkIn || r.check_in).toLocaleDateString("th-TH") : "",
+              endDate: (r.checkOut || r.check_out) ? new Date(r.checkOut || r.check_out).toLocaleDateString("th-TH") : "",
+              checkIn: (r.checkIn || r.check_in) ? new Date(r.checkIn || r.check_in).toLocaleDateString("th-TH") : "",
+              checkOut: (r.checkOut || r.check_out) ? new Date(r.checkOut || r.check_out).toLocaleDateString("th-TH") : "",
+              bookingTime: (r.reservationDate || r.reservation_date)
+                ? new Date(r.reservationDate || r.reservation_date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                : "10:00",
+              time: "10:00",
+              status: bookingStatus,
+            },
+            queue: { id: `Q${idx}`, time: "10:00" },
+          };
+        });
         setDataSets(backendDataSets);
       }
     } catch (err) {
@@ -881,24 +914,17 @@ export default function App() {
   // เปลี่ยนสถานะจริงจาก booking.status จุดเดียว
   // =====================================================
   const handlePetStatusChange = async (petId, newStatus) => {
-    const allowedStatuses = ["In Care", "พร้อมรับกลับ", "รับกลับแล้ว"];
+    const allowedStatuses = ["In Care", "พร้อมรับกลับ"];
     if (!allowedStatuses.includes(newStatus)) {
       console.log("Invalid pet status:", newStatus);
-      return false;
-    }
-
-    const target = dataSets.find((item) => String(getPetId(item)) === String(petId));
-    const reservationId = target?.booking?.id;
-    if (!reservationId) {
-      console.warn("ไม่พบ reservationId สำหรับสัตว์เลี้ยง:", petId);
-      return false;
+      return;
     }
 
     try {
-      const result = await apiUpdateStaffPetStatus({ id: reservationId, status: newStatus });
+      const result = await apiUpdateStaffPetHealth({ id: petId, status: newStatus });
       if (!result?.ok) {
         console.warn("อัปเดตสถานะสัตว์ไม่สำเร็จ:", result?.data);
-        return false;
+        return;
       }
 
       setDataSets((prev) =>
@@ -913,10 +939,8 @@ export default function App() {
           ? { ...prev, status: newStatus }
           : prev
       );
-      return true;
     } catch (err) {
-      console.warn("apiUpdateStaffPetStatus error:", err);
-      return false;
+      console.warn("apiUpdateStaffPetHealth error:", err);
     }
   };
 
@@ -952,41 +976,49 @@ export default function App() {
   const handleActivity = async (item, action) => {
     const targetId = item.petId || item.id;
     const entryType = action === "รับเข้าพัก" ? "check-in" : "check-out";
-    const newStatus = action === "รับเข้าพัก" ? "In Care" : "รับกลับแล้ว";
 
     try {
-      const entryResult = await apiRecordStaffPetEntry({
-        id: targetId,
+      const result = await apiRecordStaffPetEntry({
+        id: String(targetId),
         type: entryType,
         timestamp: new Date().toISOString(),
       });
-      if (!entryResult?.ok) {
-        console.warn("บันทึกเวลาเข้า-ออกรับคืนไม่สำเร็จ:", entryResult?.data);
+
+      if (!result?.ok) {
+        console.warn("บันทึกการรับเข้า-รับกลับไม่สำเร็จ:", result?.data);
         return;
       }
 
-      if (item.petId) {
-        const statusSaved = await handlePetStatusChange(item.petId, newStatus);
-        if (!statusSaved) return;
-      }
+      // Backend ของโปรเจกต์นี้เปลี่ยน pets.status ให้แล้วใน endpoint /staff/pets/entry
+      // check-in => In Care, check-out => รับกลับแล้ว
+      const newStatus = action === "รับเข้าพัก" ? "In Care" : "รับกลับแล้ว";
+
+      setDataSets((prev) =>
+        prev.map((row) =>
+          String(getPetId(row)) === String(targetId)
+            ? { ...row, booking: { ...row.booking, status: newStatus } }
+            : row
+        )
+      );
 
       await loadStaffData();
-      await loadCustomerData();
-      setActivityList((prev) => [
-        {
-          id: `A${Date.now()}`,
-          name: item.name || "",
-          petId: item.petId || null,
-          branch: item.branch,
-          action,
-          detail: `${action} • ${item.detail || ""}`,
-          color: action === "รับเข้าพัก" ? "#174F83" : "#FACC15",
-        },
-        ...prev,
-      ]);
     } catch (err) {
-      console.warn("handleActivity error:", err);
+      console.warn("apiRecordStaffPetEntry error:", err);
+      return;
     }
+
+    setActivityList((prev) => [
+      {
+        id: `A${Date.now()}`,
+        name: item.name || "",
+        petId: item.petId || null,
+        branch: item.branch,
+        action,
+        detail: `${action} • ${item.detail || ""}`,
+        color: action === "รับเข้าพัก" ? "#174F83" : "#FACC15",
+      },
+      ...prev,
+    ]);
   };
 
   // =====================================================
