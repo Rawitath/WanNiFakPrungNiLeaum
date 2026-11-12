@@ -656,7 +656,9 @@ export default function App() {
               checkOut: r.checkOut
                 ? new Date(r.checkOut).toLocaleDateString("th-TH")
                 : "",
+              bookingTimestamp: getBookingTimestamp(r),
               bookingTime: formatBookingTime(
+                getBookingTimestamp(r) ||
                 r.bookingTime ||
                 r.booking_time ||
                 r.createdAt ||
@@ -1012,8 +1014,11 @@ export default function App() {
 
       // เวลาที่กดจองคิว
       timestamp: bookingTimestamp,
+      bookingTimestamp: bookingTimestamp,
+      booking_timestamp: bookingTimestamp,
       bookingTime: bookingTimestamp,
       createdAt: bookingTimestamp,
+      created_at: bookingTimestamp,
 
       // วันและเวลาที่ฝากสัตว์เลี้ยง
       checkIn: toIsoDateTime(
