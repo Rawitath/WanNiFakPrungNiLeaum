@@ -14,6 +14,17 @@ import {
 // ==============================
 // ADMIN DATA HELPERS
 // ==============================
+const FIXED_BRANCHES = ["ลาดกระบัง", "ร่มเกล้า", "ปราจีนบุรี", "หาดใหญ่"];
+
+const normalizeBranchName = (name) => {
+  const value = String(name || "")
+    .trim()
+    .replace(/^สาขา\s*/i, "")
+    .toLowerCase();
+
+  return FIXED_BRANCHES.find((branch) => branch.toLowerCase() === value) || "";
+};
+
 const normalizeAnimalType = (type) => {
   const value = String(type || "").trim().toLowerCase();
 
@@ -124,7 +135,7 @@ export default function HomepageAdmin({
     (Array.isArray(overviewData?.branches) ? overviewData.branches : []).forEach(
       (branch) => {
         const id = getBranchId(branch);
-        const name = getBranchName(branch);
+        const name = normalizeBranchName(getBranchName(branch));
         if (id && name) names.set(id, name);
       }
     );
@@ -135,39 +146,32 @@ export default function HomepageAdmin({
     () =>
       adminPets.map((pet) => {
         const branchId = String(pet.branchId || pet.branch_id || "").trim();
+        const branchName =
+          normalizeBranchName(
+            pet.branch ||
+              pet.branchName ||
+              pet.branch_name ||
+              pet.branch_name_th
+          ) || normalizeBranchName(branchNameById.get(branchId));
+
         return {
           ...pet,
-          branch:
-            pet.branch ||
-            pet.branchName ||
-            pet.branch_name ||
-            pet.branch_name_th ||
-            branchNameById.get(branchId) ||
-            "ไม่ระบุสาข",
+          branch: branchName,
         };
       }),
     [adminPets, branchNameById]
-  );
+  ).filter((pet) => pet.branch);
 
   const allBranches = React.useMemo(() => {
-    const grouped = {};
-
-    (Array.isArray(overviewData?.branches) ? overviewData.branches : []).forEach(
-      (branch) => {
-        const branchName = getBranchName(branch);
-        if (branchName && !grouped[branchName]) {
-          grouped[branchName] = { name: branchName, animals: {}, total: 0 };
-        }
-      }
+    const grouped = Object.fromEntries(
+      FIXED_BRANCHES.map((name) => [name, { name, animals: {}, total: 0 }])
     );
 
     petsWithBranchName.forEach((pet) => {
       const branchName = getPetBranch(pet);
       const typeName = normalizeAnimalType(getPetType(pet));
 
-      if (!grouped[branchName]) {
-        grouped[branchName] = { name: branchName, animals: {}, total: 0 };
-      }
+      if (!grouped[branchName]) return;
 
       grouped[branchName].animals[typeName] =
         (grouped[branchName].animals[typeName] || 0) + 1;
@@ -183,11 +187,11 @@ export default function HomepageAdmin({
         }))
         .filter((animal) => animal.count > 0),
     }));
-  }, [petsWithBranchName, overviewData?.branches]);
+  }, [petsWithBranchName]);
 
   const branchOptions = [
     "ทุกสาขา",
-    ...allBranches.map((branch) => branch.name),
+    ...FIXED_BRANCHES,
   ];
 
   const displayedBranches =
