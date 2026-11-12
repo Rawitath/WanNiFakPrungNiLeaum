@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const PANEL_WIDTH = SCREEN_WIDTH / 3;
+const PANEL_WIDTH = SCREEN_WIDTH / 4;
 
 export default function StaffSidePanel({ visible, onClose, pet }) {
     const slideAnim = useRef(
@@ -136,12 +136,6 @@ export default function StaffSidePanel({ visible, onClose, pet }) {
                                 รายละเอียดการจอง
                             </Text>
 
-                            <Pressable
-                                onPress={closePanel}
-                                style={styles.closeButton}
-                            >
-                                <Text style={styles.closeText}>✕</Text>
-                            </Pressable>
                         </View>
 
                         {/* กรอบสีน้ำเงินอ่อน */}
@@ -211,27 +205,6 @@ export default function StaffSidePanel({ visible, onClose, pet }) {
 
                     {/* ส่วนล่างของ Panel */}
                     <View style={styles.bottomContainer}>
-                        {/* ปุ่ม */}
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => { }}
-                            >
-                                <Text style={styles.actionButtonText}>
-                                    ยืนยัน
-                                </Text>
-                            </TouchableOpacity>
-                        
-
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => { }}
-                            >
-                                <Text style={styles.actionButtonText}>
-                                    ติดต่อลูกค้า
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
 
                         {/* เส้นสีเหลือง */}
                         <View style={styles.footerLine} />
@@ -271,15 +244,15 @@ const styles = StyleSheet.create({
 
     panelBorder: {
         backgroundColor: "#1a6692",
-        width: "100%",
+        width: 500,
         paddingVertical: 5,
-        paddingHorizontal: 15,
+        paddingHorizontal: 8,
         marginBottom: 0,
     },
 
     panelBorder2: {
         backgroundColor: "#03314c",
-        width: "100%",
+        width: 500 ,
         paddingVertical: 15,
         paddingHorizontal: 0,
         marginBottom: 20,
@@ -287,7 +260,7 @@ const styles = StyleSheet.create({
 
     pawTopLeft2: {
         position: "absolute",
-        top: 90,
+        top: 720,
         left: 300,
         transform: [{ rotate: "30deg" }],
     },
@@ -313,18 +286,6 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
 
-    closeButton: {
-        position: "absolute",
-        right: 0,
-        top: 0,
-        padding: 3,
-    },
-
-    closeText: {
-        color: "#FFFFFF",
-        fontSize: 15,
-    },
-
     scrollContent: {
         paddingBottom: 5,
     },
@@ -335,7 +296,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 26,
         marginTop: 5,
-        marginLeft: 57,
+        marginLeft: 40,
     },
 
     section: {
@@ -345,7 +306,7 @@ const styles = StyleSheet.create({
     sectionHeader: {
         backgroundColor: "#9BD4F5",
         alignSelf: "flex-end",
-        width: "87%",
+        width: "92%",
         paddingVertical: 9,
         paddingHorizontal: 15,
         marginBottom: 12,
@@ -384,24 +345,6 @@ const styles = StyleSheet.create({
     bottomContainer: {
         paddingTop: 10,
         paddingBottom: 10,
-    },
-
-    buttonContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 10,
-        marginLeft: 40,
-        width: "80%",
-    },
-
-    actionButton: {
-        backgroundColor: "#f8931f",
-        width: "30%",
-        paddingVertical: 10,
-        borderRadius: 10,
-        alignItems: "center",
-
     },
 
     actionButtonText: {

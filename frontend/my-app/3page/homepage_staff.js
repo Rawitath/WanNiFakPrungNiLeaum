@@ -25,7 +25,20 @@ export default function HomePageStaff({
   const [selectedInformation, setSelectedInformation] = useState(null);
   const [showStatusDropdownId, setShowStatusDropdownId] = useState(null);
 
-  const statusOptions = ["In Care", "พร้อมรับกลับ"];
+  const formatQueueTime = (reservationDate) => {
+    if (!reservationDate) return "--:--";
+
+    const date = new Date(reservationDate);
+
+    if (Number.isNaN(date.getTime())) return "--:--";
+
+    return date.toLocaleTimeString("th-TH", {
+      timeZone: "Asia/Bangkok",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
 
   const normalizeBranch = (branch) =>
     getBranchValue(branch).toLowerCase().replace(/\s+/g, "").trim();
@@ -110,7 +123,9 @@ export default function HomePageStaff({
             <ScrollView style={styles.cardInnerScroll} nestedScrollEnabled>
               {filteredBookingQueue.map((item) => (
                 <View key={item.id} style={styles.queueRow}>
-                  <Text style={styles.queueTime}>{item.time}</Text>
+                <Text style={styles.queueTime}>
+                  {formatQueueTime(item.reservationDate)}
+                </Text>
                   <View style={styles.queueInfo}>
                     <Text style={styles.queueName}>{item.name}</Text>
                     <Text style={styles.queueDetail}>{item.detail}</Text>

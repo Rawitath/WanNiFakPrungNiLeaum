@@ -270,6 +270,12 @@ export default function App() {
     id: item.queue?.id || item.booking.id,
     bookingId: item.booking.id,
     petId: getPetId(item),
+
+    reservationDate:
+      item.booking.reservationDate ||
+      item.booking.reservation_date ||
+      null,
+
     time: item.queue?.time || item.booking.bookingTime || item.booking.time || "--:--",
     name: item.pet.name || "",
     branch: item.booking.branch || "",
