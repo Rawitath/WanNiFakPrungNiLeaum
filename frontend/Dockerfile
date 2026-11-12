@@ -30,4 +30,4 @@ EXPOSE 8081
 ENV REACT_NATIVE_PACKAGER_HOSTNAME=0.0.0.0
 
 # สั่งรัน Expo Web
-CMD ["npx", "serve", "-p", "8081"]
+CMD ["npx", "serve", "-s", "-l", "8081"]
