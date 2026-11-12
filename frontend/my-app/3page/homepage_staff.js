@@ -4,6 +4,8 @@ import StaffSidePanel from "../2components/booking_SidePanel.js";
 import UserSidePanel from "../2components/information_SidePanel.js";
 import { BRANCHES, getBranchValue, getBranchLabel } from "../2components/branchConfig";
 
+const statusOptions = ["In Care", "พร้อมรับกลับ"];
+
 export default function HomePageStaff({
   staffName = "พนักงาน",
   bookingQueue = [],
