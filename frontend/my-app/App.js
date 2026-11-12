@@ -1,38 +1,36 @@
-
-import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Alert, Platform, Linking } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, Linking } from "react-native";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getBranchValue } from "./2components/branchConfig";
-
+// API Services
 import {
   apiLogin,
   apiRegister,
   apiForgetPassword,
   apiGetProfile,
+  apiUpdateProfile,
   apiGetCustomerReservations,
-  apiGetCustomerPets,
   apiCreateReservation,
   apiCancelReservation,
+  apiGetCustomerPets,
   apiGetStaffPets,
+  apiUpdateStaffPetStatus,
   apiRecordStaffPetEntry,
   apiGetStaffReservations,
   apiConfirmStaffReservation,
   apiGetManagerStatus,
-  parseJwt,
-  getAuthToken,
-  clearAuthToken,
   apiManagerRegisterStaff,
-  oAuthLogin,
-  oAuthCallback
+  parseJwt,
+  clearAuthToken,
+  getAuthToken,
 } from "./api";
-
+// Components
 import LogoutNavbar from "./2components/logoutnavbar";
 import NavbarUser from "./2components/navbar_user";
 import NavbarSA from "./2components/navbar_s_a";
 import UserProfile from "./2components/userprofile";
 import Popup from "./2components/popup";
-
+// Pages
 import Login from "./3page/login";
 import Register from "./3page/register";
 import ForgotPassword from "./3page/forgotpassword";
@@ -43,643 +41,459 @@ import HomepageAdmin from "./3page/homepage_admin";
 import PetDetails from "./3page/petdetails";
 import BookingUser from "./3page/booking_user";
 import MyBookingUser from "./3page/mybooking_user";
-
+import { getBranchValue } from "./2components/branchConfig";
 const APP_STORAGE_KEY = "pet_app_page_state";
-
+// =====================================================
+// PET STATUS
+// สถานะการจองเก็บไว้ที่ booking.status เพียงจุดเดียว
+// =====================================================
 const PET_STATUSES = [
   "รอยืนยันคิว",
   "รอรับเข้า",
   "In Care",
-  "รอรับกลับ",
+  "พร้อมรับกลับ",
   "รับกลับแล้ว",
   "ถูกปฏิเสธ",
 ];
-
 const normalizePetStatus = (status) => {
-  const legacyStatuses = {
+  const backendStatuses = {
+    pending: "รอยืนยันคิว",
+    accepted: "รอรับเข้า",
+    confirmed: "รอรับเข้า",
+    rejected: "ถูกปฏิเสธ",
+    cancelled: "ถูกปฏิเสธ",
+    completed: "รับกลับแล้ว",
+    in_care: "In Care",
+    confirmed: "รอรับเข้า",
     "อยู่ระหว่างดูแล": "In Care",
-    "พร้อมรับกลับ": "รอรับกลับ",
-    "พร้อมรับกลับบ้าน": "รอรับกลับ",
+    "รอรับกลับ": "พร้อมรับกลับ",
+    "พร้อมรับกลับบ้าน": "พร้อมรับกลับ",
     "รับกลับบ้านแล้ว": "รับกลับแล้ว",
     "ปฏิเสธแล้ว": "ถูกปฏิเสธ",
   };
-
-  const normalizedStatus = legacyStatuses[status] || status;
-
+  const normalizedStatus = backendStatuses[status] || status;
   return PET_STATUSES.includes(normalizedStatus)
     ? normalizedStatus
     : "รอรับเข้า";
 };
-
+// ใช้ booking.id เป็นรหัสสัตว์เลี้ยงชั่วคราวเมื่อ INITIAL_DATA ไม่มี pet.id
+// ไม่ต้องแก้ไข INITIAL_DATA และรหัสนี้คงที่ระหว่างเปิดแอป
 const getPetId = (item) =>
-  item?.pet?.id ||
-  item?.booking?.id ||
-  item?.owner?.id ||
-  item?.pet?.name ||
-  "";
-
-// อ่านเวลาที่ Backend บันทึกไว้
-const getBookingTimestamp = (booking) => {
-  return (
-    booking?.reservationDate ||
-    booking?.reservation_date ||
-    booking?.bookingTimestamp ||
-    booking?.booking_timestamp ||
-    booking?.bookingTime ||
-    booking?.booking_time ||
-    booking?.createdAt ||
-    booking?.created_at ||
-    booking?.requestedAt ||
-    booking?.requested_at ||
-    booking?.timestamp ||
-    booking?.submittedAt ||
-    booking?.submitted_at ||
-    null
-  );
+  item?.pet?.id || item?.booking?.id || item?.owner?.id || item?.pet?.name || "";
+// =====================================================
+// INITIAL DATA
+// เริ่มแรกทุกบัญชีจะไม่มีสัตว์อยู่เลย
+// =====================================================
+const INITIAL_DATA = [];
+// =====================================================
+// CLEAN OLD SAVED DATA
+// ล้างข้อมูลเก่าให้เหลือโครงสร้างใหม่
+// =====================================================
+const cleanSavedData = (item) => {
+  const cleanItem = { ...item };
+  delete cleanItem.staffPet;
+  delete cleanItem.activity;
+  const oldPet = cleanItem.pet || {};
+  const oldBooking = cleanItem.booking || {};
+  const oldQueue = cleanItem.queue || {};
+  const petBirth =
+    oldPet.birth || oldPet.age || oldBooking.birth || oldBooking.age || "";
+  const cleanPet = {
+    ...oldPet,
+    id: oldPet.id || oldBooking.id || cleanItem.owner?.id || `P${String(Date.now()).slice(-6)}`,
+    name: oldPet.name || "",
+    petType: oldPet.petType || oldPet.type || oldBooking.petType || oldBooking.type || "",
+    breed: oldPet.breed || oldBooking.breed || "",
+    gender: oldPet.gender || oldBooking.gender || "",
+    birth: petBirth,
+    age: petBirth,
+    weight: oldPet.weight || oldBooking.weight || "",
+    health: oldPet.health || oldPet.limitation || oldBooking.health || "",
+    careNotes: oldPet.careNotes || oldBooking.careNotes || "",
+    image: oldPet.image || require("./1assets/piclogo.png"),
+  };
+  const cleanBooking = {
+    ...oldBooking,
+    branch: getBranchValue(oldBooking.branch || oldBooking.branchName || oldBooking.branch_name || ""),
+    branchId: oldBooking.branchId || oldBooking.branch_id || null,
+    status: normalizePetStatus(oldBooking.status || oldPet.status),
+    startDate: oldBooking.startDate || oldBooking.checkIn || "",
+    endDate: oldBooking.endDate || oldBooking.checkOut || "",
+    time: oldBooking.time || oldBooking.bookingTime || "--:--",
+    bookingTime: oldBooking.bookingTime || oldBooking.time || "--:--",
+  };
+  delete cleanBooking.petType;
+  delete cleanBooking.type;
+  delete cleanBooking.breed;
+  delete cleanBooking.gender;
+  delete cleanBooking.age;
+  delete cleanBooking.birth;
+  delete cleanBooking.weight;
+  delete cleanBooking.health;
+  delete cleanBooking.careNotes;
+  delete cleanPet.status;
+  delete cleanPet.detailStatus;
+  delete cleanPet.type;
+  delete cleanPet.limitation;
+  cleanItem.pet = cleanPet;
+  cleanItem.booking = cleanBooking;
+  cleanItem.queue = {
+    ...oldQueue,
+    id: oldQueue.id || `Q${String(Date.now()).slice(-6)}`,
+    time: oldQueue.time || cleanBooking.bookingTime || cleanBooking.time || "--:--",
+  };
+  return cleanItem;
 };
-
-const formatBookingTime = (value) => {
-  if (
-    value === null ||
-    value === undefined ||
-    String(value).trim() === ""
-  ) {
-    return "ไม่ได้ระบุ";
-  }
-
-  let dateValue = value;
-
-  if (typeof dateValue === "number") {
-    if (dateValue < 100000000000) {
-      dateValue *= 1000;
-    }
-  } else if (
-    typeof dateValue === "string" &&
-    /^\d+$/.test(dateValue.trim())
-  ) {
-    dateValue = Number(dateValue);
-
-    if (dateValue < 100000000000) {
-      dateValue *= 1000;
-    }
-  }
-
-  const date = new Date(dateValue);
-
-  if (Number.isNaN(date.getTime())) {
-    return "ไม่ได้ระบุ";
-  }
-
-  return date.toLocaleString("th-TH", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-};
-
-const formatClockTime = (value) => {
-  if (!value) return "";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return "";
-
-  return date.toLocaleTimeString("th-TH", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-};
-
+// =====================================================
+// APP
+// =====================================================
 export default function App() {
   const [currentPage, setCurrentPage] = useState("guest");
-
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-
   const [showBooking, setShowBooking] = useState(false);
   const [showMyBooking, setShowMyBooking] = useState(false);
-
   const [showPetDetails, setShowPetDetails] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
-
   const [showProfile, setShowProfile] = useState(false);
-
   const [activeUser, setActiveUser] = useState(null);
   const [isRestoring, setIsRestoring] = useState(true);
-  const processedOAuthCodeRef = useRef(null);
-
-  // =====================================================
-  // OAUTH CALLBACK
-  // =====================================================
-
-  useEffect(() => {
-    const handleOAuthUrl = async (rawUrl) => {
-      if (!rawUrl) return;
-
-      try {
-        const parsedUrl = new URL(
-          rawUrl,
-          "http://localhost:8081"
-        );
-
-        if (
-          parsedUrl.pathname.includes("/oauth/google/callback") ||
-          parsedUrl.pathname.includes("/oauth/callback")
-        ) {
-          const code = parsedUrl.searchParams.get("code");
-
-          if (
-            !code ||
-            processedOAuthCodeRef.current === code
-          ) {
-            return;
-          }
-
-          processedOAuthCodeRef.current = code;
-
-          if (
-            Platform.OS === "web" &&
-            typeof window !== "undefined" &&
-            window.history?.replaceState
-          ) {
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname.replace(
-                /\/oauth\/.*$/,
-                ""
-              ) || "/"
-            );
-          }
-
-          const res = await oAuthCallback(code);
-
-          if (!res.ok || !res.data?.accessToken) {
-            showMessage(
-              res.data?.message ||
-              res.data?.error ||
-              "ยืนยันการเข้าสู่ระบบด้วย Google ไม่สำเร็จ"
-            );
-            return;
-          }
-
-          await processUserAuth(res.data.accessToken);
-        }
-      } catch (err) {
-        console.warn("handleOAuthUrl error:", err);
-      }
-    };
-
-    if (
-      Platform.OS === "web" &&
-      typeof window !== "undefined" &&
-      window.location
-    ) {
-      handleOAuthUrl(window.location.href);
-    }
-
-    Linking.getInitialURL().then((url) => {
-      if (url) handleOAuthUrl(url);
-    });
-
-    const subscription = Linking.addEventListener(
-      "url",
-      (event) => {
-        handleOAuthUrl(event.url);
-      }
-    );
-
-    return () => {
-      subscription?.remove?.();
-    };
-  }, []);
-
-  const [dataSets, setDataSets] = useState([]);
+  // DATA STATE
+  const [dataSets, setDataSets] = useState(INITIAL_DATA);
   const [activityList, setActivityList] = useState([]);
   const [adminOverview, setAdminOverview] = useState(null);
-
-  const [popupVisible, setPopupVisible] = useState(false);
-  const [popupType, setPopupType] = useState("loginFailed");
-  const [popupMessage, setPopupMessage] = useState("");
-
-  const [fontsLoaded] = useFonts({
-    Itim: require("./1assets/Itim-Regular.ttf"),
-  });
-
-  // =====================================================
-  // FILTER USER DATA
-  // =====================================================
-
+  // USER PET DATA & BOOKINGS
+  // เริ่มแรกทุกบัญชีจะไม่มีสัตว์อยู่เลย ผู้ใช้จะเห็นเฉพาะสัตว์และการจองของบัญชีตนเอง
   const userDatasets =
     activeUser && activeUser.role === "user"
       ? dataSets.filter((item) => {
-          const uEmail = (activeUser.email || "")
-            .trim()
-            .toLowerCase();
-
-          const itemEmail = (
-            item.owner?.email || ""
-          )
-            .trim()
-            .toLowerCase();
-
-          return Boolean(
-            uEmail && itemEmail && itemEmail === uEmail
+          const uName = (activeUser.username || "").toLowerCase();
+          const uEmail = (activeUser.email || "").toLowerCase();
+          const itemUName = (item.owner?.username || "").toLowerCase();
+          const itemEmail = (item.owner?.email || "").toLowerCase();
+          const itemName = item.owner?.name || "";
+          return (
+            (itemUName && itemUName === uName) ||
+            (itemEmail && itemEmail === uEmail) ||
+            (itemName && itemName === activeUser.name)
           );
         })
       : dataSets;
 
-  // =====================================================
-  // PET DATA
-  // =====================================================
-
+  // ส่งข้อมูลสัตว์เลี้ยงพร้อมข้อมูลการจองให้หน้า PetDetails
   const pets = userDatasets.map((item) => ({
     ...item.pet,
-
     id: getPetId(item),
-
-    name: item.pet.name || "",
-    petType: item.pet.petType || "",
-    breed: item.pet.breed || "",
-    birth: item.pet.birth || item.pet.age || "",
-    age: item.pet.age || "",
-    gender: item.pet.gender || "",
-    weight: item.pet.weight || "",
-    health: item.pet.health || "",
-    careNotes: item.pet.careNotes || "",
-
-    image:
-      item.pet.image ||
-      require("./1assets/piclogo.png"),
-
+    image: item.pet.image || require("./1assets/piclogo.png"),
     status: normalizePetStatus(item.booking.status),
-
-    checkIn:
-      item.booking.checkIn ||
-      item.booking.startDate ||
-      "",
-
-    checkOut:
-      item.booking.checkOut ||
-      item.booking.endDate ||
-      "",
-
-    startDate:
-      item.booking.startDate ||
-      item.booking.checkIn ||
-      "",
-
-    endDate:
-      item.booking.endDate ||
-      item.booking.checkOut ||
-      "",
-
+    checkIn: item.booking.checkIn || item.booking.startDate || "",
+    checkOut: item.booking.checkOut || item.booking.endDate || "",
+    startDate: item.booking.startDate || item.booking.checkIn || "",
+    endDate: item.booking.endDate || item.booking.checkOut || "",
     branch: item.booking.branch || "",
     bookingId: item.booking.id || "",
-
-    bookingTime:
-      item.booking.bookingTime ||
-      item.booking.time ||
-      "",
-
+    bookingTime: item.booking.bookingTime || item.booking.time || "",
+    checkInTime: item.booking.checkInTime || "",
+    checkOutTime: item.booking.checkOutTime || "",
     owner: item.owner || {},
-    ownerName: item.owner?.name || "",
-    ownerPhone: item.owner?.phone || "",
-    ownerEmail: item.owner?.email || "",
   }));
-
-  const activeSelectedPet = selectedPet
-    ? pets.find(
-        (pet) =>
-          String(pet.id) === String(selectedPet.id)
-      ) || selectedPet
-    : null;
-
-  // =====================================================
   // BOOKING DATA
-  // =====================================================
-
+  // รวมข้อมูลจาก owner, pet และ booking เพื่อให้หน้า MyBookingUser แสดงครบ
   const bookings = userDatasets.map((item) => ({
     ...item.booking,
-
-    id:
-      item.booking.id ||
-      item.booking.reservationId ||
-      "",
-
-    reservationDate:
-      item.booking.reservationDate ||
-      item.booking.bookingTimestamp ||
-      null,
-
-    bookingTimestamp:
-      item.booking.reservationDate ||
-      item.booking.bookingTimestamp ||
-      null,
-
+    id: item.booking.id || item.owner?.id || item.pet.id,
     pet: item.pet.name || "",
-    petType: item.pet.petType || "",
+    petType: item.pet.petType || item.pet.type || "",
     breed: item.pet.breed || "",
     gender: item.pet.gender || "",
+    age: item.pet.birth || item.pet.age || "",
     birth: item.pet.birth || item.pet.age || "",
-    age: item.pet.age || "",
     weight: item.pet.weight || "",
     health: item.pet.health || "",
     careNotes: item.pet.careNotes || "",
-
     name: item.owner?.name || "",
     phone: item.owner?.phone || "",
     email: item.owner?.email || "",
-
     status: normalizePetStatus(item.booking.status),
   }));
+  // รายการที่ยืนยันคิวแล้วจะย้ายมาอยู่ในบันทึกเข้า-ออกรับคืน
+  // รอรับเข้า = ปุ่มรับเข้าพัก, In Care/รอรับกลับ = ปุ่มรับกลับ
+  const staffActivityList = dataSets
+    .filter((item) =>
+      ["รอรับเข้า", "In Care", "พร้อมรับกลับ"].includes(
+        normalizePetStatus(item.booking?.status)
+      )
+    )
+    .map((item) => {
+      const status = normalizePetStatus(item.booking?.status);
+      return {
+        id: `ACT-${item.booking?.id || getPetId(item)}`,
+        petId: getPetId(item),
+        bookingId: item.booking?.id,
+        name: item.pet?.name || "",
+        branch: item.booking?.branch || "",
+        branchId: item.booking?.branchId || null,
+        action: status === "รอรับเข้า" ? "รับเข้าพัก" : "รับกลับ",
+        detail: `${item.owner?.name || ""} - ${item.booking?.startDate || item.booking?.checkIn || ""} ถึง ${item.booking?.endDate || item.booking?.checkOut || ""}`,
+      };
+    });
 
-  // =====================================================
   // STAFF PET DATA
-  // =====================================================
-
   const staffPets = dataSets.map((item) => ({
     id: getPetId(item),
     name: item.pet.name || "",
-    image:
-      item.pet.image ||
-      require("./1assets/piclogo.png"),
+    image: item.pet.image || require("./1assets/piclogo.png"),
     owner: item.owner?.name || "",
     status: normalizePetStatus(item.booking.status),
-    branch: item.booking.branch || "",
+    branch: item.booking.branch || item.pet.branch || "",
+    branchId: item.booking.branchId || item.pet.branchId || null,
     petId: getPetId(item),
     petName: item.pet.name,
+    petType: item.pet.petType,
+    petBreed: item.pet.breed,
+    petSex: item.pet.gender,
+    petWeight: item.pet.weight,
+    petBirth: item.pet.birth || item.pet.age,
+    petCondition: item.pet.health,
+    petNote: item.pet.careNotes,
     customerName: item.owner?.name,
     customerPhone: item.owner?.phone,
     customerEmail: item.owner?.email,
     bookingId: item.booking.id,
-    checkIn:
-      item.booking.startDate ||
-      item.booking.checkIn,
-    checkOut:
-      item.booking.endDate ||
-      item.booking.checkOut,
+    checkIn: item.booking.startDate || item.booking.checkIn,
+    checkOut: item.booking.endDate || item.booking.checkOut,
   }));
-
-  // =====================================================
-  // BOOKING QUEUE
-  // =====================================================
-
+  // BOOKING QUEUE DATA
   const bookingQueue = dataSets.map((item) => ({
-    id:
-      item.booking.id ||
-      item.queue?.id,
-
+    id: item.queue?.id || item.booking.id,
     bookingId: item.booking.id,
     petId: getPetId(item),
-
-    time:
-      item.queue?.time ||
-      item.booking.bookingTime ||
-      "10:00",
-
+    time: item.queue?.time || item.booking.bookingTime || item.booking.time || "--:--",
     name: item.pet.name || "",
     branch: item.booking.branch || "",
+    branchId: item.booking.branchId || null,
     status: normalizePetStatus(item.booking.status),
-
-    detail: `${
-      item.owner?.name || ""
-    } - ${
-      item.booking.startDate || ""
-    } ถึง ${
-      item.booking.endDate || ""
-    }`,
-
+    detail: `${item.owner?.name || ""} - ${item.booking.startDate || item.booking.checkIn || ""} ถึง ${item.booking.endDate || item.booking.checkOut || ""}`,
     customerName: item.owner?.name,
     customerPhone: item.owner?.phone,
     customerEmail: item.owner?.email,
+    petName: item.pet.name,
+    petType: item.pet.petType,
+    petBreed: item.pet.breed,
+    petSex: item.pet.gender,
+    petWeight: item.pet.weight,
+    petBirth: item.pet.birth || item.pet.age,
+    petCondition: item.pet.health,
+    petNote: item.pet.careNotes,
+    checkIn: item.booking.startDate || item.booking.checkIn,
+    checkOut: item.booking.endDate || item.booking.checkOut,
   }));
+  // ACCOUNT STATE
+  const [accounts, setAccounts] = useState([
+    {
+      username: "a",
+      password: "123",
+      role: "user",
+      name: "ผู้ใช้งาน A",
+      phone: "083xxxxxxx",
+      email: "user@gmail.com",
+    },
+    {
+      username: "b",
+      password: "123",
+      role: "staff",
+      name: "พนักงาน B",
+      phone: "084xxxxxxx",
+      email: "staff@gmail.com",
+    },
+    {
+      username: "c",
+      password: "123",
+      role: "admin",
+      name: "ผู้ดูแลระบบ C",
+      phone: "085xxxxxxx",
+      email: "admin@gmail.com",
+    },
+  ]);
+  // POPUP STATE
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupType, setPopupType] = useState("loginFailed");
+  const [popupMessage, setPopupMessage] = useState("");
 
+  // FONT
+  const [fontsLoaded] = useFonts({
+    Itim: require("./1assets/Itim-Regular.ttf"),
+  });
   // =====================================================
-  // LOAD CUSTOMER DATA
+  // RESTORE APP STATE
+  // =====================================================
+  useEffect(() => {
+    const restoreAppState = async () => {
+      try {
+        const savedState = await AsyncStorage.getItem(APP_STORAGE_KEY);
+        if (savedState) {
+          const data = JSON.parse(savedState);
+          const validPages = [
+            "guest",
+            "login",
+            "user",
+            "staff",
+            "admin",
+          ];
+          if (validPages.includes(data.currentPage)) {
+            setCurrentPage(data.currentPage);
+          }
+          setActiveUser(data.activeUser || null);
+          setShowRegister(data.showRegister || false);
+          setShowForgotPassword(data.showForgotPassword || false);
+          setShowBooking(data.showBooking || false);
+          setShowMyBooking(data.showMyBooking || false);
+          // RESTORE PET DATA
+          let restoredData = [];
+          if (Array.isArray(data.dataSets)) {
+            const hasOldMock = data.dataSets.some((d) => d?.owner?.name === "คุณวิลักษณ์");
+            if (!hasOldMock) {
+              restoredData = data.dataSets.map(cleanSavedData);
+            }
+          }
+          setDataSets(restoredData);
+          // RESTORE ACTIVITY
+          if (Array.isArray(data.activityList)) {
+            const cleanedActivities = data.activityList.map((item) => {
+              const cleanActivity = { ...item };
+              delete cleanActivity.status;
+              return cleanActivity;
+            });
+            setActivityList(cleanedActivities);
+          }
+          // RESTORE SELECTED PET
+          if (data.showPetDetails && data.selectedPetId) {
+            const savedPet = restoredData.find(
+              (item) => getPetId(item) === data.selectedPetId
+            );
+            if (savedPet) {
+              setSelectedPet({
+                ...savedPet.pet,
+                status: savedPet.booking.status,
+                owner: savedPet.owner,
+              });
+              setShowPetDetails(true);
+            }
+          }
+          setShowProfile(false);
+        }
+      } catch (error) {
+        console.log("Restore app state error:", error);
+      } finally {
+        setIsRestoring(false);
+      }
+    };
+    restoreAppState();
+  }, []);
+  
+  // =====================================================
+  // SAVE APP STATE
+  // =====================================================
+  useEffect(() => {
+    if (isRestoring) return;
+    const saveAppState = async () => {
+      try {
+        const safeUser = activeUser
+          ? {
+              username: activeUser.username,
+              role: activeUser.role,
+              name: activeUser.name,
+              email: activeUser.email,
+              phone: activeUser.phone,
+            }
+          : null;
+        await AsyncStorage.setItem(
+          APP_STORAGE_KEY,
+          JSON.stringify({
+            currentPage,
+            activeUser: safeUser,
+            showRegister,
+            showForgotPassword,
+            showBooking,
+            showMyBooking,
+            showPetDetails,
+            selectedPetId: selectedPet?.id || null,
+            dataSets,
+            activityList,
+          })
+        );
+      } catch (error) {
+        console.log("Save app state error:", error);
+      }
+    };
+    saveAppState();
+  }, [
+    isRestoring,
+    currentPage,
+    activeUser,
+    showRegister,
+    showForgotPassword,
+    showBooking,
+    showMyBooking,
+    showPetDetails,
+    selectedPet?.id,
+    dataSets,
+    activityList,
+  ]);
+  // LOADING
+  if (!fontsLoaded || isRestoring) {
+    return null;
+  }
+  // =====================================================
+  // API LOADERS
   // =====================================================
 
-  const loadCustomerData = async (userOverride = null) => {
-    const customer = userOverride || activeUser;
-
+  const loadCustomerData = async () => {
     try {
-      const [resRes, petsRes] = await Promise.all([
+      const [resRes, petRes] = await Promise.all([
         apiGetCustomerReservations(),
         apiGetCustomerPets(),
       ]);
 
-      const reservationRows = Array.isArray(resRes.data)
-        ? resRes.data
-        : (
-            resRes.data?.reservations ||
-            resRes.data?.data ||
-            resRes.data?.items ||
-            []
-          );
-
-      const petRows = Array.isArray(petsRes.data)
-        ? petsRes.data
-        : (
-            petsRes.data?.pets ||
-            petsRes.data?.data ||
-            []
-          );
-
-      if (resRes.ok && Array.isArray(reservationRows)) {
-        const backendPets =
-          petsRes.ok && Array.isArray(petRows)
-            ? petRows
-            : [];
-
-        const accountEmail = String(
-          customer?.email || ""
-        )
-          .trim()
-          .toLowerCase();
-
-        const ownReservations = accountEmail
-          ? reservationRows.filter((r) =>
-              String(
-                r.customerEmail || r.email || ""
-              )
-                .trim()
-                .toLowerCase() === accountEmail
-            )
-          : reservationRows;
-
-        const backendDataSets = ownReservations.map(
-          (r, idx) => {
-            const matchedPet = backendPets.find((p) =>
-              String(p.customerEmail || "")
-                .trim()
-                .toLowerCase() ===
-                String(r.customerEmail || "")
-                  .trim()
-                  .toLowerCase() &&
-              String(p.petName || "")
-                .trim()
-                .toLowerCase() ===
-                String(r.petName || "")
-                  .trim()
-                  .toLowerCase()
-            );
-
-            const plannedIn = r.checkIn
-              ? new Date(r.checkIn).getTime()
-              : 0;
-
-            const actualIn = matchedPet?.checkIn
-              ? new Date(matchedPet.checkIn).getTime()
-              : 0;
-
-            const plannedOut = r.checkOut
-              ? new Date(r.checkOut).getTime()
-              : 0;
-
-            const actualOut = matchedPet?.checkOut
-              ? new Date(matchedPet.checkOut).getTime()
-              : 0;
-
-            const checkedIn =
-              actualIn &&
-              (!plannedIn ||
-                Math.abs(actualIn - plannedIn) > 60000);
-
-            const checkedOut =
-              actualOut &&
-              (!plannedOut ||
-                Math.abs(actualOut - plannedOut) > 60000);
-
-            const bookingStatus = matchedPet
-              ? (
-                  checkedOut
-                    ? "รับกลับแล้ว"
-                    : checkedIn
-                    ? "In Care"
-                    : "รอรับเข้า"
-                )
-              : (
-                  r.status === "accepted" ||
-                  r.status === "confirmed"
-                    ? "รอรับเข้า"
-                    : r.status === "in_care"
-                    ? "In Care"
-                    : r.status === "rejected" ||
-                      r.status === "cancelled"
-                    ? "ถูกปฏิเสธ"
-                    : r.status === "completed"
-                    ? "รับกลับแล้ว"
-                    : "รอยืนยันคิว"
-                );
-
-            const reservationTimestamp =
-              getBookingTimestamp(r);
-
-            return {
-              owner: {
-                id: r.customerName || `O${idx}`,
-                username: customer?.username || "",
-                name:
-                  r.customerName ||
-                  customer?.name ||
-                  "ลูกค้า",
-                phone: r.customerPhone || "",
-                email: r.customerEmail || "",
-              },
-
-              pet: {
-                id: String(
-                  matchedPet?.petId ||
-                  matchedPet?.id ||
-                  r.reservationId ||
-                  r.id ||
-                  idx
-                ),
-
-                name: r.petName || "สัตว์เลี้ยง",
-                petType: r.petType || "สุนัข",
-                breed: r.petBreed || "",
-                gender: r.petSex || "ผู้",
-                birth: r.petBirth || "",
-                weight: String(r.petWeight || ""),
-                health: r.petCondition || "",
-                careNotes: r.petNote || "",
-                image: require("./1assets/piclogo.png"),
-              },
-
-              booking: {
-                id: String(
-                  r.reservationId ||
-                  r.id ||
-                  idx
-                ),
-
-                branch:
-                  r.branch ||
-                  r.branchName ||
-                  r.branch_name ||
-                  "",
-
-                startDate: r.checkIn
-                  ? new Date(
-                      r.checkIn
-                    ).toLocaleDateString("th-TH")
-                  : "",
-
-                endDate: r.checkOut
-                  ? new Date(
-                      r.checkOut
-                    ).toLocaleDateString("th-TH")
-                  : "",
-
-                checkIn: r.checkIn
-                  ? new Date(
-                      r.checkIn
-                    ).toLocaleDateString("th-TH")
-                  : "",
-
-                checkOut: r.checkOut
-                  ? new Date(
-                      r.checkOut
-                    ).toLocaleDateString("th-TH")
-                  : "",
-
-                // เวลาจองจริงจาก Backend
-                reservationDate: reservationTimestamp,
-
-                bookingTimestamp: reservationTimestamp,
-
-                bookingTime: formatBookingTime(
-                  reservationTimestamp
-                ),
-
-                checkInTime: r.checkIn
-                  ? formatClockTime(r.checkIn)
-                  : "",
-
-                checkOutTime: r.checkOut
-                  ? formatClockTime(r.checkOut)
-                  : "",
-
-                status: bookingStatus,
-              },
-
-              queue: {
-                id: `Q${idx}`,
-
-                time: formatBookingTime(
-                  reservationTimestamp
-                ),
-              },
-            };
-          }
-        );
-
+      if (resRes.ok && Array.isArray(resRes.data)) {
+        const backendDataSets = resRes.data.map((r, idx) => ({
+          owner: {
+            id: r.customerName || `O${idx}`,
+            username: activeUser?.username || "",
+            name: r.customerName || activeUser?.name || "ลูกค้า",
+            phone: r.customerPhone || "",
+            email: r.customerEmail || "",
+          },
+          pet: {
+            id: String(r.reservationId || r.id || idx),
+            name: r.petName || "สัตว์เลี้ยง",
+            petType: r.petType || "สุนัข",
+            breed: r.petBreed || "",
+            gender: r.petSex || "ผู้",
+            birth: r.petBirth || "",
+            weight: String(r.petWeight || ""),
+            health: r.petCondition || "",
+            careNotes: r.petNote || "",
+            image: require("./1assets/piclogo.png"),
+          },
+          booking: {
+            id: String(r.reservationId || r.id || idx),
+            branch: getBranchValue(r.branch || r.branch_name || ""),
+            branchId: r.branchId || r.branch_id || null,
+            reservationDate: r.reservationDate || r.reservation_date || null,
+            startDate: r.checkIn ? new Date(r.checkIn).toLocaleDateString("th-TH") : "",
+            endDate: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
+            checkIn: r.checkIn ? new Date(r.checkIn).toLocaleDateString("th-TH") : "",
+            checkOut: r.checkOut ? new Date(r.checkOut).toLocaleDateString("th-TH") : "",
+            bookingTime: r.reservationDate ? new Date(r.reservationDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "10:00",
+            time: "10:00",
+            status: normalizePetStatus(r.status),
+          },
+          queue: {
+            id: `Q${idx}`,
+            time: "10:00",
+          },
+        }));
         setDataSets(backendDataSets);
       }
     } catch (err) {
@@ -687,88 +501,53 @@ export default function App() {
     }
   };
 
-  // =====================================================
-  // LOAD STAFF DATA
-  // =====================================================
-
   const loadStaffData = async () => {
-
-    console.log("เวลาที่ Backend ส่งมา:", reservationTimestamp);
-    console.log("ข้อมูลการจองทั้งหมด:", r);
-    
     try {
-      const [resRes, petsRes] = await Promise.all([
+      const [resRes, petRes] = await Promise.all([
         apiGetStaffReservations(),
         apiGetStaffPets(),
       ]);
 
       if (resRes.ok && Array.isArray(resRes.data)) {
-        const backendPets =
-          petsRes.ok && Array.isArray(petsRes.data)
-            ? petsRes.data
-            : [];
+        const staffPetRows = Array.isArray(petRes?.data)
+          ? petRes.data
+          : Array.isArray(petRes?.data?.pets)
+          ? petRes.data.pets
+          : [];
 
         const backendStaffSets = resRes.data.map((r, idx) => {
-          const matchedPet = backendPets.find(
-            (p) =>
-              String(p.customerEmail || "").trim().toLowerCase() ===
-                String(r.customerEmail || "").trim().toLowerCase() &&
-              String(p.petName || "").trim().toLowerCase() ===
-                String(r.petName || "").trim().toLowerCase()
-          );
+          const reservationId = String(r.reservationId || r.id || idx);
+          const branchName = getBranchValue(r.branch || r.branch_name || "");
+          const branchId = r.branchId || r.branch_id || null;
+          const matchedPet = staffPetRows.find((pet) => {
+            const sameName = String(pet.petName || pet.pet_name || "").trim().toLowerCase() ===
+              String(r.petName || "").trim().toLowerCase();
+            const sameEmail = !r.customerEmail || !pet.customerEmail ||
+              String(pet.customerEmail).trim().toLowerCase() === String(r.customerEmail).trim().toLowerCase();
+            const sameBranch = branchId && (pet.branchId || pet.branch_id)
+              ? String(pet.branchId || pet.branch_id) === String(branchId)
+              : getBranchValue(pet.branch || pet.branch_name || "") === branchName;
+            return sameName && sameEmail && sameBranch;
+          });
 
-          const statusMap = {
-            pending: "รอยืนยันคิว",
-            confirmed: "รอรับเข้า",
-            accepted: "รอรับเข้า",
-            in_care: "In Care",
-            rejected: "ถูกปฏิเสธ",
-            cancelled: "ถูกปฏิเสธ",
-            completed: "รับกลับแล้ว",
-          };
-
-          let currentStatus =
-            statusMap[r.status] || "รอยืนยันคิว";
-
-          if (matchedPet) {
-            const plannedIn = r.checkIn
-              ? new Date(r.checkIn).getTime()
-              : 0;
-
-            const actualIn = matchedPet.checkIn
-              ? new Date(matchedPet.checkIn).getTime()
-              : 0;
-
-            const plannedOut = r.checkOut
-              ? new Date(r.checkOut).getTime()
-              : 0;
-
-            const actualOut = matchedPet.checkOut
-              ? new Date(matchedPet.checkOut).getTime()
-              : 0;
-
-            const checkedIn =
-              actualIn &&
-              (!plannedIn ||
-                Math.abs(actualIn - plannedIn) > 60000);
-
-            const checkedOut =
-              actualOut &&
-              (!plannedOut ||
-                Math.abs(actualOut - plannedOut) > 60000);
-
-            currentStatus = checkedOut
-              ? "รับกลับแล้ว"
-              : checkedIn
-              ? "In Care"
-              : "รอรับเข้า";
+          // หลังยืนยันคิว Backend สร้าง pet_id ใหม่ จึงต้องใช้ petId จาก /staff/pets
+          // เพื่อให้การบันทึกเข้า-ออกรับคืนอ้างอิงรหัสสัตว์ที่ถูกต้อง
+          const actualPetId = matchedPet?.petId || matchedPet?.pet_id || reservationId;
+          const plannedCheckIn = r.checkIn || r.check_in;
+          const plannedCheckOut = r.checkOut || r.check_out;
+          const actualCheckIn = matchedPet?.checkIn || matchedPet?.check_in;
+          const actualCheckOut = matchedPet?.checkOut || matchedPet?.check_out;
+          const hasCheckedOut = Boolean(actualCheckOut && plannedCheckOut &&
+            Math.abs(new Date(actualCheckOut).getTime() - new Date(plannedCheckOut).getTime()) > 60000);
+          const hasCheckedIn = Boolean(actualCheckIn && plannedCheckIn &&
+            Math.abs(new Date(actualCheckIn).getTime() - new Date(plannedCheckIn).getTime()) > 60000);
+          let bookingStatus = normalizePetStatus(r.status);
+          const petLifecycleStatus = matchedPet?.status;
+          if (["In Care", "พร้อมรับกลับ", "รับกลับแล้ว"].includes(petLifecycleStatus)) {
+            bookingStatus = petLifecycleStatus;
           }
-
-          // อ่านเวลาจองจาก Backend
-          const reservationTimestamp = getBookingTimestamp(r);
-
-            console.log("เวลาที่ Backend ส่งมา:", reservationTimestamp);
-            console.log("เวลาหลังแปลง:", new Date(reservationTimestamp).toString());
+          if (hasCheckedOut) bookingStatus = "รับกลับแล้ว";
+          else if (hasCheckedIn && bookingStatus === "รอรับเข้า") bookingStatus = "In Care";
 
           return {
             owner: {
@@ -777,15 +556,10 @@ export default function App() {
               phone: r.customerPhone || "",
               email: r.customerEmail || "",
             },
-
             pet: {
-              id: String(
-                matchedPet?.petId ||
-                matchedPet?.id ||
-                r.reservationId ||
-                r.id ||
-                idx
-              ),
+              id: String(actualPetId),
+              branch: branchName,
+              branchId,
               name: r.petName || "สัตว์เลี้ยง",
               petType: r.petType || "สุนัข",
               breed: r.petBreed || "",
@@ -796,353 +570,239 @@ export default function App() {
               careNotes: r.petNote || "",
               image: require("./1assets/piclogo.png"),
             },
-
             booking: {
-              id: String(r.reservationId || r.id || idx),
-
-              branch:
-                r.branch ||
-                r.branchName ||
-                r.branch_name ||
-                "",
-
-              startDate: r.checkIn
-                ? new Date(r.checkIn).toLocaleDateString("th-TH")
-                : "",
-
-              endDate: r.checkOut
-                ? new Date(r.checkOut).toLocaleDateString("th-TH")
-                : "",
-
-              checkIn: r.checkIn
-                ? new Date(r.checkIn).toLocaleDateString("th-TH")
-                : "",
-
-              checkOut: r.checkOut
-                ? new Date(r.checkOut).toLocaleDateString("th-TH")
-                : "",
-
-              // ใช้เวลาที่ Backend บันทึกไว้
-              reservationDate: reservationTimestamp,
-              bookingTimestamp: reservationTimestamp,
-              bookingTime: formatBookingTime(reservationTimestamp),
-
-              status: currentStatus,
+              id: reservationId,
+              branch: branchName,
+              branchId,
+              reservationDate: r.reservationDate || r.reservation_date || null,
+              startDate: plannedCheckIn ? new Date(plannedCheckIn).toLocaleDateString("th-TH") : "",
+              endDate: plannedCheckOut ? new Date(plannedCheckOut).toLocaleDateString("th-TH") : "",
+              checkIn: plannedCheckIn ? new Date(plannedCheckIn).toLocaleDateString("th-TH") : "",
+              checkOut: plannedCheckOut ? new Date(plannedCheckOut).toLocaleDateString("th-TH") : "",
+              bookingTime: r.reservationDate ? new Date(r.reservationDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "10:00",
+              time: "10:00",
+              status: bookingStatus,
             },
-
-            queue: {
-              id: `Q${idx}`,
-
-              // ให้เวลาในหน้าจัดการคิวใช้ค่าเดียวกัน
-              time: formatBookingTime(reservationTimestamp),
-            },
+            queue: { id: `Q${idx}`, time: "10:00" },
           };
         });
-
         setDataSets(backendStaffSets);
-
-        const initialActivities = backendStaffSets
-          .filter(
-            (item) =>
-              item.booking.status === "รอรับเข้า" ||
-              item.booking.status === "In Care"
-          )
-          .map((item) => ({
-            id: `ACT-${item.booking.id}`,
-            name: item.pet.name,
-            petId: getPetId(item),
-            bookingId: item.booking.id,
-            branch: item.booking.branch,
-            action:
-              item.booking.status === "In Care"
-                ? "รับกลับ"
-                : "รับเข้าพัก",
-            detail: `${
-              item.booking.status === "In Care"
-                ? "รับกลับ"
-                : "รับเข้าพัก"
-            } • ${item.owner.name} - ${item.booking.startDate} ถึง ${item.booking.endDate}`,
-          }));
-
-        setActivityList(initialActivities);
       }
     } catch (err) {
       console.warn("loadStaffData error:", err);
     }
   };
 
+  const loadAdminData = async () => {
+    try {
+      const res = await apiGetManagerStatus();
+      if (res.ok && res.data) {
+        setAdminOverview(res.data);
+      }
+    } catch (err) {
+      console.warn("loadAdminData error:", err);
+    }
+  };
 
   // =====================================================
-  // RESTORE PAGE AFTER REFRESH
+  // POPUP ERROR
   // =====================================================
+  const showLoginError = (message) => {
+    setPopupType("loginFailed");
+    setPopupMessage(message);
+    setPopupVisible(true);
+  };
 
-  useEffect(() => {
-    let cancelled = false;
+  // =====================================================
+  // LOGIN
+  // =====================================================
+  const handleLogin = async (username, password) => {
+    try {
+      const res = await apiLogin({ username: username.trim(), password });
+      if (res.ok && res.data && res.data.accessToken) {
+        const payload = parseJwt(res.data.accessToken);
+        const userRole =
+          payload && (payload.role === "manager" ? "admin" : payload.role);
+        const role = ["user", "staff", "admin"].includes(userRole)
+          ? userRole
+          : "user";
 
-    const restoreAppState = async () => {
-      try {
-        const savedText = await AsyncStorage.getItem(APP_STORAGE_KEY);
-        const savedState = savedText ? JSON.parse(savedText) : {};
-        const token = await getAuthToken();
-
-        if (token) {
-          const payload = parseJwt(token) || {};
-
-          const tokenExpired =
-            payload.exp &&
-            Number(payload.exp) * 1000 <= Date.now();
-
-          if (tokenExpired) {
-            await clearAuthToken();
-          } else {
-            const backendRole = String(
-              payload.role || savedState.role || ""
-            ).toLowerCase();
-
-            const role =
-              backendRole === "customer"
-                ? "user"
-                : backendRole === "manager"
-                ? "admin"
-                : backendRole;
-
-            if (["user", "staff", "admin"].includes(role)) {
-              const profileResult = await apiGetProfile();
-
-              const profile = profileResult.ok
-                ? profileResult.data || {}
-                : {};
-
-              const userObj = {
-                userid:
-                  payload.userid ||
-                  payload.userId ||
-                  payload.id ||
-                  payload.sub ||
-                  "",
-                username:
-                  profile.username ||
-                  payload.username ||
-                  savedState.username ||
-                  "",
-                name:
-                  profile.username ||
-                  payload.username ||
-                  savedState.name ||
-                  "ผู้ใช้",
-                email:
-                  profile.email ||
-                  payload.email ||
-                  savedState.email ||
-                  "",
-                phone:
-                  profile.phone ||
-                  payload.phone ||
-                  savedState.phone ||
-                  "",
-                role,
-              };
-
-              const savedAccountKey = String(
-                savedState.accountKey || ""
-              );
-
-              const currentAccountKeys = [
-                userObj.userid,
-                userObj.email,
-                userObj.username,
-              ]
-                .map((value) =>
-                  String(value || "").trim().toLowerCase()
-                )
-                .filter(Boolean);
-
-              const sameAccount =
-                !savedAccountKey ||
-                currentAccountKeys.includes(
-                  savedAccountKey.trim().toLowerCase()
-                );
-
-              if (cancelled) return;
-
-              setActiveUser(userObj);
-              setCurrentPage(role);
-
-              setShowRegister(false);
-              setShowForgotPassword(false);
-
-              setShowProfile(
-                sameAccount && Boolean(savedState.showProfile)
-              );
-
-              if (role === "user" && sameAccount) {
-                const restoreBooking = Boolean(
-                  savedState.showBooking
-                );
-
-                const restoreMyBooking = Boolean(
-                  savedState.showMyBooking
-                );
-
-                setShowBooking(restoreBooking);
-
-                setShowMyBooking(
-                  !restoreBooking && restoreMyBooking
-                );
-              } else {
-                setShowBooking(false);
-                setShowMyBooking(false);
-              }
-
-              // โหลดข้อมูลใหม่จาก Backend ตามบัญชีที่ Login อยู่
-              if (role === "user") {
-                await loadCustomerData(userObj);
-              } else if (role === "staff") {
-                await loadStaffData();
-              } else if (role === "admin") {
-                const overview = await apiGetManagerStatus();
-
-                if (!cancelled && overview.ok) {
-                  setAdminOverview(overview.data);
-                }
-              }
-
-              return;
-            }
-          }
+        let profile = { name: username, email: "", phone: "" };
+        const profRes = await apiGetProfile();
+        if (profRes.ok && profRes.data) {
+          profile = {
+            name: profRes.data.username || username,
+            email: profRes.data.email || "",
+            phone: profRes.data.phone || "",
+          };
         }
 
-        if (cancelled) return;
+        const userObj = {
+          username: username.trim(),
+          role,
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+        };
 
-        setActiveUser(null);
+        setActiveUser(userObj);
+        setShowRegister(false);
+        setShowForgotPassword(false);
         setShowBooking(false);
         setShowMyBooking(false);
+        setShowPetDetails(false);
+        setSelectedPet(null);
         setShowProfile(false);
+        setCurrentPage(role);
 
-        // กรณีที่ยังอยู่หน้า Login ก่อน Refresh
-        if (savedState.currentPage === "login") {
-          setCurrentPage("login");
-
-          setShowRegister(
-            Boolean(savedState.showRegister)
-          );
-
-          setShowForgotPassword(
-            Boolean(savedState.showForgotPassword)
-          );
-        } else {
-          setCurrentPage("guest");
-          setShowRegister(false);
-          setShowForgotPassword(false);
-        }
-      } catch (error) {
-        console.warn("restoreAppState error:", error);
-
-        if (!cancelled) {
-          setActiveUser(null);
-          setShowBooking(false);
-          setShowMyBooking(false);
-          setShowProfile(false);
-          setShowRegister(false);
-          setShowForgotPassword(false);
-          setCurrentPage("guest");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsRestoring(false);
-        }
+        if (role === "user") loadCustomerData();
+        else if (role === "staff") loadStaffData();
+        else if (role === "admin") loadAdminData();
+        return;
       }
-    };
+    } catch (err) {
+      console.warn("apiLogin error:", err);
+    }
 
-    restoreAppState();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    // In-memory fallback
+    const account = accounts.find(
+      (item) =>
+        item.username === username.trim() && item.password === password
+    );
+    if (!account) {
+      return showLoginError("ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง");
+    }
+    if (!["user", "staff", "admin"].includes(account.role)) {
+      return showLoginError("ไม่พบสิทธิ์ของบัญชีนี้");
+    }
+    setActiveUser(account);
+    setShowRegister(false);
+    setShowForgotPassword(false);
+    setShowBooking(false);
+    setShowMyBooking(false);
+    setShowPetDetails(false);
+    setSelectedPet(null);
+    setShowProfile(false);
+    setCurrentPage(account.role);
+  };
 
   // =====================================================
-  // SAVE CURRENT PAGE
+  // REGISTER
   // =====================================================
+  const handleRegister = async (
+    username,
+    email,
+    phone,
+    password,
+    confirmPassword
+  ) => {
+    const cleanUsername = username.trim();
+    if (
+      !cleanUsername ||
+      !email.trim() ||
+      !phone.trim() ||
+      !password ||
+      !confirmPassword
+    ) {
+      return showLoginError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+    }
+    if (password !== confirmPassword) {
+      return showLoginError("รหัสผ่านไม่ตรงกัน");
+    }
 
-  useEffect(() => {
-    if (isRestoring) return;
+    try {
+      const res = await apiRegister({
+        username: cleanUsername,
+        email: email.trim(),
+        phone: phone.trim(),
+        password,
+      });
 
-    const pageState = {
-      currentPage,
+      if (res.ok) {
+        setPopupType("loginFailed");
+        setPopupMessage("ลงทะเบียนสำเร็จแล้ว สามารถเข้าสู่ระบบได้ทันที");
+        setPopupVisible(true);
+        setShowRegister(false);
+        setShowForgotPassword(false);
+        return;
+      } else {
+        const errorMsg =
+          res.data?.message || res.data?.error || "เกิดข้อผิดพลาดในการลงทะเบียน";
+        return showLoginError(errorMsg);
+      }
+    } catch (err) {
+      console.warn("apiRegister error:", err);
+    }
 
-      showRegister:
-        currentPage === "login" && showRegister,
-
-      showForgotPassword:
-        currentPage === "login" && showForgotPassword,
-
-      showBooking:
-        currentPage === "user" && showBooking,
-
-      showMyBooking:
-        currentPage === "user" && showMyBooking,
-
-      showProfile: Boolean(activeUser && showProfile),
-
-      role: activeUser?.role || "",
-
-      accountKey: activeUser
-        ? String(
-            activeUser.userid ||
-            activeUser.email ||
-            activeUser.username ||
-            ""
-          )
-        : "",
-
-      username: activeUser?.username || "",
-      name: activeUser?.name || "",
-      email: activeUser?.email || "",
-      phone: activeUser?.phone || "",
+    // In-memory fallback
+    if (
+      accounts.some(
+        (item) => item.username.toLowerCase() === cleanUsername.toLowerCase()
+      )
+    ) {
+      return showLoginError("ชื่อบัญชีนี้ถูกใช้งานแล้ว");
+    }
+    const newAccount = {
+      username: cleanUsername,
+      password,
+      role: "user",
+      name: cleanUsername,
+      email: email.trim(),
+      phone: phone.trim(),
     };
+    setAccounts((prev) => [...prev, newAccount]);
+    setShowRegister(false);
+    setShowForgotPassword(false);
+  };
 
-    AsyncStorage.setItem(
-      APP_STORAGE_KEY,
-      JSON.stringify(pageState)
-    ).catch((error) => {
-      console.warn("save app page state error:", error);
-    });
-  }, [
-    isRestoring,
-    currentPage,
-    showRegister,
-    showForgotPassword,
-    showBooking,
-    showMyBooking,
-    showProfile,
-    activeUser,
-  ]);
+  // =====================================================
+  // FORGOT PASSWORD
+  // =====================================================
+  const handleForgotPasswordSubmit = async (emailOrUsername) => {
+    if (!emailOrUsername || !emailOrUsername.trim()) {
+      return showLoginError("กรุณากรอกอีเมลหรือชื่อผู้ใช้");
+    }
+    try {
+      const res = await apiForgetPassword({ username: emailOrUsername.trim() });
+      if (res.ok) {
+        setPopupType("loginFailed");
+        setPopupMessage("ระบบได้รับคำขอรีเซ็ตรหัสผ่านเรียบร้อยแล้ว");
+        setPopupVisible(true);
+        setShowForgotPassword(false);
+        return;
+      }
+    } catch (err) {
+      console.warn("apiForgetPassword error:", err);
+    }
+    showLoginError("ไม่สามารถส่งคำขอรีเซ็ตรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง");
+  };
+
+  // =====================================================
+  // LOGOUT
+  // =====================================================
+  const handleLogout = async () => {
+    await clearAuthToken();
+    setActiveUser(null);
+    setCurrentPage("guest");
+    setShowBooking(false);
+    setShowMyBooking(false);
+    setShowPetDetails(false);
+    setSelectedPet(null);
+    setShowProfile(false);
+    setShowRegister(false);
+    setShowForgotPassword(false);
+  };
 
   // =====================================================
   // ADD BOOKING
   // =====================================================
-
   const handleBookingSubmit = async (formData) => {
-    const selectedBranch = getBranchValue(formData?.branch);
-
-    if (!selectedBranch) {
-      showMessage("กรุณาเลือกสาขาก่อนยืนยันการจอง");
-      return;
-    }
-
-    // บันทึกเวลาจริง ณ ตอนที่กดปุ่มจองคิว
-    const bookingTimestamp = new Date().toISOString();
-
     const toIsoDateTime = (dateStr, timeStr) => {
       if (!dateStr) return new Date().toISOString();
-
       const parts = dateStr.split("/");
-
       if (parts.length === 3) {
         const [d, m, y] = parts;
         const [h, min] = (timeStr || "10:00").split(":");
-
         return new Date(
           Number(y),
           Number(m) - 1,
@@ -1151,7 +811,6 @@ export default function App() {
           Number(min || 0)
         ).toISOString();
       }
-
       return new Date().toISOString();
     };
 
@@ -1159,7 +818,6 @@ export default function App() {
       customerName: formData.ownerName || activeUser?.name || "ลูกค้า",
       customerPhone: formData.phone || activeUser?.phone || "0812345678",
       customerEmail: formData.email || activeUser?.email || "customer@example.com",
-
       petName: formData.petName || "สัตว์เลี้ยง",
       petType: formData.petType || "สุนัข",
       petBreed: formData.breed || "ทั่วไป",
@@ -1168,283 +826,49 @@ export default function App() {
       petBirth: formData.age || "2022-01-01",
       petCondition: formData.health || "ไม่มี",
       petNote: formData.careNotes || "ไม่มี",
-
-      // เวลาที่กดจองคิว
-      timestamp: bookingTimestamp,
-      bookingTimestamp: bookingTimestamp,
-      booking_timestamp: bookingTimestamp,
-      bookingTime: bookingTimestamp,
-      createdAt: bookingTimestamp,
-      created_at: bookingTimestamp,
-
-      // วันและเวลาที่ฝากสัตว์เลี้ยง
-      checkIn: toIsoDateTime(
-        formData.checkIn,
-        formData.checkInTime
-      ),
-
-      // วันและเวลาที่รับสัตว์เลี้ยงกลับ
-      checkOut: toIsoDateTime(
-        formData.checkOut,
-        formData.checkOutTime
-      ),
-
-      branch: selectedBranch,
+      checkIn: toIsoDateTime(formData.checkIn, formData.checkInTime),
+      checkOut: toIsoDateTime(formData.checkOut, formData.checkOutTime),
+      branch: getBranchValue(formData.branch) || "ลาดกระบัง",
     };
 
     try {
       const res = await apiCreateReservation(reservationPayload);
-
-      if (!res.ok) {
-        showMessage(
-          res.data?.message ||
-          res.data?.error ||
-          "บันทึกการจองไม่สำเร็จ"
-        );
+      if (!res?.ok) {
+        const message = res?.data?.error || res?.data?.message || "ไม่สามารถบันทึกการจองได้ กรุณาลองใหม่";
+        showLoginError(message);
         return;
       }
 
       await loadCustomerData();
-
       setShowBooking(false);
       setShowMyBooking(true);
-
-      showMessage("ส่งคำขอจองสำเร็จ สถานะรอการยืนยันคิว");
-
+      setPopupType("loginFailed");
+      setPopupMessage("การจองสำเร็จแล้ว!");
+      setPopupVisible(true);
     } catch (err) {
       console.warn("apiCreateReservation error:", err);
-
-      showMessage(
-        "เชื่อมต่อ Backend ไม่สำเร็จ จึงยังไม่ได้บันทึกการจอง"
-      );
+      showLoginError("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ จึงยังไม่ได้บันทึกการจอง");
     }
   };
 
   // =====================================================
   // CANCEL BOOKING
   // =====================================================
-
   const handleCancelBooking = async (bookingId) => {
     try {
-      const result = await apiCancelReservation(bookingId);
-
-      if (!result.ok) {
-        showMessage(
-          result.data?.message ||
-          result.data?.error ||
-          "ยกเลิกการจองไม่สำเร็จ"
-        );
-        return;
-      }
-
+      await apiCancelReservation(bookingId);
       await loadCustomerData();
-
-      showMessage("ส่งคำขอยกเลิกการจองแล้ว");
-    } catch (error) {
-      console.warn("handleCancelBooking error:", error);
-      showMessage("เชื่อมต่อ Backend ไม่สำเร็จ");
-    }
-  };
-
-  // =====================================================
-  // CONFIRM / REJECT QUEUE (STAFF)
-  // =====================================================
-
-  const handleQueueDecision = async (queueItem, accepted) => {
-    const targetId = queueItem.bookingId || queueItem.id;
-
-    try {
-      const result = await apiConfirmStaffReservation(
-        targetId,
-        accepted
-      );
-
-      if (!result.ok) {
-        setPopupType("loginFailed");
-
-        setPopupMessage(
-          result.data?.message ||
-          result.data?.error ||
-          "ไม่สามารถบันทึกผลการยืนยันคิวได้"
-        );
-
-        setPopupVisible(true);
-        return;
-      }
     } catch (err) {
-      console.warn("apiConfirmStaffReservation error:", err);
-
-      setPopupType("loginFailed");
-      setPopupMessage(
-        "เชื่อมต่อ Backend ไม่สำเร็จ ไม่ได้เปลี่ยนสถานะคิว"
-      );
-      setPopupVisible(true);
-
-      return;
+      console.warn("apiCancelReservation error:", err);
     }
-
-    if (accepted) {
-      setDataSets((prev) =>
-        prev.map((item) =>
-          item.booking.id === targetId ||
-          getPetId(item) === queueItem.petId
-            ? {
-                ...item,
-                booking: {
-                  ...item.booking,
-                  status: "รอรับเข้า",
-                },
-              }
-            : item
-        )
-      );
-
-      setActivityList((prev) => [
-        {
-          id: `ACT-${targetId}`,
-          name: queueItem.name || queueItem.petName,
-          petId: queueItem.petId,
-          bookingId: targetId,
-          branch: queueItem.branch,
-          action: "รับเข้าพัก",
-          detail: `รับเข้าพัก • ${queueItem.detail}`,
-        },
-        ...prev.filter((a) => a.bookingId !== targetId),
-      ]);
-    } else {
-      setDataSets((prev) =>
-        prev.map((item) =>
-          item.booking.id === targetId ||
-          getPetId(item) === queueItem.petId
-            ? {
-                ...item,
-                booking: {
-                  ...item.booking,
-                  status: "ถูกปฏิเสธ",
-                },
-              }
-            : item
-        )
-      );
-
-      setActivityList((prev) =>
-        prev.filter((a) => a.bookingId !== targetId)
-      );
-    }
-
-    if (accepted) {
-      await loadStaffData();
-    }
-  };
-
-  // =====================================================
-  // STAFF ACTIVITY
-  // =====================================================
-
-  const handleActivity = async (item, action) => {
-    const targetId = item.petId || item.id || item.bookingId;
-
-    const entryType =
-      action === "รับเข้าพัก"
-        ? "check-in"
-        : "check-out";
-
-    try {
-      const result = await apiRecordStaffPetEntry({
-        id: targetId,
-        type: entryType,
-        timestamp: new Date().toISOString(),
-      });
-
-      if (!result.ok) {
-        setPopupType("loginFailed");
-
-        setPopupMessage(
-          result.data?.message ||
-          result.data?.error ||
-          "บันทึกเวลาเข้า-ออกไม่สำเร็จ"
-        );
-
-        setPopupVisible(true);
-        return;
-      }
-    } catch (err) {
-      console.warn("apiRecordStaffPetEntry error:", err);
-
-      setPopupType("loginFailed");
-      setPopupMessage("เชื่อมต่อ Backend ไม่สำเร็จ");
-      setPopupVisible(true);
-
-      return;
-    }
-
-    if (action === "รับเข้าพัก") {
-      setDataSets((prev) =>
-        prev.map((d) =>
-          d.booking.id === targetId ||
-          getPetId(d) === item.petId
-            ? {
-                ...d,
-                booking: {
-                  ...d.booking,
-                  status: "In Care",
-                },
-              }
-            : d
-        )
-      );
-
-      setActivityList((prev) =>
-        prev.map((a) =>
-          a.id === item.id || a.bookingId === targetId
-            ? {
-                ...a,
-                action: "รับกลับ",
-                detail: `รับกลับ • ${item.detail || ""}`,
-              }
-            : a
-        )
-      );
-    } else if (action === "รับกลับ") {
-      setDataSets((prev) =>
-        prev.map((d) =>
-          d.booking.id === targetId ||
-          getPetId(d) === item.petId
-            ? {
-                ...d,
-                booking: {
-                  ...d.booking,
-                  status: "รับกลับแล้ว",
-                },
-              }
-            : d
-        )
-      );
-
-      setActivityList((prev) =>
-        prev.filter(
-          (a) =>
-            a.bookingId !== targetId &&
-            a.id !== item.id
-        )
-      );
-    }
-  };
-
-  // =====================================================
-  // PET STATUS CHANGE
-  // =====================================================
-
-  const handlePetStatusChange = async (petId, newStatus) => {
     setDataSets((prev) =>
       prev.map((item) =>
-        getPetId(item) === petId ||
-        item.booking.id === petId
+        item.booking?.id === bookingId || getPetId(item) === bookingId
           ? {
               ...item,
               booking: {
                 ...item.booking,
-                status: newStatus,
+                status: "ถูกปฏิเสธ",
               },
             }
           : item
@@ -1453,246 +877,208 @@ export default function App() {
   };
 
   // =====================================================
-  // POPUP MESSAGE
+  // UPDATE PET STATUS
+  // เปลี่ยนสถานะจริงจาก booking.status จุดเดียว
   // =====================================================
-
-  const showMessage = (message) => {
-    setPopupType("loginFailed");
-    setPopupMessage(message);
-    setPopupVisible(true);
-  };
-
-  const processUserAuth = async (token) => {
-    const payload = parseJwt(token);
-    const backendRole = String(payload?.role || "customer").toLowerCase();
-    const role = backendRole === "customer" ? "user" :
-      backendRole === "manager" ? "admin" : backendRole;
-
-    const profRes = await apiGetProfile();
-    const profile = profRes.ok ? profRes.data : {};
-    const userObj = {
-      userid: payload?.userid || "",
-      username: profile.username || payload?.username || payload?.email || "ผู้ใช้งาน",
-      name: profile.username || profile.name || payload?.name || payload?.email || "ผู้ใช้งาน",
-      email: profile.email || payload?.email || "",
-      phone: profile.phone || payload?.phone || "",
-      role,
-    };
-
-    setActiveUser(userObj);
-    setShowRegister(false);
-    setShowForgotPassword(false);
-    setShowBooking(false);
-    setShowMyBooking(false);
-    setShowProfile(false);
-    setCurrentPage(role);
-    setDataSets([]);
-
-    if (role === "user") await loadCustomerData(userObj);
-    else if (role === "staff") await loadStaffData();
-    else if (role === "admin") {
-      const overview = await apiGetManagerStatus();
-      if (overview.ok) setAdminOverview(overview.data);
-    }
-  };
-
-  const handleLogin = async (username, password) => {
-    if (!username?.trim() || !password) {
-      showMessage("กรุณากรอกชื่อบัญชีและรหัสผ่าน");
+  const handlePetStatusChange = async (petId, newStatus) => {
+    const allowedStatuses = ["In Care", "พร้อมรับกลับ"];
+    if (!allowedStatuses.includes(newStatus)) {
+      console.log("Invalid pet status:", newStatus);
       return;
     }
 
     try {
-      const res = await apiLogin({
-        username: username.trim(),
-        password,
-      });
-
-      if (!res.ok || !res.data?.accessToken) {
-        showMessage(
-          res.data?.message ||
-          res.data?.error ||
-          "ชื่อบัญชีหรือรหัสผ่านไม่ถูกต้อง"
-        );
+      const result = await apiUpdateStaffPetStatus({ id: petId, status: newStatus });
+      if (!result?.ok) {
+        console.warn("อัปเดตสถานะสัตว์ไม่สำเร็จ:", result?.data);
         return;
       }
 
-      await processUserAuth(res.data.accessToken);
-    } catch (err) {
-      console.warn("handleLogin error:", err);
-
-      showMessage(
-        "ไม่สามารถเข้าสู่ระบบได้ กรุณาตรวจสอบการเชื่อมต่อ Backend"
+      setDataSets((prev) =>
+        prev.map((item) =>
+          String(getPetId(item)) === String(petId)
+            ? { ...item, booking: { ...item.booking, status: newStatus } }
+            : item
+        )
       );
+      setSelectedPet((prev) =>
+        prev && String(prev.id) === String(petId)
+          ? { ...prev, status: newStatus }
+          : prev
+      );
+    } catch (err) {
+      console.warn("apiUpdateStaffPetStatus error:", err);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  // =====================================================
+  // CONFIRM / REJECT BOOKING QUEUE
+  // =====================================================
+  const handleQueueDecision = async (queueItem, accepted) => {
+    const targetId = queueItem.bookingId || queueItem.id;
     try {
-      const loginUrl = await oAuthLogin();
-      if (Platform.OS === "web" && typeof window !== "undefined") {
-        window.location.href = loginUrl;
-      } else {
-        await Linking.openURL(loginUrl);
+      const result = await apiConfirmStaffReservation(targetId, accepted);
+      if (!result?.ok) {
+        console.warn("ยืนยัน/ปฏิเสธคิวไม่สำเร็จ:", result?.data);
+        return;
       }
+      await loadStaffData();
     } catch (err) {
-      console.warn("handleGoogleLogin error:", err);
-      showMessage("ไม่สามารถเปิดหน้าเข้าสู่ระบบของ Google ได้");
-    }
-  };
-
-  const handleRegister = async (username, email, phone, password, confirmPassword) => {
-    if (!username?.trim() || !email?.trim() || !phone?.trim() || !password) {
-      showMessage("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      console.warn("apiConfirmStaffReservation error:", err);
       return;
     }
-
-    if (password !== confirmPassword) {
-      showMessage("รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน");
-      return;
-    }
-
-    const result = await apiRegister({
-      username: username.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      password,
-    });
-
-    if (!result.ok) {
-      showMessage(
-        result.data?.message ||
-        result.data?.error ||
-        "สมัครสมาชิกไม่สำเร็จ"
-      );
-      return;
-    }
-
-    setShowRegister(false);
-    setCurrentPage("login");
-
-    showMessage("สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ");
-  };
-
-  // =====================================================
-  // FORGOT PASSWORD
-  // =====================================================
-
-  const handleForgotPassword = async (email) => {
-    const result = await apiForgetPassword({
-      username: email.trim(),
-    });
-
-    if (!result.ok) {
-      showMessage(
-        result.data?.message ||
-        result.data?.error ||
-        "ส่งคำขอไม่สำเร็จ"
-      );
-      return;
-    }
-
-    setShowForgotPassword(false);
-    setCurrentPage("login");
-
-    showMessage(
-      "หากอีเมลนี้มีบัญชีอยู่ ระบบจะส่งลิงก์รีเซ็ตรหัสผ่านไปให้"
+    const newStatus = accepted ? "รอรับเข้า" : "ถูกปฏิเสธ";
+    setDataSets((prev) =>
+      prev.map((item) =>
+        String(item.booking?.id) === String(targetId)
+          ? { ...item, booking: { ...item.booking, status: newStatus } }
+          : item
+      )
     );
   };
 
   // =====================================================
-  // CREATE STAFF
+  // STAFF ACTIVITY
   // =====================================================
-
-  const handleCreateStaff = async (staffData) => {
-    const result = await apiManagerRegisterStaff(staffData);
-
-    if (!result.ok) {
-      throw new Error(
-        result.data?.message ||
-        result.data?.error ||
-        "สร้างบัญชีพนักงานไม่สำเร็จ"
-      );
+  const handleActivity = async (item, action) => {
+    const targetId = item.petId || item.id;
+    const entryType = action === "รับเข้าพัก" ? "check-in" : "check-out";
+    try {
+      await apiRecordStaffPetEntry({
+        id: targetId,
+        type: entryType,
+        timestamp: new Date().toISOString(),
+      });
+      await loadStaffData();
+    } catch (err) {
+      console.warn("apiRecordStaffPetEntry error:", err);
     }
 
-    return true;
+    if (item.petId) {
+      let newStatus = null;
+      if (action === "รับเข้าพัก") {
+        newStatus = "In Care";
+      } else if (action === "รับกลับ") {
+        newStatus = "รับกลับแล้ว";
+      }
+      if (newStatus) {
+        handlePetStatusChange(item.petId, newStatus);
+      }
+    }
+    setActivityList((prev) => [
+      {
+        id: `A${Date.now()}`,
+        name: item.name || "",
+        petId: item.petId || null,
+        branch: item.branch,
+        action,
+        detail: `${action} • ${item.detail || ""}`,
+        color: action === "รับเข้าพัก" ? "#174F83" : "#F39A13",
+      },
+      ...prev,
+    ]);
   };
 
   // =====================================================
-  // LOGOUT
+  // ADMIN CREATE STAFF
   // =====================================================
-
-  const handleLogout = async () => {
-    await clearAuthToken();
-
-    setActiveUser(null);
-    setDataSets([]);
-    setActivityList([]);
-
-    setShowBooking(false);
-    setShowMyBooking(false);
-    setShowProfile(false);
-
-    setShowRegister(false);
-    setShowForgotPassword(false);
-
-    setCurrentPage("guest");
+  const handleAdminCreateStaff = async (staffData) => {
+    try {
+      const res = await apiManagerRegisterStaff({
+        username: staffData.username,
+        email: staffData.email,
+        phone: staffData.phone,
+        password: staffData.password,
+        branch_id: staffData.branch_id || null,
+      });
+      if (res.ok) {
+        await loadAdminData();
+        return true;
+      } else {
+        const msg =
+          res.data?.message ||
+          res.data?.error ||
+          "ไม่สามารถสร้างบัญชีพนักงานได้";
+        showLoginError(msg);
+        return false;
+      }
+    } catch (err) {
+      showLoginError(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      return false;
+    }
   };
 
   // =====================================================
-  // WAIT FOR PAGE RESTORE
+  // PROFILE DATA
   // =====================================================
+  const profileData = {
+    name: activeUser?.name || "ผู้ใช้งาน",
+    phone: activeUser?.phone || "083xxxxxxx",
+    email: activeUser?.email || "user@gmail.com",
+  };
 
-  if (isRestoring) {
-    return <View style={styles.container} />;
-  }
+  const renderProfile = () => (
+    <UserProfile
+      visible={showProfile}
+      onClose={() => setShowProfile(false)}
+      title={profileData.name}
+      name={profileData.name}
+      phone={profileData.phone}
+      email={profileData.email}
+    />
+  );
 
   // =====================================================
   // RENDER
   // =====================================================
-
   return (
     <View style={styles.container}>
+      {/* GUEST */}
       {currentPage === "guest" && (
         <View style={styles.pageContainer}>
           <LogoutNavbar
             onLogin={() => setCurrentPage("login")}
           />
-
           <HomePageGuest
             onLogin={() => setCurrentPage("login")}
           />
         </View>
       )}
 
-      {currentPage === "login" && !showRegister && !showForgotPassword && (
-        <Login
-          onBack={() => setCurrentPage("guest")}
-          onLogin={handleLogin}
-          onRegister={() => setShowRegister(true)}
-          // onForgotPassword={() => setShowForgotPassword(true)}
-          onGoogleLogin={handleGoogleLogin}
-        />
-      )}
+      {/* LOGIN / REGISTER / FORGOT PASSWORD */}
+      {currentPage === "login" &&
+        (showForgotPassword ? (
+          <ForgotPassword
+            onBack={() => setShowForgotPassword(false)}
+            onSubmit={handleForgotPasswordSubmit}
+          />
+        ) : showRegister ? (
+          <Register
+            onBack={() => setShowRegister(false)}
+            onLogin={() => setShowRegister(false)}
+            onRegister={handleRegister}
+          />
+        ) : (
+          <Login
+            onBack={() => {
+              setCurrentPage("guest");
+              setShowRegister(false);
+              setShowForgotPassword(false);
+            }}
+            onLogin={handleLogin}
+            onForgotPassword={() => setShowForgotPassword(true)}
+            onGoogleLogin={() => {
+              const base =
+                process.env.EXPO_PUBLIC_API_URL ||
+                process.env.API_URL ||
+                "http://localhost:3000";
+              Linking.openURL(`${base}/api/oauth/google`);
+            }}
+            onRegister={() => setShowRegister(true)}
+          />
+        ))}
 
-      {currentPage === "login" && showRegister && (
-        <Register
-          onBack={() => setShowRegister(false)}
-          onRegister={handleRegister}
-          onLogin={() => {
-            setShowRegister(false);
-            setCurrentPage("login");
-          }}
-        />
-      )}
-
-      {currentPage === "login" && showForgotPassword && (
-        <ForgotPassword
-          onBack={() => setShowForgotPassword(false)}
-          onSubmit={handleForgotPassword}
-        />
-      )}
-
+      {/* USER */}
       {currentPage === "user" && (
         <View style={styles.userContainer}>
           <NavbarUser
@@ -1700,61 +1086,72 @@ export default function App() {
             onMyBooking={() => {
               setShowMyBooking(true);
               setShowBooking(false);
+              setShowProfile(false);
+              setShowPetDetails(false);
             }}
             onLogout={handleLogout}
           />
-
           <View style={styles.pageContent}>
-          {showPetDetails ? (
-            <PetDetails
-              pet={activeSelectedPet}
-              petImage={activeSelectedPet?.image}
-              initialStatus={activeSelectedPet?.status}
-              onBack={() => {
-                setShowPetDetails(false);
-                setSelectedPet(null);
-              }}
-            />
-          ) : showBooking ? (
-            <BookingUser
-              onBack={() => setShowBooking(false)}
-              onSubmit={handleBookingSubmit}
-            />
-          ) : showMyBooking ? (
-            <MyBookingUser
-              visible={showMyBooking}
-              bookings={bookings}
-              onBack={() => setShowMyBooking(false)}
-              onCancelBooking={handleCancelBooking}
-            />
-          ) : (
-            <HomePageUser
-              pets={pets}
-              onBooking={() => setShowBooking(true)}
-              onPetPress={(pet) => {
-                setSelectedPet(pet);
-                setShowPetDetails(true);
-                setShowBooking(false);
-                setShowMyBooking(false);
-              }}
-            />
-          )}
+            {renderProfile()}
+            {/* PET DETAILS */}
+            {showPetDetails && selectedPet ? (
+              <PetDetails
+                key={selectedPet.id}
+                pet={selectedPet}
+                petImage={selectedPet.image}
+                initialStatus={selectedPet.status}
+                onBack={() => setShowPetDetails(false)}
+                onStatusChange={(newStatus) =>
+                  handlePetStatusChange(selectedPet.id, newStatus)
+                }
+              />
+            ) : showBooking ? (
+              <BookingUser
+                onBack={() => setShowBooking(false)}
+                onSubmit={handleBookingSubmit}
+              />
+            ) : showMyBooking ? (
+              <MyBookingUser
+                visible={showMyBooking}
+                bookings={bookings}
+                onBack={() => setShowMyBooking(false)}
+                onCancelBooking={handleCancelBooking}
+              />
+            ) : (
+              <HomePageUser
+                pets={pets}
+                onPetPress={(pet) => {
+                  setSelectedPet(pet);
+                  setShowPetDetails(true);
+                  setShowBooking(false);
+                  setShowMyBooking(false);
+                  setShowProfile(false);
+                }}
+                onBooking={() => {
+                  setShowBooking(true);
+                  setShowMyBooking(false);
+                  setShowPetDetails(false);
+                  setShowProfile(false);
+                }}
+              />
+            )}
           </View>
         </View>
       )}
 
+      {/* STAFF */}
       {currentPage === "staff" && (
         <View style={styles.userContainer}>
           <NavbarSA
             onProfile={() => setShowProfile(true)}
             onLogout={handleLogout}
           />
-
           <View style={styles.pageContent}>
+            {renderProfile()}
             <HomePageStaff
               staffName={activeUser?.name || "พนักงาน"}
               bookingQueue={bookingQueue}
-              activityList={activityList}
+              activityList={staffActivityList}
               petList={staffPets}
               onUpdatePetStatus={handlePetStatusChange}
               onConfirmQueue={(item) =>
@@ -1774,30 +1171,25 @@ export default function App() {
         </View>
       )}
 
+      {/* ADMIN */}
       {currentPage === "admin" && (
         <View style={styles.userContainer}>
           <NavbarSA
             onProfile={() => setShowProfile(true)}
             onLogout={handleLogout}
           />
-
           <View style={styles.pageContent}>
+            {renderProfile()}
             <HomepageAdmin
+              onBack={() => {}}
+              onCreateStaff={handleAdminCreateStaff}
               overviewData={adminOverview}
-              onCreateStaff={handleCreateStaff}
             />
           </View>
         </View>
       )}
 
-      <UserProfile
-        visible={showProfile}
-        onClose={() => setShowProfile(false)}
-        name={activeUser?.name || ""}
-        phone={activeUser?.phone || ""}
-        email={activeUser?.email || ""}
-      />
-
+      {/* POPUP */}
       <Popup
         visible={popupVisible}
         type={popupType}
@@ -1808,22 +1200,22 @@ export default function App() {
   );
 }
 
+// =====================================================
+// STYLES
+// =====================================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-
   pageContainer: {
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-
   userContainer: {
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-
   pageContent: {
     flex: 1,
     backgroundColor: "#FFFFFF",

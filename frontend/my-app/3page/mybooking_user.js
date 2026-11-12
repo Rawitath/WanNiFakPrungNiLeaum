@@ -42,7 +42,7 @@ export default function MyBookingUser({
 
   const getDisplayStatus = (status) => {
     if (
-      ["รอรับเข้า", "In Care", "รอรับกลับ", "รับกลับแล้ว"].includes(status)
+      ["รอรับเข้า", "In Care", "รอรับกลับ", "พร้อมรับกลับ", "รับกลับแล้ว"].includes(status)
     ) {
       return "จองสำเร็จ";
     }

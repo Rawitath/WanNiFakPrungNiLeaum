@@ -193,10 +193,24 @@ export async function apiGetCustomerReservations(id = null) {
 }
 
 export async function apiCreateReservation(data) {
-  return apiRequest("/api/customer/reservation", {
+  const payload = {
+    ...data,
+    branch: String(data?.branch ?? "").trim(),
+  };
+
+  console.log("========== CREATE RESERVATION ==========");
+  console.log("Branch ที่กำลังส่ง:", payload.branch);
+  console.log("ข้อมูลทั้งหมด:", payload);
+
+  const result = await apiRequest("/api/customer/reservation", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
+
+  console.log("ผลตอบกลับจาก Backend:", result);
+  console.log("========================================");
+
+  return result;
 }
 
 export async function apiCancelReservation(id) {
@@ -221,14 +235,16 @@ export async function apiGetStaffPets(petId = null) {
   return apiRequest(`/api/staff/pets${query}`, { method: "GET" });
 }
 
-// Backend /staff/pets/status only accepts pet health values: สบายดี / ไม่สบาย.
-// Do not use this endpoint for reservation lifecycle statuses.
-export async function apiUpdateStaffPetHealth({ id, status }) {
+// อัปเดตสถานะการดูแลสัตว์ในตาราง pets (ไม่ใช่สถานะสุขภาพ)
+export async function apiUpdateStaffPetStatus({ id, status }) {
   return apiRequest("/api/staff/pets/status", {
     method: "POST",
     body: JSON.stringify({ id: String(id), status }),
   });
 }
+
+// คงชื่อเดิมไว้เพื่อรองรับไฟล์อื่นที่อาจเรียกใช้
+export const apiUpdateStaffPetHealth = apiUpdateStaffPetStatus;
 
 export async function apiRecordStaffPetEntry({ id, type, timestamp }) {
   return apiRequest("/api/staff/pets/entry", {
