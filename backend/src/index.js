@@ -533,6 +533,15 @@ app.get('/api/oauth/google/callback', googleOauthCallback);
   // Mount entry router
   app.use('/api', entryRouter);
 
+  // Global error handler - ensure JSON error responses instead of HTML stack traces
+  app.use((err, req, res, next) => {
+    console.error('Unhandled API error:', err);
+    res.status(err.status || 500).json({
+      error: err.message || 'Internal server error',
+      message: err.message || 'Internal server error',
+    });
+  });
+
   return app;
 }
 //---------------------------------------------Export App---------------------------------------
