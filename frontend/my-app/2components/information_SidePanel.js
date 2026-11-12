@@ -136,9 +136,9 @@ export default function UserSidePanel({ visible, onClose, pet, information }) {
                     >
 
                         {/* รหัสการจอง */}
-                        <Text style={styles.bookingId}>
+                        {/* <Text style={styles.bookingId}>
                             รหัสลูกค้า: {booking.bookingId}
-                        </Text>
+                        </Text> */}
 
                         {/* ข้อมูลลูกค้า */}
                         {renderSection(
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
 
     pawTopLeft2: {
         position: "absolute",
-        top: 230,
+        top: 180,
         left: 300,
         transform: [{ rotate: "30deg" }],
     },
@@ -380,11 +380,11 @@ const styles = StyleSheet.create({
     },
     
     petTable: {
-        width: "80%",
+        width: "92%",
         borderWidth: "none",
         borderColor: "none",
         marginTop: 10,
-        marginLeft: 60,
+        marginLeft: 40,
     },
 
     petTableRow: {
