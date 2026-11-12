@@ -134,12 +134,12 @@ services:
       - stayforget-network
 
   db:
-    image: postgres:18-alpine
+    image: stayforget-postgres:18-alpine
+    build: ./db
     profiles: ["", "prod", "test", "backend"]
     restart: unless-stopped
     volumes:
       - stayforget_db:/var/lib/postgresql
-      - ./init-scripts/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-stayforget}
       POSTGRES_USER: ${POSTGRES_USER:-stayforget}
@@ -154,12 +154,12 @@ services:
       - stayforget-network
 
   db-dev:
-    image: postgres:18-alpine
+    image: stayforget-postgres:18-alpine
+    build: ./db
     profiles: ["dev", "dev-backend"]
     restart: on-failure
     volumes:
       - stayforget_dev_db:/var/lib/postgresql
-      - ./init-scripts/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     environment:
       POSTGRES_DB: dev
       POSTGRES_USER: dev
