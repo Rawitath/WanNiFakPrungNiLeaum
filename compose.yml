@@ -149,7 +149,7 @@ services:
       interval: 3s
       timeout: 3s
       retries: 10
-      start_period: 15s
+      start_period: 30s
     networks:
       - stayforget-network
 
@@ -169,7 +169,7 @@ services:
       interval: 3s
       timeout: 3s
       retries: 10
-      start_period: 15s
+      start_period: 30s
     ports:
       - "5432:5432"
     networks:
