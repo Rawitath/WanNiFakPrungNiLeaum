@@ -424,6 +424,13 @@ pipeline {
         }
         failure {
             script {
+                executeStepWithCheck(
+                    name: 'print error logs',
+                    title: 'Printing Docker Error Logs',
+                    command: "docker compose logs db",
+                    useCredentials: false,
+                    failOnError: false
+                )
                 publishOverallSummary('FAILURE', 'One or more stages failed. Check individual step check runs above for error traces.')
             }
         }

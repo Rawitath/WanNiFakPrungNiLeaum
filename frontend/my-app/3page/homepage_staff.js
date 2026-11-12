@@ -25,6 +25,13 @@ export default function HomePageStaff({
   const [selectedInformation, setSelectedInformation] = useState(null);
   const [showStatusDropdownId, setShowStatusDropdownId] = useState(null);
 
+  const statusOptions = [
+    "ทั้งหมด",
+    "จองสำเร็จ",
+    "รอยืนยันคิว",
+    "ถูกปฏิเสธ",
+  ];
+
   const formatQueueTime = (reservationDate) => {
     if (!reservationDate) return "--:--";
 
