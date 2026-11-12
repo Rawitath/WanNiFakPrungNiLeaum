@@ -398,19 +398,20 @@ export default function MyBookingUser({
                           {formatBookingTimestamp(bookingTimestamp)}
                         </Text>
 
-                        {bookingStatus !== "ถูกปฏิเสธ" && (
-                          <TouchableOpacity
-                            style={styles.cancelButton}
-                            onPress={() =>
-                              onCancelBooking &&
-                              onCancelBooking(info.id)
-                            }
-                          >
-                            <Text style={styles.cancelButtonText}>
-                              ยกเลิกการจอง
-                            </Text>
-                          </TouchableOpacity>
-                        )}
+                        {bookingStatus !== "ถูกปฏิเสธ" &&
+                          String(booking.status || "").trim() !== "รับกลับแล้ว" && (
+                            <TouchableOpacity
+                              style={styles.cancelButton}
+                              onPress={() =>
+                                onCancelBooking &&
+                                onCancelBooking(info.id)
+                              }
+                            >
+                              <Text style={styles.cancelButtonText}>
+                                ยกเลิกการจอง
+                              </Text>
+                            </TouchableOpacity>
+                          )}
                       </View>
                     </View>
                   </View>
