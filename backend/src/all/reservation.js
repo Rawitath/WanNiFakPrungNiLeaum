@@ -151,36 +151,87 @@ async function createReservation(req, res, next) {
     const reservationId = uuidv4();
     const reservationDate = new Date().toISOString();
 
-    // เพิ่มคอลัมน์สถานะให้ฐานข้อมูลเดิมรองรับสถานะการจอง
-    await db.query("ALTER TABLE reservations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'");
+    // เพิ่มคอลัมน์สถานะให้ฐานข้อมูลเดิมรองรับสถานะการจอง (ถ้ามีอยู่แล้วจะไม่ error)
+    try {
+      await db.query("ALTER TABLE reservations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'");
+    } catch (_) {}
 
     const branchName = String(branch).trim().replace(/^สาขา\s*/i, "");
     let bRes = await db.query(
       'SELECT branch_id FROM branches WHERE LOWER(TRIM(branch_name)) = LOWER(TRIM($1)) OR branch_id::text = $1 LIMIT 1',
       [branchName]
     );
-    // บางฐานข้อมูลเดิมมี admin อยู่แล้ว แต่ยังไม่มีข้อมูล branches จาก initadmin
-    const validBranches = ['ลาดกระบัง', 'ร่มเกล้า', 'ปราจีนบุรี', 'หาดใหญ่'];
-    if (!bRes.rows.length && validBranches.includes(branchName)) {
+
+    // หากไม่พบสาขา ให้สร้างสาขาอัตโนมัติ เพื่อรองรับทุกสาขาที่ผู้ใช้เลือก
+    if (!bRes.rows.length) {
+      const newBranchId = uuidv4();
       await db.query(
-        'INSERT INTO branches (branch_id, branch_name) SELECT $1, $2 WHERE NOT EXISTS (SELECT 1 FROM branches WHERE branch_name = $2)',
-        [uuidv4(), branchName]
+        'INSERT INTO branches (branch_id, branch_name) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [newBranchId, branchName]
       );
       bRes = await db.query(
-        'SELECT branch_id FROM branches WHERE LOWER(TRIM(branch_name)) = LOWER(TRIM($1)) LIMIT 1',
+        'SELECT branch_id FROM branches WHERE LOWER(TRIM(branch_name)) = LOWER(TRIM($1)) OR branch_id::text = $1 LIMIT 1',
         [branchName]
       );
     }
+
     if (!bRes.rows.length) {
       return res.status(400).json({ error: `ไม่พบสาขา ${branchName} ในฐานข้อมูล` });
     }
     const branchId = bRes.rows[0].branch_id;
 
-    let userId = req.user?.userid;
-    if (!userId) {
-      const uRes = await db.query('SELECT userid FROM users WHERE email = $1', [customerEmail]);
-      if (uRes.rows.length > 0) userId = uRes.rows[0].userid;
+    // ตรวจสอบ userId ให้แน่ใจว่ามีในฐานข้อมูล users และไม่ใช่ undefined
+    let userId = req.user?.userid || null;
+    if (userId) {
+      try {
+        const checkU = await db.query('SELECT userid FROM users WHERE userid::text = $1', [String(userId)]);
+        if (checkU.rows.length === 0) {
+          userId = null;
+        }
+      } catch (_) {
+        userId = null;
+      }
     }
+    if (!userId && customerEmail) {
+      try {
+        const uRes = await db.query('SELECT userid FROM users WHERE email = $1', [customerEmail]);
+        if (uRes.rows.length > 0) {
+          userId = uRes.rows[0].userid;
+        } else {
+          userId = null;
+        }
+      } catch (_) {
+        userId = null;
+      }
+    }
+
+    // แปลงวันเกิดให้เป็น YYYY-MM-DD เพื่อป้องกัน error: date/time field value out of range (เช่น เมื่อได้รับ DD/MM/YYYY)
+    let formattedBirth = '2022-01-01';
+    if (petBirth) {
+      const birthStr = String(petBirth).trim();
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(birthStr)) {
+        const [d, m, y] = birthStr.split('/');
+        formattedBirth = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      } else if (/^\d{4}-\d{2}-\d{2}/.test(birthStr)) {
+        formattedBirth = birthStr.substring(0, 10);
+      } else {
+        const numMatch = birthStr.match(/\d+/);
+        if (numMatch) {
+          const ageYears = parseInt(numMatch[0], 10);
+          if (!isNaN(ageYears) && ageYears < 50) {
+            const y = new Date().getFullYear() - ageYears;
+            formattedBirth = `${y}-01-01`;
+          }
+        } else {
+          const parsed = Date.parse(birthStr);
+          if (!isNaN(parsed)) {
+            formattedBirth = new Date(parsed).toISOString().split('T')[0];
+          }
+        }
+      }
+    }
+
+    const numericWeight = Number(String(petWeight).replace(/[^0-9.]/g, '')) || 5;
 
     await db.query(
       `INSERT INTO reservations (
@@ -189,8 +240,22 @@ async function createReservation(req, res, next) {
          pet_sex, pet_weight, pet_birth, pet_condition, pet_note, status
        ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'pending')`,
       [
-        reservationId, userId, branchId, customerName, customerPhone, customerEmail,
-        checkIn, checkOut, petName, petType, petBreed, petSex, petWeight, petBirth, petCondition, petNote,
+        reservationId,
+        userId,
+        branchId,
+        customerName,
+        customerPhone,
+        customerEmail,
+        checkIn,
+        checkOut,
+        petName,
+        petType,
+        petBreed,
+        petSex,
+        numericWeight,
+        formattedBirth,
+        petCondition,
+        petNote,
       ]
     );
 
@@ -206,8 +271,8 @@ async function createReservation(req, res, next) {
       petType,
       petBreed,
       petSex,
-      petWeight: Number(petWeight),
-      petBirth,
+      petWeight: numericWeight,
+      petBirth: formattedBirth,
       petCondition,
       petNote,
       checkIn,
@@ -219,7 +284,8 @@ async function createReservation(req, res, next) {
 
     return res.status(201).json({ reservationId, reservationDate, branch: branchName, status: 'pending' });
   } catch (err) {
-    next(err);
+    console.error('createReservation error:', err);
+    res.status(500).json({ error: err.message || 'ไม่สามารถบันทึกการจองได้', message: err.message || 'ไม่สามารถบันทึกการจองได้' });
   }
 }
 
