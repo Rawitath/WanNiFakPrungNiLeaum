@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   View,
@@ -13,62 +12,32 @@ import {
 } from "react-native";
 
 // ==============================
-// BRANCH DATA
+// ADMIN DATA HELPERS
 // ==============================
-const branches = [
-  {
-    name: "สาขาลาดกระบัง",
-    animals: [
-      { type: "สุนัข", count: 12 },
-      { type: "แมว", count: 12 },
-    ],
-    total: 24,
-  },
-  {
-    name: "สาขาร่มเกล้า",
-    animals: [
-      { type: "สุนัข", count: 16 },
-      { type: "นก", count: 15 },
-    ],
-    total: 31,
-  },
-  {
-    name: "สาขาปราจีนบุรี",
-    animals: [
-      { type: "สุนัข", count: 20 },
-      { type: "นก", count: 15 },
-      { type: "แมว", count: 4 },
-      { type: "ไก่", count: 3 },
-    ],
-    total: 42,
-  },
-  {
-    name: "สาขาขาดใหญ่",
-    animals: [
-      { type: "สุนัข", count: 20 },
-      { type: "นก", count: 15 },
-      { type: "แมว", count: 4 },
-      { type: "ไก่", count: 3 },
-    ],
-    total: 42,
-  },
-];
+const normalizeAnimalType = (type) => {
+  const value = String(type || "").trim().toLowerCase();
 
-const statusData = [
-  { label: "กำลังเข้าพัก", count: 1700, percent: 80 },
-  { label: "พร้อมรับกลับ", count: 10, percent: 38 },
-  { label: "อยู่ระหว่างตรวจสุขภาพ", count: 5, percent: 27 },
-  { label: "ออกจากสาขาแล้ว", count: 220, percent: 22 },
-];
+  if (["dog", "dogs", "สุนัข", "หมา"].includes(value)) return "สุนัข";
+  if (["cat", "cats", "แมว"].includes(value)) return "แมว";
+  if (["rabbit", "rabbits", "กระต่าย"].includes(value)) return "กระต่าย";
 
-const animalSummary = [
-  { name: "สุนัข", count: 80 },
-  { name: "กระต่าย", count: 45 },
-  { name: "แมว", count: 360 },
-  { name: "วัว", count: 16 },
-  { name: "นก", count: 400 },
-  { name: "หนู", count: 35 },
-];
+  return "อื่นๆ";
+};
+
+const getPetBranch = (pet) =>
+  String(
+    pet.branch ||
+    pet.branchName ||
+    pet.branch_name ||
+    pet.branch_name_th ||
+    "ไม่ระบุสาข"
+  ).trim();
+
+const getPetType = (pet) =>
+  pet.petType || pet.pet_type || pet.type || pet.animalType || pet.animal_type || "";
+
+const getPetStatus = (pet) =>
+  String(pet.status || pet.petStatus || pet.pet_status || "").trim();
 
 // ==============================
 // PAW PRINT
@@ -86,26 +55,17 @@ function PawPrint({ style }) {
 }
 
 // ==============================
-// STATUS BAR
+// STATUS NUMBER
 // ==============================
-function StatusBar({ item }) {
+function StatusNumber({ item }) {
   return (
     <View style={styles.statusItem}>
-      <View style={styles.statusTop}>
-        <Text style={styles.statusLabel}>{item.label}</Text>
-
+      <Text style={styles.statusLabel}>{item.label}</Text>
+      <View style={styles.statusNumberBox}>
         <Text style={styles.statusCount}>
-          {item.count.toLocaleString()} ตัว
+          {Number(item.count || 0).toLocaleString("th-TH")}
         </Text>
-      </View>
-
-      <View style={styles.progressBackground}>
-        <View
-          style={[
-            styles.progressFill,
-            { width: `${item.percent}%` },
-          ]}
-        />
+        <Text style={styles.statusUnit}>ตัว</Text>
       </View>
     </View>
   );
@@ -139,63 +99,108 @@ export default function HomepageAdmin({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const adminPets = Array.isArray(overviewData?.pets)
+    ? overviewData.pets
+    : [];
+
+  const allBranches = React.useMemo(() => {
+    const grouped = {};
+
+    adminPets.forEach((pet) => {
+      const branchName = getPetBranch(pet);
+      const typeName = normalizeAnimalType(getPetType(pet));
+
+      if (!grouped[branchName]) {
+        grouped[branchName] = { name: branchName, animals: {}, total: 0 };
+      }
+
+      grouped[branchName].animals[typeName] =
+        (grouped[branchName].animals[typeName] || 0) + 1;
+      grouped[branchName].total += 1;
+    });
+
+    return Object.values(grouped).map((branch) => ({
+      ...branch,
+      animals: ["สุนัข", "แมว", "กระต่าย", "อื่นๆ"]
+        .map((type) => ({
+          type,
+          count: branch.animals[type] || 0,
+        }))
+        .filter((animal) => animal.count > 0),
+    }));
+  }, [adminPets]);
+
   const branchOptions = [
     "ทุกสาขา",
-    ...branches.map((b) => b.name),
+    ...allBranches.map((branch) => branch.name),
   ];
 
   const displayedBranches =
     selectedBranch === "ทุกสาขา"
-      ? branches
-      : branches.filter((b) => b.name === selectedBranch);
+      ? allBranches
+      : allBranches.filter((branch) => branch.name === selectedBranch);
+
+  const petsInSelectedBranch =
+    selectedBranch === "ทุกสาขา"
+      ? adminPets
+      : adminPets.filter((pet) => getPetBranch(pet) === selectedBranch);
 
   const displayedAnimalSummary = React.useMemo(() => {
-    if (overviewData && overviewData.byType && Object.keys(overviewData.byType).length > 0) {
-      const typeTranslations = {
-        dog: "สุนัข",
-        cat: "แมว",
-        bird: "นก",
-        rabbit: "กระต่าย",
-        cow: "วัว",
-        mouse: "หนู",
-        other: "อื่นๆ",
-        "สุนัข": "สุนัข",
-        "แมว": "แมว",
-        "นก": "นก",
-        "กระต่าย": "กระต่าย",
-      };
-      return Object.entries(overviewData.byType).map(([type, count]) => ({
-        name: typeTranslations[type.toLowerCase()] || type,
-        count: Number(count),
-      }));
+    const counts = {
+      "สุนัข": 0,
+      "แมว": 0,
+      "กระต่าย": 0,
+      "อื่นๆ": 0,
+    };
+
+    if (petsInSelectedBranch.length > 0) {
+      petsInSelectedBranch.forEach((pet) => {
+        counts[normalizeAnimalType(getPetType(pet))] += 1;
+      });
+    } else if (
+      selectedBranch === "ทุกสาขา" &&
+      overviewData?.byType &&
+      Object.keys(overviewData.byType).length > 0
+    ) {
+      Object.entries(overviewData.byType).forEach(([type, count]) => {
+        counts[normalizeAnimalType(type)] += Number(count) || 0;
+      });
     }
-    return animalSummary;
-  }, [overviewData]);
+
+    return Object.entries(counts).map(([name, count]) => ({ name, count }));
+  }, [petsInSelectedBranch, selectedBranch, overviewData]);
+
+  const totalAnimalCount = displayedAnimalSummary.reduce(
+    (sum, animal) => sum + animal.count,
+    0
+  );
 
   const displayedStatusData = React.useMemo(() => {
-    if (overviewData && Array.isArray(overviewData.pets) && overviewData.pets.length > 0) {
-      const total = overviewData.pets.length;
-      const inCare = overviewData.pets.filter(
-        (p) => p.status === "In Care" || p.status === "สบายดี"
-      ).length;
-      const ready = overviewData.pets.filter(
-        (p) => p.status === "พร้อมรับกลับ" || p.status === "รอรับกลับ"
-      ).length;
-      const pending = overviewData.pets.filter(
-        (p) => p.status === "รอรับเข้า" || p.status === "รอยืนยันคิว" || p.status === "pending"
-      ).length;
-      const returned = overviewData.pets.filter(
-        (p) => p.status === "รับกลับแล้ว"
-      ).length;
-      return [
-        { label: "กำลังเข้าพัก", count: inCare, percent: total > 0 ? Math.round((inCare / total) * 100) : 0 },
-        { label: "พร้อมรับกลับ", count: ready, percent: total > 0 ? Math.round((ready / total) * 100) : 0 },
-        { label: "อยู่ระหว่างตรวจสุขภาพ", count: pending, percent: total > 0 ? Math.round((pending / total) * 100) : 0 },
-        { label: "ออกจากสาขาแล้ว", count: returned, percent: total > 0 ? Math.round((returned / total) * 100) : 0 },
-      ];
-    }
-    return statusData;
-  }, [overviewData]);
+    const statuses = [
+      { label: "กำลังเข้าพัก", count: 0 },
+      { label: "พร้อมรับกลับ", count: 0 },
+      { label: "อยู่ระหว่างตรวจสุขภาพ", count: 0 },
+      { label: "ออกจากสาขาแล้ว", count: 0 },
+    ];
+
+    petsInSelectedBranch.forEach((pet) => {
+      const status = getPetStatus(pet);
+
+      if (["In Care", "in_care", "สบายดี", "กำลังเข้าพัก"].includes(status)) {
+        statuses[0].count += 1;
+      } else if (["พร้อมรับกลับ", "รอรับกลับ"].includes(status)) {
+        statuses[1].count += 1;
+      } else if (
+        ["รอรับเข้า", "รอยืนยันคิว", "pending", "accepted", "confirmed"].includes(status)
+      ) {
+        statuses[2].count += 1;
+      } else if (["รับกลับแล้ว", "completed"].includes(status)) {
+        statuses[3].count += 1;
+      }
+    });
+
+    return statuses;
+  }, [petsInSelectedBranch]);
 
   // ==============================
   // OPEN CREATE STAFF
@@ -477,7 +482,7 @@ export default function HomepageAdmin({
                 <View style={styles.summaryContent}>
                   <View style={styles.totalNumberContainer}>
                     <Text style={styles.totalNumber}>
-                      800 ตัว
+                      {totalAnimalCount.toLocaleString("th-TH")} ตัว
                     </Text>
                   </View>
 
@@ -504,7 +509,7 @@ export default function HomepageAdmin({
 
                 <View style={styles.statusList}>
                   {displayedStatusData.map((item, index) => (
-                    <StatusBar key={index} item={item} />
+                    <StatusNumber key={index} item={item} />
                   ))}
                 </View>
               </View>
@@ -513,9 +518,7 @@ export default function HomepageAdmin({
         </View>
       </ScrollView>
 
-      {/* ==================================
-          CREATE STAFF MODAL
-      ================================== */}
+      {/* CREATE STAFF MODAL */}
       <Modal
         visible={showCreateStaff}
         transparent
@@ -525,8 +528,6 @@ export default function HomepageAdmin({
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-
-            {/* MODAL HEADER */}
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalTitle}>
@@ -554,7 +555,6 @@ export default function HomepageAdmin({
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              {/* USERNAME */}
               <Text style={styles.inputLabel}>
                 Username
               </Text>
@@ -570,7 +570,6 @@ export default function HomepageAdmin({
                 autoCapitalize="none"
               />
 
-              {/* EMAIL */}
               <Text style={styles.inputLabel}>
                 Email
               </Text>
@@ -587,7 +586,6 @@ export default function HomepageAdmin({
                 autoCapitalize="none"
               />
 
-            {/* Phone */}
               <Text style={styles.inputLabel}>
                 Phone
               </Text>
@@ -604,7 +602,6 @@ export default function HomepageAdmin({
                 autoCapitalize="none"
               />
 
-              {/* PASSWORD */}
               <Text style={styles.inputLabel}>
                 Password
               </Text>
@@ -632,7 +629,6 @@ export default function HomepageAdmin({
                 </TouchableOpacity>
               </View>
 
-              {/* CONFIRM PASSWORD */}
               <Text style={styles.inputLabel}>
                 Confirm Password
               </Text>
@@ -660,9 +656,7 @@ export default function HomepageAdmin({
                 </TouchableOpacity>
               </View>
 
-              {/* BUTTONS */}
               <View style={styles.modalButtons}>
-
                 <TouchableOpacity
                   style={styles.submitButton}
                   onPress={handleCreateStaff}
@@ -980,7 +974,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 16,
     paddingHorizontal: 18,
-    minHeight: 230,
+    minHeight: 190,
     elevation: 4,
     shadowColor: "#000000",
     shadowOpacity: 0.2,
@@ -999,43 +993,45 @@ const styles = StyleSheet.create({
   },
 
   statusList: {
-    gap: 9,
-    paddingHorizontal: 6,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    paddingHorizontal: 2,
+    paddingTop: 4,
   },
 
   statusItem: {
-    width: "100%",
-  },
-
-  statusTop: {
-    flexDirection: "row",
+    width: "47%",
+    minHeight: 68,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    borderRadius: 9,
+    backgroundColor: "#17415F",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
   },
 
   statusLabel: {
-    color: "#FFFFFF",
+    color: "#DCEAF4",
     fontSize: 11,
+    fontWeight: "600",
+  },
+
+  statusNumberBox: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    marginTop: 5,
   },
 
   statusCount: {
     color: "#FFFFFF",
-    fontSize: 11,
+    fontSize: 23,
+    fontWeight: "bold",
   },
 
-  progressBackground: {
-    width: "100%",
-    height: 15,
-    backgroundColor: "#E5EDF2",
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#216EAD",
-    borderRadius: 20,
+  statusUnit: {
+    color: "#DCEAF4",
+    fontSize: 10,
+    marginLeft: 5,
   },
 
   // PAW DECORATIONS
@@ -1107,9 +1103,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.1 }],
   },
 
-  // ==================================
   // CREATE STAFF MODAL
-  // ==================================
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",
